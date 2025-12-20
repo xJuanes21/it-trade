@@ -1,30 +1,14 @@
-import { auth, signOut } from "@/auth"
-
-export default async function DashboardPage() {
-  const session = await auth()
-
+export default function DashboardPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-8 bg-background text-foreground">
-      <h1 className="text-3xl font-bold mb-4">Dashboard</h1>
-      <p className="mb-4">Welcome, {session?.user?.name || session?.user?.email}!</p>
-      
-      <div className="p-4 bg-card rounded-lg border border-border">
-        <pre className="text-xs text-muted-foreground overflow-auto max-w-lg mb-4">
-          {JSON.stringify(session, null, 2)}
-        </pre>
+    <div className="flex min-h-[60vh] flex-col gap-4 p-4 md:p-8 bg-background text-foreground">
+      <h1 className="text-3xl font-bold">Dashboard</h1>
+      <p className="text-muted-foreground max-w-prose">
+        Bienvenido a iTtrade. Esta página es pública por ahora mientras dejamos el proyecto sin autenticación.
+      </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="p-4 bg-card rounded-lg border border-border">Bloque A</div>
+        <div className="p-4 bg-card rounded-lg border border-border">Bloque B</div>
       </div>
-
-      <form
-        action={async () => {
-          "use server"
-          await signOut()
-        }}
-        className="mt-6"
-      >
-        <button className="bg-destructive hover:bg-destructive/90 text-white px-4 py-2 rounded-md">
-          Sign Out
-        </button>
-      </form>
     </div>
   )
 }
