@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Search, Bell, ChevronDown, LogOut, User } from 'lucide-react';
 import { useSession } from "next-auth/react";
-import { logOut } from "@/app/actions/auth";
+import { logOut } from "@/lib/auth-actions";
 import {
   DropdownMenu,
   DropdownMenuContent,
