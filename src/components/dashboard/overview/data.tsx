@@ -1,6 +1,7 @@
-import { TrendingUp, TrendingDown, Zap, Eye, BarChart3 } from "lucide-react";
+import { TrendingUp, TrendingDown, Zap, Eye, BarChart3, type LucideIcon } from "lucide-react";
+import React from "react";
 
-export type LucideIconType = (props: { size?: number; className?: string }) => JSX.Element;
+export type LucideIconType = LucideIcon;
 
 export type StatCard = {
   label: string;

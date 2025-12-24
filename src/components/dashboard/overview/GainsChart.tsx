@@ -58,17 +58,20 @@ export function GainsChart() {
             padding: 12,
             displayColors: false,
             callbacks: {
-              label: (context) => `$${context.parsed.y.toLocaleString()}`,
+              label: (context) => {
+                const value = context.parsed.y;
+                return value !== null ? `$${value.toLocaleString()}` : "";
+              },
             },
           },
         },
         scales: {
           x: {
-            grid: { display: false, drawBorder: false },
+            grid: { display: false },
             ticks: { color: "#6b7280", font: { size: 11 } },
           },
           y: {
-            grid: { color: "#1a1f35", drawBorder: false },
+            grid: { color: "#1a1f35" },
             ticks: {
               color: "#6b7280",
               font: { size: 11 },

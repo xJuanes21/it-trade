@@ -120,3 +120,7 @@ export async function register(
 export async function signInWithGoogle(): Promise<void> {
   await signIn("google", { redirectTo: "/dashboard" });
 }
+
+export async function logOut(): Promise<void> {
+  await import("@/auth").then((m) => m.signOut({ redirectTo: "/login" }));
+}

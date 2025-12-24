@@ -1,10 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  experimental: {
-    // Ensure 'pg' isn't bundled into client/RSC; keep it server-side only
-    serverComponentsExternalPackages: ["pg"],
-  },
+  // Moved from experimental in Next.js 16
+  serverExternalPackages: ["pg"],
+  
+  // Add turbopack config to silence error
+  turbopack: {},
+  
   webpack: (config) => {
     // Prevent Next from trying to resolve optional native bindings of 'pg'
     config.resolve = config.resolve || {};
