@@ -116,3 +116,7 @@ export async function register(
     return { error: "Error registrando usuario" };
   }
 }
+
+export async function signInWithGoogle(): Promise<void> {
+  await signIn("google", { redirectTo: "/dashboard" });
+}
