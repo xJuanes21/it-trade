@@ -30,7 +30,18 @@ export const authConfig: NextAuthConfig = {
         const bcrypt = await import("bcryptjs");
         
         const email = credentials.email.toString();
-        const user = await prisma.user.findUnique({ where: { email } });
+        const user = await prisma.user.findUnique({ 
+          where: { email },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            emailVerified: true,
+            image: true,
+            passwordHash: true,
+            role: true,
+          }
+        });
         
         if (!user || !user.passwordHash) return null;
         
@@ -39,7 +50,17 @@ export const authConfig: NextAuthConfig = {
           user.passwordHash
         );
 
-        if (passwordsMatch) return user;
+        if (passwordsMatch) {
+          // Retornar usuario con el rol incluido
+          return {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            emailVerified: user.emailVerified,
+            image: user.image,
+            role: user.role as "user" | "superadmin",
+          };
+        }
         return null;
       },
     }),
@@ -49,16 +70,33 @@ export const authConfig: NextAuthConfig = {
   },
   callbacks: {
     async jwt({ token, user, account }) {
-      if (account?.provider === "google") {
-        // Al usar adaptador, el user ya viene de DB con ID estable
-        // No necesitamos lógica compleja aquí, el adaptador hace el link
+      // En el primer login, cargar el rol desde el usuario
+      if (user) {
+        token.id = user.id;
+        token.role = user.role;
       }
+      
+      // Si no tenemos el rol en el token, cargarlo desde la base de datos
+      if (!token.role && token.sub) {
+        const { prisma } = await import("@/lib/prisma");
+        const dbUser = await prisma.user.findUnique({ 
+          where: { id: token.sub },
+          select: { role: true }
+        });
+        if (dbUser?.role) {
+          token.role = dbUser.role as "user" | "superadmin";
+        }
+      }
+      
       return token;
     },
     async session({ session, token }) {
-      // Pasar ID del token a la sesión
+      // Pasar ID y rol del token a la sesión
       if (token.sub) {
         session.user.id = token.sub;
+      }
+      if (token.role) {
+        session.user.role = token.role as "user" | "superadmin";
       }
       return session;
     }

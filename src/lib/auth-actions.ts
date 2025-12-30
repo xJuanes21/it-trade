@@ -65,7 +65,14 @@ export async function register(
 
     const bcrypt = await import("bcryptjs");
     const passwordHash = await bcrypt.hash(password, 10);
-    await prisma.user.create({ data: { name, email, passwordHash } });
+    await prisma.user.create({ 
+      data: { 
+        name, 
+        email, 
+        passwordHash,
+        role: "user", // Asignar rol user por defecto
+      } 
+    });
 
     // Auto-login after registration could be attempted here,
     // but for simplicity/safety we ask them to login.

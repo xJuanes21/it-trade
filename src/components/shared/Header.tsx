@@ -21,6 +21,7 @@ export default function Header() {
 
   const userName = session?.user?.name || "Usuario";
   const userInitial = userName.charAt(0).toUpperCase();
+  const userRole = session?.user?.role === "superadmin" ? "Super Admin" : "Usuario";
 
   return (
     <header className=" backdrop-blur-md border-b border-[#2a3050] px-6 py-3 sticky top-0 z-40">
@@ -62,7 +63,7 @@ export default function Header() {
                 </div>
                 <div className="hidden sm:flex flex-col items-start">
                     <span className="text-sm font-medium text-white leading-none">{userName}</span>
-                    <span className="text-[10px] text-slate-400 mt-0.5">Trader Pro</span>
+                    <span className="text-[10px] text-slate-400 mt-0.5">{userRole}</span>
                 </div>
                 <ChevronDown size={14} className="text-slate-500" />
             </DropdownMenuTrigger>
@@ -72,7 +73,7 @@ export default function Header() {
             >
                 <div className="px-2 py-1.5 mb-1 border-b border-[#2a3050]/50 sm:hidden">
                     <p className="text-sm font-medium text-white">{userName}</p>
-                    <p className="text-xs text-slate-400">Trader Pro</p>
+                    <p className="text-xs text-slate-400">{userRole}</p>
                 </div>
                 <DropdownMenuItem 
                 onClick={handleLogout}

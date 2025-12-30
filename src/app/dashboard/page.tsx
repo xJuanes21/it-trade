@@ -12,7 +12,7 @@ import { statsData } from "@/components/dashboard/overview/data";
 export default function DashboardPage() {
   return (
     <MarketDataProvider>
-      <div className="min-h-screen bg-[#050816] p-4 text-white md:p-8">
+      <div className="min-h-screen p-4 text-white md:p-8">
         <div className="mx-auto flex max-w-[1600px] flex-col gap-6">
           <header>
             <p className="text-sm text-blue-300">Resumen General</p>
