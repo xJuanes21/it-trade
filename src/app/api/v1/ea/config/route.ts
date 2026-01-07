@@ -95,32 +95,26 @@ export async function GET(req: Request) {
             return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
         }
 
-        const configs = await prisma.eaConfig.findMany({
-            where: { userId: session.user.id },
-            orderBy: { createdAt: 'desc' }
+        // PROXY to External API
+        const externalResponse = await fetch('https://mt5.ittradew.com/api/v1/ea/configs', {
+            headers: {
+                'accept': 'application/json'
+            },
+            cache: 'no-store'
         });
 
-        const response = configs.map(c => ({
-            ea_name: c.eaName,
-            magic_number: c.magicNumber,
-            symbol: c.symbol,
-            timeframe: c.timeframe,
-            lot_size: c.lotSize,
-            stop_loss: c.stopLoss,
-            take_profit: c.takeProfit,
-            max_trades: c.maxTrades,
-            trading_hours_start: c.tradingHoursStart,
-            trading_hours_end: c.tradingHoursEnd,
-            risk_percent: c.riskPercent,
-            enabled: c.enabled,
-            custom_params: c.customParams,
-            created_at: c.createdAt,
-            updated_at: c.updatedAt,
-        }));
+        if (!externalResponse.ok) {
+            throw new Error(`External API Error: ${externalResponse.statusText}`);
+        }
 
-        return NextResponse.json(response);
+        const data = await externalResponse.json();
+        
+        // Return data directly as it matches our interface (snake_case)
+        // User requested: "solo sea accequilbe ese bot" (Filtered if needed, but endpoint returns list)
+        return NextResponse.json(data);
+
     } catch (error) {
-        console.error("Error fetching EA Configs:", error);
-        return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
+        console.error("Error fetching EA Configs from External:", error);
+        return NextResponse.json({ message: "External Service Unavailable" }, { status: 502 });
     }
 }

@@ -1,5 +1,4 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 export async function POST(req: Request, { params }: { params: Promise<{ magic_number: string }> }) {
@@ -10,26 +9,26 @@ export async function POST(req: Request, { params }: { params: Promise<{ magic_n
     }
 
     const { magic_number } = await params;
-    const magicNumber = parseInt(magic_number);
-
-    if (isNaN(magicNumber)) {
-        return NextResponse.json({ message: "Invalid magic number" }, { status: 400 });
-    }
-
-    const existing = await prisma.eaConfig.findUnique({
-        where: { magicNumber: magicNumber }
+    
+    // PROXY Disable to External API
+    const response = await fetch(`https://mt5.ittradew.com/api/v1/ea/config/${magic_number}/disable`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'accept': 'application/json'
+        },
+        cache: 'no-store'
     });
 
-    if (!existing || existing.userId !== session.user.id) {
-        return NextResponse.json({ message: "Not Found" }, { status: 404 });
+    if (!response.ok) {
+        return NextResponse.json(
+            { message: `Upstream Error: ${response.status} ${response.statusText}` }, 
+            { status: response.status }
+        );
     }
 
-    await prisma.eaConfig.update({
-        where: { magicNumber: magicNumber },
-        data: { enabled: false }
-    });
-
-    return NextResponse.json({ message: "EA disabled" });
+    const data = await response.json();
+    return NextResponse.json(data);
   } catch (error) {
     console.error("Error disabling EA:", error);
     return NextResponse.json({ message: "Internal Server Error" }, { status: 500 });
