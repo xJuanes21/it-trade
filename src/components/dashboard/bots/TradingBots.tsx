@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Search,
   TrendingUp,
-  TrendingDown,
   Zap,
   Settings as SettingsIcon,
   Pause,
@@ -13,27 +12,19 @@ import {
   Filter,
   Grid3x3,
   List,
+  Plus,
+  Server,
+  Loader2
 } from "lucide-react";
+import { toast } from "sonner";
+import Link from "next/link";
+import { eaService } from "@/services/ea.service";
+import { EaConfig } from "@/types/ea";
+import BotConfigModal from "./BotConfigModal";
 
 // Types
 type Trend = "up" | "down";
-
 type BotStatus = "active" | "paused";
-
-interface BotItem {
-  id: number;
-  name: string;
-  strategy: string;
-  exchange: string; // Using as risk label to match MVP
-  status: BotStatus;
-  statusLabel: string;
-  badges: string[];
-  gananciaTotal: number;
-  winRate: number;
-  operaciones: number;
-  rendimiento: number[]; // percentage heights 0..100
-  color: "blue" | "purple";
-}
 
 interface StatCard {
   label: string;
@@ -44,79 +35,84 @@ interface StatCard {
   icon: React.ComponentType<{ size?: number; className?: string }>;
 }
 
-const botsData: BotItem[] = [
-  {
-    id: 1,
-    name: "Scalper Pro Elite",
-    strategy: "Scalping",
-    exchange: "Medium Risk",
-    status: "active",
-    statusLabel: "Activo",
-    badges: ["BTCUSDT", "ETHUSDT", "SOLUSDT"],
-    gananciaTotal: 12245.5,
-    winRate: 72.5,
-    operaciones: 1284,
-    rendimiento: [40, 45, 60, 55, 70, 85, 75],
-    color: "blue",
-  },
-  {
-    id: 2,
-    name: "Trend Master AI",
-    strategy: "Trend Following",
-    exchange: "Low Risk",
-    status: "active",
-    statusLabel: "Activo",
-    badges: ["BTCUSDT", "ETHUSDT"],
-    gananciaTotal: 18892.3,
-    winRate: 78.3,
-    operaciones: 456,
-    rendimiento: [50, 55, 65, 75, 70, 85, 90],
-    color: "blue",
-  },
-  {
-    id: 3,
-    name: "Grid Bot Ultra",
-    strategy: "Grid Trading",
-    exchange: "High Risk",
-    status: "paused",
-    statusLabel: "Pausado",
-    badges: ["BNBUSDT", "ADAUSDT"],
-    gananciaTotal: 6456.8,
-    winRate: 65.8,
-    operaciones: 2341,
-    rendimiento: [60, 50, 55, 70, 65, 55, 45],
-    color: "purple",
-  },
-];
-
 const statsCards: StatCard[] = [
-  { label: "Ganancia Total", value: "$83,153.3", change: "+2% hoy", trend: "up", icon: TrendingUp },
-  { label: "Win Rate Promedio", value: "74.0%", subtitle: "en 18,107 operaciones", icon: BarChart3 },
-  { label: "Bots Activos", value: "5/6", subtitle: "1 pausado(s)", icon: Zap },
-  { label: "Ganancia Mensual", value: "$54,862.2", change: "+8.5% del total", trend: "up", icon: TrendingUp },
+  { label: "Ganancia Total", value: "$0.00", change: "+0% hoy", trend: "up", icon: TrendingUp },
+  { label: "Win Rate Promedio", value: "0.0%", subtitle: "en 0 operaciones", icon: BarChart3 },
+  { label: "Bots Activos", value: "0/0", subtitle: "0 pausado(s)", icon: Zap },
+  { label: "Ganancia Mensual", value: "$0.00", change: "+0% del total", trend: "up", icon: TrendingUp },
 ];
 
 export default function TradingBots() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterActive, setFilterActive] = useState<"all" | BotStatus>("all");
   const [view, setView] = useState<"grid" | "list">("grid");
+  
+  const [bots, setBots] = useState<EaConfig[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedBot, setSelectedBot] = useState<EaConfig | undefined>(undefined);
 
-  const bots = useMemo(() => {
+  const fetchBots = async () => {
+    try {
+      setLoading(true);
+      const data = await eaService.getConfigs();
+      setBots(data);
+    } catch (error) {
+      console.error(error);
+      toast.error("Error al cargar bots");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchBots();
+  }, []);
+
+  const handleToggleStatus = async (bot: EaConfig) => {
+    try {
+        if (bot.enabled) {
+            await eaService.disableEa(bot.magic_number);
+            toast.success("Bot pausado");
+        } else {
+            await eaService.enableEa(bot.magic_number);
+            toast.success("Bot activado");
+        }
+        await fetchBots(); // Refresh list
+    } catch (error) {
+        toast.error("Error al cambiar estado");
+    }
+  };
+
+  const handleEdit = (bot: EaConfig) => {
+    setSelectedBot(bot);
+    setIsModalOpen(true);
+  };
+
+  const handleCreate = () => {
+    setSelectedBot(undefined);
+    setIsModalOpen(true);
+  };
+
+  const filteredBots = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
-    let filtered = botsData.filter((b) =>
-      [b.name, b.strategy, b.exchange, ...b.badges].some((v) => v.toLowerCase().includes(term))
+    let filtered = bots.filter((b) =>
+      [b.ea_name, b.symbol, b.timeframe].some((v) => v.toLowerCase().includes(term))
     );
-    if (filterActive !== "all") filtered = filtered.filter((b) => b.status === filterActive);
+    if (filterActive !== "all") {
+        const isEnabled = filterActive === "active";
+        filtered = filtered.filter((b) => b.enabled === isEnabled);
+    }
     return filtered;
-  }, [searchTerm, filterActive]);
+  }, [searchTerm, filterActive, bots]);
 
-  const getStatusColor = (status: BotStatus) =>
-    status === "active"
-      ? "bg-amber-500/20 text-amber-500 border-amber-500/30"
+  const getStatusColor = (enabled: boolean) =>
+    enabled
+      ? "bg-green-500/20 text-green-500 border-green-500/30"
       : "bg-orange-500/20 text-orange-500 border-orange-500/30";
 
-  const getStatusButton = (status: BotStatus) =>
-    status === "active"
+  const getStatusButton = (enabled: boolean) =>
+    enabled
       ? { icon: Pause, label: "Pausar", color: "bg-amber-500 hover:bg-amber-600" }
       : { icon: Play, label: "Activar", color: "bg-green-500 hover:bg-green-600" };
 
@@ -126,8 +122,35 @@ export default function TradingBots() {
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
+      <BotConfigModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={fetchBots}
+        initialData={selectedBot}
+      />
+
       <div className="max-w-7xl mx-auto">
-        {/* Stats Cards */}
+        {/* Header Actions */}
+        <div className="flex justify-between items-center mb-6">
+            <div>
+                 <h1 className="text-2xl font-bold text-foreground">Mis Bots</h1>
+                 <p className="text-muted-foreground text-sm">Gestiona tus estrategias automatizadas</p>
+            </div>
+            <div className="flex gap-2">
+                 <Link href="/dashboard/configuracion">
+                    <button className="bg-secondary hover:bg-secondary/80 text-foreground px-4 py-2 rounded-xl flex items-center gap-2 border border-border transition-all">
+                        <Server size={18} />
+                        <span className="hidden sm:inline">Conectar MT5</span>
+                    </button>
+                 </Link>
+                 <button onClick={handleCreate} className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-xl flex items-center gap-2 shadow-lg shadow-primary/20 transition-all">
+                    <Plus size={18} />
+                    <span className="hidden sm:inline">Nuevo Bot</span>
+                 </button>
+            </div>
+        </div>
+
+        {/* Stats Cards - Static for now, waiting for real status API */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {statsCards.map((stat, index) => (
             <div key={index} className="bg-card rounded-2xl p-5 border border-border">
@@ -151,148 +174,137 @@ export default function TradingBots() {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
               <input
                 type="text"
-                placeholder="Buscar bots por nombre o tipo..."
+                placeholder="Buscar bots por nombre, símbolo..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full bg-secondary text-foreground pl-12 pr-4 py-3 rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
             <div className="flex gap-2 w-full lg:w-auto">
-              <button
-                className={`flex-1 lg:flex-none px-6 py-3 rounded-xl font-medium transition-all ${
-                  filterActive === "all"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary hover:bg-background text-muted-foreground hover:text-foreground border border-border"
-                }`}
-                onClick={() => setFilterActive("all")}
-              >
-                Todos
-              </button>
-              <button
-                className={`flex-1 lg:flex-none px-6 py-3 rounded-xl font-medium transition-all ${
-                  filterActive === "active"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary hover:bg-background text-muted-foreground hover:text-foreground border border-border"
-                }`}
-                onClick={() => setFilterActive("active")}
-              >
-                Activos
-              </button>
-              <button
-                className={`flex-1 lg:flex-none px-6 py-3 rounded-xl font-medium transition-all ${
-                  filterActive === "paused"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-secondary hover:bg-background text-muted-foreground hover:text-foreground border border-border"
-                }`}
-                onClick={() => setFilterActive("paused")}
-              >
-                Pausados
-              </button>
+              {['all', 'active', 'paused'].map((filter) => (
+                  <button
+                    key={filter}
+                    className={`flex-1 lg:flex-none px-6 py-3 rounded-xl font-medium transition-all capitalize ${
+                      filterActive === filter
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-secondary hover:bg-background text-muted-foreground hover:text-foreground border border-border"
+                    }`}
+                    onClick={() => setFilterActive(filter as any)}
+                  >
+                    {filter === 'all' ? 'Todos' : filter === 'active' ? 'Activos' : 'Pausados'}
+                  </button>
+              ))}
+              
               <button
                 className={`p-3 rounded-xl transition-all ${view === "grid" ? "bg-primary text-primary-foreground" : "bg-secondary hover:bg-background text-muted-foreground border border-border"}`}
                 onClick={() => setView("grid")}
-                aria-label="Vista grid"
               >
                 <Grid3x3 size={20} />
               </button>
               <button
                 className={`p-3 rounded-xl transition-all ${view === "list" ? "bg-primary text-primary-foreground" : "bg-secondary hover:bg-background text-muted-foreground border border-border"}`}
                 onClick={() => setView("list")}
-                aria-label="Vista lista"
               >
                 <List size={20} />
-              </button>
-              <button className="bg-secondary hover:bg-background text-muted-foreground p-3 rounded-xl transition-all border border-border" aria-label="Filtros">
-                <Filter size={20} />
               </button>
             </div>
           </div>
         </div>
 
-        {/* Bots Grid */}
-        <div className={view === "grid" ? "grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6" : "flex flex-col gap-4"}>
-          {bots.map((bot) => {
-            const statusBtn = getStatusButton(bot.status);
-            const StatusIcon = statusBtn.icon;
+        {/* Loading State */}
+        {loading && (
+            <div className="flex justify-center items-center py-20">
+                <Loader2 className="animate-spin text-primary" size={40} />
+            </div>
+        )}
 
-            return (
-              <div
-                key={bot.id}
-                className="bg-card rounded-3xl p-6 border border-border hover:border-ring/40 transition-all duration-300"
-              >
-                {/* Header */}
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="bg-blue-500 w-12 h-12 rounded-2xl flex items-center justify-center">
-                      <Zap size={24} className="text-white" />
+        {/* Empty State */}
+        {!loading && filteredBots.length === 0 && (
+            <div className="text-center py-20 bg-card rounded-3xl border border-border border-dashed">
+                <div className="bg-secondary w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Zap className="text-muted-foreground" size={32} />
+                </div>
+                <h3 className="text-xl font-bold mb-2">No tienes bots configurados</h3>
+                <p className="text-muted-foreground mb-6">Crea tu primer bot para empezar a operar automáticamente.</p>
+                <button onClick={handleCreate} className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-primary/20 transition-all">
+                    Crear mi primer Bot
+                </button>
+            </div>
+        )}
+
+        {/* Bots Grid */}
+        {!loading && filteredBots.length > 0 && (
+            <div className={view === "grid" ? "grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6" : "flex flex-col gap-4"}>
+            {filteredBots.map((bot) => {
+                const statusBtn = getStatusButton(bot.enabled);
+                const StatusIcon = statusBtn.icon;
+
+                return (
+                <div
+                    key={bot.magic_number}
+                    className="bg-card rounded-3xl p-6 border border-border hover:border-ring/40 transition-all duration-300 group"
+                >
+                    {/* Header */}
+                    <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-blue-500 w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
+                        <Zap size={24} className="text-white" />
+                        </div>
+                        <div>
+                        <h3 className="text-foreground font-bold text-lg">{bot.ea_name}</h3>
+                        <div className="flex gap-2 mt-1">
+                            <span className="bg-blue-500/10 text-blue-400 text-xs px-2 py-0.5 rounded border border-blue-500/20">
+                            {bot.symbol}
+                            </span>
+                            <span className="bg-amber-500/10 text-amber-400 text-xs px-2 py-0.5 rounded border border-amber-500/20">
+                            {bot.timeframe}
+                            </span>
+                        </div>
+                        </div>
+                    </div>
+                    <span className={`text-xs px-3 py-1 rounded-full font-medium border ${getStatusColor(bot.enabled)}`}>
+                        {bot.enabled ? "Activo" : "Pausado"}
+                    </span>
+                    </div>
+
+                    {/* Stats */}
+                    <div className="grid grid-cols-3 gap-4 mb-4 bg-secondary/30 p-4 rounded-xl">
+                    <div>
+                        <p className="text-muted-foreground text-xs mb-1">Lot Size</p>
+                        <p className="text-foreground text-sm font-bold">{bot.lot_size}</p>
                     </div>
                     <div>
-                      <h3 className="text-foreground font-bold text-lg">{bot.name}</h3>
-                      <div className="flex gap-2 mt-1">
-                        <span className="bg-blue-500/20 text-blue-400 text-xs px-2 py-0.5 rounded border border-blue-500/30">
-                          {bot.strategy}
-                        </span>
-                        <span className="bg-amber-500/20 text-amber-400 text-xs px-2 py-0.5 rounded border border-amber-500/30">
-                          {bot.exchange}
-                        </span>
-                      </div>
+                        <p className="text-muted-foreground text-xs mb-1">Risk %</p>
+                        <p className="text-foreground text-sm font-bold">{bot.risk_percent}%</p>
                     </div>
-                  </div>
-                  <span className={`text-xs px-3 py-1 rounded-full font-medium border ${getStatusColor(bot.status)}`}>
-                    {bot.statusLabel}
-                  </span>
-                </div>
+                    <div>
+                        <p className="text-muted-foreground text-xs mb-1">Max Trades</p>
+                        <p className="text-foreground text-sm font-bold">{bot.max_trades}</p>
+                    </div>
+                    </div>
 
-                {/* Badges */}
-                <div className="flex gap-2 mb-4">
-                  {bot.badges.map((badge, index) => (
-                    <span key={index} className="bg-blue-500/10 text-blue-400 text-xs px-3 py-1 rounded-lg border border-blue-500/20">
-                      {badge}
-                    </span>
-                  ))}
+                    {/* Action Buttons */}
+                    <div className="flex gap-2">
+                    <button 
+                        onClick={() => handleEdit(bot)}
+                        className="flex-1 bg-secondary hover:bg-secondary/80 text-foreground px-4 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2 border border-border hover:border-blue-500/30"
+                    >
+                        <SettingsIcon size={18} className="text-blue-400" />
+                        Configurar
+                    </button>
+                    <button 
+                        onClick={() => handleToggleStatus(bot)}
+                        className={`flex-1 ${statusBtn.color} text-white px-4 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl`}
+                    >
+                        <StatusIcon size={18} />
+                        {statusBtn.label}
+                    </button>
+                    </div>
                 </div>
-
-                {/* Stats */}
-                <div className="grid grid-cols-3 gap-4 mb-4">
-                  <div>
-                    <p className="text-muted-foreground text-xs mb-1">Ganancia Total</p>
-                    <p className="text-green-400 text-lg font-bold">${bot.gananciaTotal.toLocaleString()}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground text-xs mb-1">Win Rate</p>
-                    <p className="text-foreground text-lg font-bold">{bot.winRate}%</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground text-xs mb-1">Operaciones</p>
-                    <p className="text-foreground text-lg font-bold">{bot.operaciones.toLocaleString()}</p>
-                  </div>
-                </div>
-
-                {/* Performance Chart */}
-                <div className="mb-4">
-                  <p className="text-muted-foreground text-xs mb-2">Rendimiento 7D</p>
-                  <div className="flex items-end gap-1 h-16">
-                    {bot.rendimiento.map((value, index) => (
-                      <div key={index} className="flex-1 bg-blue-500 rounded-t transition-all hover:bg-blue-400" style={{ height: `${value}%` }} />
-                    ))}
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-2">
-                  <button className="flex-1 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 px-4 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2 border border-blue-500/20">
-                    <SettingsIcon size={18} />
-                    Configurar
-                  </button>
-                  <button className={`flex-1 ${statusBtn.color} text-white px-4 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2 shadow-lg`}>
-                    <StatusIcon size={18} />
-                    {statusBtn.label}
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+                );
+            })}
+            </div>
+        )}
       </div>
     </div>
   );
