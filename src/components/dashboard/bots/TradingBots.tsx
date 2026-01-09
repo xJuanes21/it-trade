@@ -97,11 +97,11 @@ export default function TradingBots() {
     fetchBots();
   }, []);
 
-  // Poll for updates every 10 seconds to simulate live connection
+  // Poll for updates every 5 minutes (300,000ms) or on demand
   useEffect(() => {
     const interval = setInterval(() => {
         if (bots.length > 0) refreshStatusOnly();
-    }, 10000);
+    }, 300000);
     return () => clearInterval(interval);
   }, [bots]);
 
