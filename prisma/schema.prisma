@@ -29,6 +29,8 @@ model User {
   profile       UserInformation?
   accounts      Account[]
   sessions      Session[]
+  mt5Account    Mt5Account?
+  eaConfigs     EaConfig[]
 }
 
 model Account {
@@ -80,4 +82,38 @@ model UserInformation {
   avatarUrl  String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+}
+
+model Mt5Account {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  login     String   
+  password  String   // Encrypted
+  server    String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model EaConfig {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  eaName            String
+  magicNumber       Int      @unique
+  symbol            String
+  timeframe         String
+  lotSize           Float
+  stopLoss          Int
+  takeProfit        Int
+  maxTrades         Int
+  tradingHoursStart Int
+  tradingHoursEnd   Int
+  riskPercent       Float
+  enabled           Boolean  @default(true)
+  customParams      Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@index([userId])
 }
