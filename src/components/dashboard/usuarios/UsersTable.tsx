@@ -2,6 +2,8 @@
 
 import { DataTable, Column } from "@/components/ui/data-table";
 import { useState } from "react";
+import { Settings } from "lucide-react";
+import BotAssignmentModal from "./BotAssignmentModal";
 
 interface User {
   id: string;
@@ -18,6 +20,21 @@ interface UsersTableProps {
 
 export default function UsersTable({ users }: UsersTableProps) {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  const [selectedUserName, setSelectedUserName] = useState<string>("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleManageBots = (userId: string, userName: string) => {
+    setSelectedUserId(userId);
+    setSelectedUserName(userName);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedUserId(null);
+    setSelectedUserName("");
+  };
 
   // Filtrar usuarios según búsqueda
   const filteredUsers = users.filter((user) => {
@@ -91,18 +108,43 @@ export default function UsersTable({ users }: UsersTableProps) {
         </span>
       ),
     },
+    {
+      key: "actions",
+      label: "Acciones",
+      align: "center",
+      render: (user) => (
+        <button
+          onClick={() => handleManageBots(user.id, user.name || user.email)}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 text-blue-200 rounded-lg transition-all border border-blue-500/30 hover:border-blue-500/50"
+        >
+          <Settings size={16} />
+          Gestionar Bots
+        </button>
+      ),
+    },
   ];
 
   return (
-    <DataTable
-      title="Usuarios Registrados"
-      subtitle="Gestión de usuarios de la plataforma"
-      columns={columns}
-      data={filteredUsers}
-      searchable
-      searchPlaceholder="Buscar por nombre, email o rol..."
-      onSearch={setSearchQuery}
-      emptyMessage="No se encontraron usuarios"
-    />
+    <>
+      <DataTable
+        title="Usuarios Registrados"
+        subtitle="Gestión de usuarios de la plataforma"
+        columns={columns}
+        data={filteredUsers}
+        searchable
+        searchPlaceholder="Buscar por nombre, email o rol..."
+        onSearch={setSearchQuery}
+        emptyMessage="No se encontraron usuarios"
+      />
+      
+      {selectedUserId && (
+        <BotAssignmentModal
+          isOpen={isModalOpen}
+          onClose={handleCloseModal}
+          userId={selectedUserId}
+          userName={selectedUserName}
+        />
+      )}
+    </>
   );
 }

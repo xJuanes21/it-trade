@@ -15,11 +15,13 @@ import {
   Plus,
   Server,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  BotOff
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { eaService } from "@/services/ea.service";
+import { botAssignmentService } from "@/services/bot-assignment.service";
 import { EaConfig, EaStatus } from "@/types/ea";
 import BotConfigModal from "./BotConfigModal";
 
@@ -43,7 +45,12 @@ const statsCards: StatCard[] = [
   { label: "Ganancia Mensual", value: "$4,862.2", change: "+12.5% del total", trend: "up", icon: TrendingUp },
 ];
 
-export default function TradingBots() {
+interface TradingBotsProps {
+  userRole: string;
+  userId: string;
+}
+
+export default function TradingBots({ userRole, userId }: TradingBotsProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterActive, setFilterActive] = useState<"all" | BotStatus>("all");
   const [view, setView] = useState<"grid" | "list">("grid");
@@ -53,11 +60,23 @@ export default function TradingBots() {
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBot, setSelectedBot] = useState<EaConfig | undefined>(undefined);
+  
+  const isSuperAdmin = userRole === "superadmin";
 
   const fetchBots = async () => {
     try {
       setLoading(true);
-      const data = await eaService.getConfigs();
+      
+      let data: EaConfig[];
+      
+      if (isSuperAdmin) {
+        // Super admin ve todos los bots
+        data = await eaService.getConfigs();
+      } else {
+        // Usuario normal solo ve sus bots asignados
+        data = await botAssignmentService.getUserBotAssignments(userId);
+      }
+      
       setBots(data);
       
       // Fetch status for each bot to show "Live" data
@@ -173,20 +192,24 @@ export default function TradingBots() {
         <div className="flex justify-between items-center mb-6">
             <div>
                  <h1 className="text-2xl font-bold text-foreground">Mis Bots</h1>
-                 <p className="text-muted-foreground text-sm">Gestiona tus estrategias automatizadas</p>
+                 <p className="text-muted-foreground text-sm">
+                   {isSuperAdmin ? "Gestiona tus estrategias automatizadas" : "Visualiza tus bots asignados"}
+                 </p>
             </div>
-            <div className="flex gap-2">
-                 <Link href="/dashboard/configuracion">
-                    <button className="bg-secondary hover:bg-secondary/80 text-foreground px-4 py-2 rounded-xl flex items-center gap-2 border border-border transition-all">
-                        <Server size={18} />
-                        <span className="hidden sm:inline">Conectar MT5</span>
-                    </button>
-                 </Link>
-                 <button onClick={handleCreate} className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-xl flex items-center gap-2 shadow-lg shadow-primary/20 transition-all">
-                    <Plus size={18} />
-                    <span className="hidden sm:inline">Nuevo Bot</span>
-                 </button>
-            </div>
+            {isSuperAdmin && (
+              <div className="flex gap-2">
+                   <Link href="/dashboard/configuracion">
+                      <button className="bg-secondary hover:bg-secondary/80 text-foreground px-4 py-2 rounded-xl flex items-center gap-2 border border-border transition-all">
+                          <Server size={18} />
+                          <span className="hidden sm:inline">Conectar MT5</span>
+                      </button>
+                   </Link>
+                   <button onClick={handleCreate} className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-xl flex items-center gap-2 shadow-lg shadow-primary/20 transition-all">
+                      <Plus size={18} />
+                      <span className="hidden sm:inline">Nuevo Bot</span>
+                   </button>
+              </div>
+            )}
         </div>
 
         {/* Stats Cards */}
@@ -261,13 +284,23 @@ export default function TradingBots() {
         {!loading && filteredBots.length === 0 && (
             <div className="text-center py-20 bg-card rounded-3xl border border-border border-dashed">
                 <div className="bg-secondary w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Zap className="text-muted-foreground" size={32} />
+                    <BotOff className="text-muted-foreground" size={32} />
                 </div>
-                <h3 className="text-xl font-bold mb-2">No tienes bots configurados</h3>
-                <p className="text-muted-foreground mb-6">Crea tu primer bot para empezar a operar automáticamente.</p>
-                <button onClick={handleCreate} className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-primary/20 transition-all">
-                    Crear mi primer Bot
-                </button>
+                {isSuperAdmin ? (
+                  <>
+                    <h3 className="text-xl font-bold mb-2">No tienes bots configurados</h3>
+                    <p className="text-muted-foreground mb-6">Crea tu primer bot para empezar a operar automáticamente.</p>
+                    <button onClick={handleCreate} className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-primary/20 transition-all">
+                        Crear mi primer Bot
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="text-xl font-bold mb-2">Sin Bots Asignados</h3>
+                    <p className="text-muted-foreground mb-2">Aún no se te ha asignado ningún bot de trading.</p>
+                    <p className="text-muted-foreground">Por favor, contacta con el administrador para que te asigne un bot.</p>
+                  </>
+                )}
             </div>
         )}
 
