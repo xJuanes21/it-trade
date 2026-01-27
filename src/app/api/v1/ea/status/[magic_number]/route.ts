@@ -1,5 +1,4 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 export async function GET(req: Request, { params }: { params: Promise<{ magic_number: string }> }) {
@@ -40,7 +39,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ magic_nu
 
         const statuses = await externalResponse.json();
         // Find the specific bot status
-        const botStatus = statuses.find((s: any) => s.magic_number === magicNumber);
+        const botStatus = (statuses as { magic_number: number }[]).find((s) => s.magic_number === magicNumber);
 
         if (botStatus) {
             return NextResponse.json(botStatus);

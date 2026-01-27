@@ -18,8 +18,8 @@ const configSchema = z.object({
   stop_loss: z.coerce.number().nonnegative(),
   take_profit: z.coerce.number().nonnegative(),
   max_trades: z.coerce.number().int().positive(),
-  trading_hours_start: z.coerce.number().min(0).max(23),
-  trading_hours_end: z.coerce.number().min(0).max(23),
+  trading_hours_start: z.coerce.number().int().min(0).max(23),
+  trading_hours_end: z.coerce.number().int().min(0).max(23),
   risk_percent: z.coerce.number().min(0).max(100),
 });
 
@@ -44,6 +44,7 @@ export default function BotConfigModal({
     reset,
     formState: { errors, isSubmitting },
   } = useForm<ConfigFormData>({
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(configSchema) as any,
     defaultValues: {
       ea_name: "",
@@ -75,18 +76,18 @@ export default function BotConfigModal({
         risk_percent: initialData.risk_percent,
       });
     } else {
-        reset({
-            ea_name: "",
-            symbol: "",
-            timeframe: "H1",
-            lot_size: 0.01,
-            max_trades: 1,
-            trading_hours_start: 0,
-            trading_hours_end: 23,
-            risk_percent: 1,
-            stop_loss: 0,
-            take_profit: 0,
-        });
+      reset({
+        ea_name: "",
+        symbol: "",
+        timeframe: "H1",
+        lot_size: 0.01,
+        max_trades: 1,
+        trading_hours_start: 0,
+        trading_hours_end: 23,
+        risk_percent: 1,
+        stop_loss: 0,
+        take_profit: 0,
+      });
     }
   }, [initialData, reset, isOpen]);
 
@@ -96,15 +97,31 @@ export default function BotConfigModal({
         await eaService.updateConfig(initialData.magic_number, data);
         toast.success("Configuración actualizada");
       } else {
+        // 1. Crear Configuración general
         await eaService.createConfig(data);
+
+        // 2. Crear Configuración JSON operativa
+        try {
+          await eaService.createJsonConfig(data.magic_number, data.lot_size);
+        } catch (jsonError) {
+          console.error("Error creating JSON config:", jsonError);
+          toast.warning(
+            "Bot creado pero falló la config JSON inicial. Intente ajustarla manualmente.",
+          );
+        }
+
         toast.success("Bot creado exitosamente");
       }
       onSuccess();
       onClose();
-    } catch (error: any) {
-        console.error(error);
+    } catch (error: unknown) {
+      console.error(error);
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Verifique los datos e intente nuevamente";
       toast.error("Error al guardar", {
-        description: error.message || "Verifique los datos e intente nuevamente",
+        description: message,
       });
     }
   };
@@ -117,18 +134,24 @@ export default function BotConfigModal({
         <div className="p-6 border-b border-border flex justify-between items-center sticky top-0 bg-card z-10">
           <div>
             <h2 className="text-xl font-bold text-foreground">
-                {initialData ? "Editar Configuración" : "Nuevo Bot"}
+              {initialData ? "Editar Configuración" : "Nuevo Bot"}
             </h2>
             <p className="text-sm text-muted-foreground">
-                Ajuste los parámetros operativos del Expert Advisor.
+              Ajuste los parámetros operativos del Expert Advisor.
             </p>
           </div>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
+          <button
+            onClick={onClose}
+            className="text-muted-foreground hover:text-foreground"
+          >
             <X size={24} />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-6 flex-1 overflow-y-auto">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="p-6 space-y-6 flex-1 overflow-y-auto"
+        >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Basic Info */}
             <div className="col-span-full space-y-2">
@@ -138,7 +161,9 @@ export default function BotConfigModal({
                 className="w-full bg-secondary text-foreground p-3 rounded-xl border border-border focus:ring-2 focus:ring-primary outline-none"
                 placeholder="Ej: Scalper Pro"
               />
-              {errors.ea_name && <p className="text-red-400 text-xs">{errors.ea_name.message}</p>}
+              {errors.ea_name && (
+                <p className="text-red-400 text-xs">{errors.ea_name.message}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -150,7 +175,11 @@ export default function BotConfigModal({
                 placeholder="Ej: 12345"
                 className="w-full bg-secondary text-foreground p-3 rounded-xl border border-border focus:ring-2 focus:ring-primary outline-none disabled:opacity-50"
               />
-              {errors.magic_number && <p className="text-red-400 text-xs">{errors.magic_number.message}</p>}
+              {errors.magic_number && (
+                <p className="text-red-400 text-xs">
+                  {errors.magic_number.message}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -160,7 +189,9 @@ export default function BotConfigModal({
                 className="w-full bg-secondary text-foreground p-3 rounded-xl border border-border focus:ring-2 focus:ring-primary outline-none"
                 placeholder="EURUSD"
               />
-              {errors.symbol && <p className="text-red-400 text-xs">{errors.symbol.message}</p>}
+              {errors.symbol && (
+                <p className="text-red-400 text-xs">{errors.symbol.message}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -176,101 +207,117 @@ export default function BotConfigModal({
                 <option value="H4">H4</option>
                 <option value="D1">D1</option>
               </select>
-              {errors.timeframe && <p className="text-red-400 text-xs">{errors.timeframe.message}</p>}
+              {errors.timeframe && (
+                <p className="text-red-400 text-xs">
+                  {errors.timeframe.message}
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">
-                <label className="text-sm font-medium">Lot Size</label>
-                <input 
-                    type="number" 
-                    step="0.01" 
-                    {...register("lot_size")} 
-                    className="w-full bg-secondary text-foreground p-3 rounded-xl border border-border focus:ring-2 focus:ring-primary outline-none" 
-                />
-                {errors.lot_size && <p className="text-red-400 text-xs">{errors.lot_size.message}</p>}
+              <label className="text-sm font-medium">Lot Size</label>
+              <input
+                type="number"
+                step="0.01"
+                {...register("lot_size")}
+                className="w-full bg-secondary text-foreground p-3 rounded-xl border border-border focus:ring-2 focus:ring-primary outline-none"
+              />
+              {errors.lot_size && (
+                <p className="text-red-400 text-xs">
+                  {errors.lot_size.message}
+                </p>
+              )}
             </div>
 
             {/* Risk Management */}
             <div className="col-span-full border-t border-border pt-4 mt-2">
-                <h3 className="font-semibold mb-4 text-foreground/80">Gestión de Riesgo</h3>
+              <h3 className="font-semibold mb-4 text-foreground/80">
+                Gestión de Riesgo
+              </h3>
             </div>
 
             <div className="space-y-2">
-                <label className="text-sm font-medium">Stop Loss (Pips)</label>
-                <input 
-                    type="number" 
-                    {...register("stop_loss")} 
-                    className="w-full bg-secondary text-foreground p-3 rounded-xl border border-border focus:ring-2 focus:ring-primary outline-none" 
-                />
+              <label className="text-sm font-medium">Stop Loss (Pips)</label>
+              <input
+                type="number"
+                {...register("stop_loss")}
+                className="w-full bg-secondary text-foreground p-3 rounded-xl border border-border focus:ring-2 focus:ring-primary outline-none"
+              />
             </div>
 
             <div className="space-y-2">
-                <label className="text-sm font-medium">Take Profit (Pips)</label>
-                <input 
-                    type="number" 
-                    {...register("take_profit")} 
-                    className="w-full bg-secondary text-foreground p-3 rounded-xl border border-border focus:ring-2 focus:ring-primary outline-none" 
-                />
+              <label className="text-sm font-medium">Take Profit (Pips)</label>
+              <input
+                type="number"
+                {...register("take_profit")}
+                className="w-full bg-secondary text-foreground p-3 rounded-xl border border-border focus:ring-2 focus:ring-primary outline-none"
+              />
             </div>
 
             <div className="space-y-2">
-                <label className="text-sm font-medium">Riesgo (%)</label>
-                <input 
-                    type="number" 
-                    step="0.1" 
-                    {...register("risk_percent")} 
-                    className="w-full bg-secondary text-foreground p-3 rounded-xl border border-border focus:ring-2 focus:ring-primary outline-none" 
-                />
+              <label className="text-sm font-medium">Riesgo (%)</label>
+              <input
+                type="number"
+                step="0.1"
+                {...register("risk_percent")}
+                className="w-full bg-secondary text-foreground p-3 rounded-xl border border-border focus:ring-2 focus:ring-primary outline-none"
+              />
             </div>
 
             <div className="space-y-2">
-                <label className="text-sm font-medium">Max Trades</label>
-                <input 
-                    type="number" 
-                    {...register("max_trades")} 
-                    className="w-full bg-secondary text-foreground p-3 rounded-xl border border-border focus:ring-2 focus:ring-primary outline-none" 
-                />
+              <label className="text-sm font-medium">Max Trades</label>
+              <input
+                type="number"
+                {...register("max_trades")}
+                className="w-full bg-secondary text-foreground p-3 rounded-xl border border-border focus:ring-2 focus:ring-primary outline-none"
+              />
             </div>
 
             {/* Trading Hours */}
-             <div className="col-span-full border-t border-border pt-4 mt-2">
-                <h3 className="font-semibold mb-4 text-foreground/80">Horario de Trading</h3>
-            </div>
-            
-            <div className="space-y-2">
-                <label className="text-sm font-medium">Hora Inicio (0-23)</label>
-                <input 
-                    type="number" 
-                    {...register("trading_hours_start")} 
-                    className="w-full bg-secondary text-foreground p-3 rounded-xl border border-border focus:ring-2 focus:ring-primary outline-none" 
-                />
+            <div className="col-span-full border-t border-border pt-4 mt-2">
+              <h3 className="font-semibold mb-4 text-foreground/80">
+                Horario de Trading
+              </h3>
             </div>
 
             <div className="space-y-2">
-                <label className="text-sm font-medium">Hora Fin (0-23)</label>
-                <input 
-                    type="number" 
-                    {...register("trading_hours_end")} 
-                    className="w-full bg-secondary text-foreground p-3 rounded-xl border border-border focus:ring-2 focus:ring-primary outline-none" 
-                />
+              <label className="text-sm font-medium">Hora Inicio (0-23)</label>
+              <input
+                type="number"
+                {...register("trading_hours_start")}
+                className="w-full bg-secondary text-foreground p-3 rounded-xl border border-border focus:ring-2 focus:ring-primary outline-none"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Hora Fin (0-23)</label>
+              <input
+                type="number"
+                {...register("trading_hours_end")}
+                className="w-full bg-secondary text-foreground p-3 rounded-xl border border-border focus:ring-2 focus:ring-primary outline-none"
+              />
             </div>
           </div>
-        
+
           <div className="pt-6 border-t border-border flex justify-end gap-3">
             <button
-                onClick={onClose}
-                className="px-6 py-3 rounded-xl text-sm font-medium hover:bg-secondary transition-colors border border-transparent hover:border-border"
-                type="button"
+              onClick={onClose}
+              className="px-6 py-3 rounded-xl text-sm font-medium hover:bg-secondary transition-colors border border-transparent hover:border-border"
+              type="button"
             >
-                Cancelar
+              Cancelar
             </button>
             <button
-                type="submit"
-                disabled={isSubmitting}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-xl text-sm font-medium flex items-center gap-2 transition-all shadow-lg shadow-primary/20"
+              type="submit"
+              disabled={isSubmitting}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-xl text-sm font-medium flex items-center gap-2 transition-all shadow-lg shadow-primary/20"
             >
-                {isSubmitting ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-                {initialData ? "Actualizar" : "Crear Bot"}
+              {isSubmitting ? (
+                <Loader2 className="animate-spin" size={16} />
+              ) : (
+                <Save size={16} />
+              )}
+              {initialData ? "Actualizar" : "Crear Bot"}
             </button>
           </div>
         </form>

@@ -88,7 +88,7 @@ export const botAssignmentService = {
   async updateUserAssignments(userId: string, magicNumbers: number[]) {
     // Obtener asignaciones actuales
     const currentBots = await this.getUserBotAssignments(userId);
-    const currentMagicNumbers = currentBots.map((bot: any) => bot.magic_number);
+    const currentMagicNumbers = currentBots.map((bot: { magic_number: number }) => bot.magic_number);
 
     // Determinar qué bots agregar y cuáles remover
     const toAdd = magicNumbers.filter((mn) => !currentMagicNumbers.includes(mn));

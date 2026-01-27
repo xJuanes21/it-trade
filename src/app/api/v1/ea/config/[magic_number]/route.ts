@@ -14,7 +14,7 @@ const updateConfigSchema = z.object({
   trading_hours_end: z.coerce.number().int().min(0).max(23).optional(),
   risk_percent: z.coerce.number().min(0).max(100).optional(),
   enabled: z.boolean().optional(),
-  custom_params: z.record(z.string(), z.any()).optional(),
+  custom_params: z.record(z.string(), z.unknown()).optional(),
 });
 
 // PROXY GET (Single)

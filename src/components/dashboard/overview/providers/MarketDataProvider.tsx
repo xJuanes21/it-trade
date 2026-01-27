@@ -38,7 +38,9 @@ type MarketDataContextValue = {
   lastUpdated: Date | null;
 };
 
-const MarketDataContext = createContext<MarketDataContextValue | undefined>(undefined);
+const MarketDataContext = createContext<MarketDataContextValue | undefined>(
+  undefined,
+);
 
 type Props = {
   children: React.ReactNode;
@@ -86,18 +88,27 @@ export function MarketDataProvider({
 
   const selectedInstrument = useMemo(() => {
     if (!selectedSymbol) return null;
-    return instruments.find((instrument) => instrument.symbol === selectedSymbol) ?? null;
+    return (
+      instruments.find((instrument) => instrument.symbol === selectedSymbol) ??
+      null
+    );
   }, [instruments, selectedSymbol]);
 
   useEffect(() => {
     if (!instruments.length) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedSymbol(null);
       return;
     }
-    if (selectedSymbol && instruments.some((instrument) => instrument.symbol === selectedSymbol)) {
+    if (
+      selectedSymbol &&
+      instruments.some((instrument) => instrument.symbol === selectedSymbol)
+    ) {
       return;
     }
-    const fallback = instruments.find((instrument) => instrument.tradable) ?? instruments[0];
+    const fallback =
+      instruments.find((instrument) => instrument.tradable) ?? instruments[0];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     setSelectedSymbol(fallback?.symbol ?? null);
   }, [instruments, selectedSymbol]);
 
@@ -126,7 +137,11 @@ export function MarketDataProvider({
     lastUpdated,
   };
 
-  return <MarketDataContext.Provider value={value}>{children}</MarketDataContext.Provider>;
+  return (
+    <MarketDataContext.Provider value={value}>
+      {children}
+    </MarketDataContext.Provider>
+  );
 }
 
 export function useMarketData() {

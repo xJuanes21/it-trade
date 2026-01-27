@@ -63,7 +63,13 @@ const initialWallets: WalletItem[] = [
   },
 ];
 
-function IconComponent({ icon, size = 24 }: { icon: WalletIconKey; size?: number }) {
+function IconComponent({
+  icon,
+  size = 24,
+}: {
+  icon: WalletIconKey;
+  size?: number;
+}) {
   const icons: Record<WalletIconKey, React.ComponentType<{ size?: number }>> = {
     wallet: WalletIcon,
     lock: Lock,
@@ -73,7 +79,7 @@ function IconComponent({ icon, size = 24 }: { icon: WalletIconKey; size?: number
   return <Icon size={size} />;
 }
 
-function useColorClasses(color: WalletColor) {
+function getColorClasses(color: WalletColor) {
   const map = {
     blue: {
       bg: "bg-blue-500/10",
@@ -106,7 +112,7 @@ export default function MisWallets() {
 
   const totalBalance = useMemo(
     () => wallets.reduce((sum, w) => sum + w.balance, 0),
-    [wallets]
+    [wallets],
   );
 
   const copyAddress = (address: string) => {
@@ -137,11 +143,14 @@ export default function MisWallets() {
         <div className="bg-card rounded-3xl p-6 md:p-8 mb-6 shadow-2xl border border-border">
           <div className="flex items-start justify-between mb-4">
             <div className="flex-1">
-              <p className="text-muted-foreground text-sm mb-2">Balance Total</p>
+              <p className="text-muted-foreground text-sm mb-2">
+                Balance Total
+              </p>
               <div className="flex items-center gap-4">
                 {showBalance ? (
                   <h2 className="text-4xl md:text-5xl font-bold text-foreground">
-                    ${totalBalance.toLocaleString("en-US", {
+                    $
+                    {totalBalance.toLocaleString("en-US", {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
@@ -162,8 +171,12 @@ export default function MisWallets() {
               </div>
             </div>
             <div className="text-right">
-              <p className="text-muted-foreground text-sm mb-2">Total de Wallets</p>
-              <p className="text-4xl md:text-5xl font-bold text-foreground">{wallets.length}</p>
+              <p className="text-muted-foreground text-sm mb-2">
+                Total de Wallets
+              </p>
+              <p className="text-4xl md:text-5xl font-bold text-foreground">
+                {wallets.length}
+              </p>
             </div>
           </div>
         </div>
@@ -171,7 +184,7 @@ export default function MisWallets() {
         {/* Wallets Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {wallets.map((wallet) => {
-            const colorClass = useColorClasses(wallet.color);
+            const colorClass = getColorClasses(wallet.color);
             return (
               <div
                 key={wallet.id}
@@ -180,11 +193,15 @@ export default function MisWallets() {
                 {/* Wallet Header */}
                 <div className="flex items-start justify-between mb-6">
                   <div className="flex items-center gap-3">
-                    <div className={`${colorClass.icon} w-12 h-12 rounded-2xl flex items-center justify-center text-white`}>
+                    <div
+                      className={`${colorClass.icon} w-12 h-12 rounded-2xl flex items-center justify-center text-white`}
+                    >
                       <IconComponent icon={wallet.icon} size={24} />
                     </div>
                     <div>
-                      <h3 className="text-foreground font-bold text-lg">{wallet.name}</h3>
+                      <h3 className="text-foreground font-bold text-lg">
+                        {wallet.name}
+                      </h3>
                       <p className="text-muted-foreground text-sm flex items-center gap-1">
                         <span className="w-2 h-2 bg-green-400 rounded-full" />
                         {wallet.network}
@@ -200,8 +217,12 @@ export default function MisWallets() {
 
                 {/* Address */}
                 <div className="mb-6">
-                  <p className="text-muted-foreground text-xs mb-2">Dirección</p>
-                  <div className={`${colorClass.bg} border ${colorClass.border} rounded-xl p-3 flex items-center justify-between`}>
+                  <p className="text-muted-foreground text-xs mb-2">
+                    Dirección
+                  </p>
+                  <div
+                    className={`${colorClass.bg} border ${colorClass.border} rounded-xl p-3 flex items-center justify-between`}
+                  >
                     <code className="text-foreground text-sm font-mono truncate flex-1">
                       {wallet.address}
                     </code>
@@ -219,12 +240,19 @@ export default function MisWallets() {
                   <p className="text-muted-foreground text-sm mb-2">Balance</p>
                   {showBalance ? (
                     <p className="text-foreground text-3xl font-bold">
-                      ${wallet.balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      $
+                      {wallet.balance.toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
                     </p>
                   ) : (
                     <div className="flex gap-1.5">
                       {Array.from({ length: 6 }).map((_, i) => (
-                        <div key={i} className="w-2.5 h-2.5 bg-muted rounded-full" />
+                        <div
+                          key={i}
+                          className="w-2.5 h-2.5 bg-muted rounded-full"
+                        />
                       ))}
                     </div>
                   )}
@@ -232,7 +260,9 @@ export default function MisWallets() {
 
                 {/* Actions */}
                 <div className="flex gap-2">
-                  <button className={`${colorClass.button} flex-1 text-white px-4 py-3 rounded-xl font-medium transition-all duration-300 flex items-center justify-center gap-2 shadow-lg`}>
+                  <button
+                    className={`${colorClass.button} flex-1 text-white px-4 py-3 rounded-xl font-medium transition-all duration-300 flex items-center justify-center gap-2 shadow-lg`}
+                  >
                     <Send size={18} />
                     Enviar
                   </button>

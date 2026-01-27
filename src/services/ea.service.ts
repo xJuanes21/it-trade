@@ -79,6 +79,72 @@ export const eaService = {
     }
   },
 
+  async pauseEa(magicNumber: number): Promise<void> {
+    const response = await fetch(`/api/v1/ea/${magicNumber}/pause`, {
+      method: "POST",
+    });
+
+    if (!response.ok) {
+        throw new Error("Failed to pause EA");
+    }
+  },
+
+  async resumeEa(magicNumber: number): Promise<void> {
+    const response = await fetch(`/api/v1/ea/${magicNumber}/resume`, {
+      method: "POST",
+    });
+
+    if (!response.ok) {
+        throw new Error("Failed to resume EA");
+    }
+  },
+
+  async updateLotaje(magicNumber: number, lotaje: number): Promise<void> {
+    const response = await fetch(`/api/v1/ea/${magicNumber}/lotaje?lotaje=${lotaje}`, {
+        method: 'PATCH',
+    });
+
+    if (!response.ok) {
+        throw new Error("Failed to update lotaje");
+    }
+  },
+
+  async createJsonConfig(magicNumber: number, lotaje: number): Promise<void> {
+    const response = await fetch(`/api/v1/ea/json/${magicNumber}/create`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        lotaje,
+        pause: false,
+        stop: false
+      }),
+    });
+
+    if (!response.ok) {
+        throw new Error("Failed to create JSON config");
+    }
+  },
+
+  async startEa(magicNumber: number): Promise<void> {
+    const response = await fetch(`/api/v1/ea/${magicNumber}/start`, {
+      method: "POST",
+    });
+
+    if (!response.ok) {
+        throw new Error("Failed to start EA");
+    }
+  },
+
+  async stopEa(magicNumber: number): Promise<void> {
+    const response = await fetch(`/api/v1/ea/${magicNumber}/stop`, {
+      method: "POST",
+    });
+
+    if (!response.ok) {
+        throw new Error("Failed to stop EA");
+    }
+  },
+
   async getEaStatus(magicNumber: number): Promise<EaStatus> {
     const response = await fetch(`/api/v1/ea/status/${magicNumber}`);
     if (!response.ok) {

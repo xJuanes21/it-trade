@@ -16,7 +16,7 @@ import {
   Server,
   Loader2,
   RefreshCw,
-  BotOff
+  BotOff,
 } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
@@ -39,10 +39,27 @@ interface StatCard {
 }
 
 const statsCards: StatCard[] = [
-  { label: "Ganancia Total", value: "$1,240.50", change: "+4.2% hoy", trend: "up", icon: TrendingUp },
-  { label: "Win Rate Promedio", value: "68.5%", subtitle: "en 24 operaciones", icon: BarChart3 },
+  {
+    label: "Ganancia Total",
+    value: "$1,240.50",
+    change: "+4.2% hoy",
+    trend: "up",
+    icon: TrendingUp,
+  },
+  {
+    label: "Win Rate Promedio",
+    value: "68.5%",
+    subtitle: "en 24 operaciones",
+    icon: BarChart3,
+  },
   { label: "Bots Activos", value: "1/1", subtitle: "0 pausado(s)", icon: Zap },
-  { label: "Ganancia Mensual", value: "$4,862.2", change: "+12.5% del total", trend: "up", icon: TrendingUp },
+  {
+    label: "Ganancia Mensual",
+    value: "$4,862.2",
+    change: "+12.5% del total",
+    trend: "up",
+    icon: TrendingUp,
+  },
 ];
 
 interface TradingBotsProps {
@@ -54,21 +71,23 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterActive, setFilterActive] = useState<"all" | BotStatus>("all");
   const [view, setView] = useState<"grid" | "list">("grid");
-  
+
   const [bots, setBots] = useState<EaConfig[]>([]);
   const [botStatuses, setBotStatuses] = useState<Record<number, EaStatus>>({});
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedBot, setSelectedBot] = useState<EaConfig | undefined>(undefined);
-  
+  const [selectedBot, setSelectedBot] = useState<EaConfig | undefined>(
+    undefined,
+  );
+
   const isSuperAdmin = userRole === "superadmin";
 
   const fetchBots = async () => {
     try {
       setLoading(true);
-      
+
       let data: EaConfig[];
-      
+
       if (isSuperAdmin) {
         // Super admin ve todos los bots
         data = await eaService.getConfigs();
@@ -76,21 +95,22 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
         // Usuario normal solo ve sus bots asignados
         data = await botAssignmentService.getUserBotAssignments(userId);
       }
-      
+
       setBots(data);
-      
+
       // Fetch status for each bot to show "Live" data
       const statuses: Record<number, EaStatus> = {};
-      await Promise.all(data.map(async (bot) => {
-        try {
+      await Promise.all(
+        data.map(async (bot) => {
+          try {
             const status = await eaService.getEaStatus(bot.magic_number);
             statuses[bot.magic_number] = status;
-        } catch (e) {
+          } catch (e) {
             console.error("Failed to load status for", bot.magic_number);
-        }
-      }));
+          }
+        }),
+      );
       setBotStatuses(statuses);
-
     } catch (error) {
       console.error(error);
       toast.error("Error al cargar bots");
@@ -101,16 +121,18 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
 
   const refreshStatusOnly = async () => {
     const statuses: Record<number, EaStatus> = {};
-    await Promise.all(bots.map(async (bot) => {
+    await Promise.all(
+      bots.map(async (bot) => {
         try {
-            const status = await eaService.getEaStatus(bot.magic_number);
-            statuses[bot.magic_number] = status;
+          const status = await eaService.getEaStatus(bot.magic_number);
+          statuses[bot.magic_number] = status;
         } catch (e) {
-            console.error(e);
+          console.error(e);
         }
-    }));
-    setBotStatuses(prev => ({...prev, ...statuses}));
-  }
+      }),
+    );
+    setBotStatuses((prev) => ({ ...prev, ...statuses }));
+  };
 
   useEffect(() => {
     fetchBots();
@@ -119,26 +141,56 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
   // Poll for updates every 5 minutes (300,000ms) or on demand
   useEffect(() => {
     const interval = setInterval(() => {
-        if (bots.length > 0) refreshStatusOnly();
+      if (bots.length > 0) refreshStatusOnly();
     }, 300000);
     return () => clearInterval(interval);
   }, [bots]);
 
-  const handleToggleStatus = async (bot: EaConfig) => {
+  const handleStart = async (bot: EaConfig) => {
     try {
-        if (bot.enabled) {
-            await eaService.disableEa(bot.magic_number);
-            toast.success("Bot pausado", { description: "La orden se ha enviado a MT5" });
-        } else {
-            await eaService.enableEa(bot.magic_number);
-            toast.success("Bot activado", { description: "Iniciando operaciones en MT5" });
-        }
-        // Refresh bots and statuses immediately
-        const updatedConfigs = await eaService.getConfigs();
-        setBots(updatedConfigs);
-        refreshStatusOnly();
+      await eaService.startEa(bot.magic_number);
+      toast.success("Bot iniciado", {
+        description: "El EA ha sido activado en MT5",
+      });
+      fetchBots();
     } catch (error) {
-        toast.error("Error al cambiar estado");
+      toast.error("Error al iniciar el bot");
+    }
+  };
+
+  const handleStop = async (bot: EaConfig) => {
+    try {
+      await eaService.stopEa(bot.magic_number);
+      toast.success("Bot detenido", {
+        description: "El bot se ha detenido y cerrado operaciones",
+      });
+      fetchBots();
+    } catch (error) {
+      toast.error("Error al detener el bot");
+    }
+  };
+
+  const handlePause = async (bot: EaConfig) => {
+    try {
+      await eaService.pauseEa(bot.magic_number);
+      toast.success("Bot pausado", {
+        description: "Se ha enviado la señal de pausa al MT5",
+      });
+      fetchBots();
+    } catch (error) {
+      toast.error("Error al pausar el bot");
+    }
+  };
+
+  const handleResume = async (bot: EaConfig) => {
+    try {
+      await eaService.resumeEa(bot.magic_number);
+      toast.success("Bot reanudado", {
+        description: "El bot continuará operando",
+      });
+      fetchBots();
+    } catch (error) {
+      toast.error("Error al reanudar el bot");
     }
   };
 
@@ -155,11 +207,13 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
   const filteredBots = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
     let filtered = bots.filter((b) =>
-      [b.ea_name, b.symbol, b.timeframe].some((v) => v.toLowerCase().includes(term))
+      [b.ea_name, b.symbol, b.timeframe].some((v) =>
+        v.toLowerCase().includes(term),
+      ),
     );
     if (filterActive !== "all") {
-        const isEnabled = filterActive === "active";
-        filtered = filtered.filter((b) => b.enabled === isEnabled);
+      const isEnabled = filterActive === "active";
+      filtered = filtered.filter((b) => b.enabled === isEnabled);
     }
     return filtered;
   }, [searchTerm, filterActive, bots]);
@@ -169,18 +223,28 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
       ? "bg-green-500/20 text-green-500 border-green-500/30"
       : "bg-orange-500/20 text-orange-500 border-orange-500/30";
 
-  const getStatusButton = (enabled: boolean) =>
-    enabled
-      ? { icon: Pause, label: "Pausar", color: "bg-amber-500 hover:bg-amber-600" }
-      : { icon: Play, label: "Activar", color: "bg-green-500 hover:bg-green-600" };
-
-  const StatIcon = ({ Icon, trend }: { Icon: StatCard["icon"]; trend?: Trend }) => (
-    <Icon size={20} className={trend === "up" ? "text-green-400" : trend === "down" ? "text-red-400" : "text-blue-400"} />
+  const StatIcon = ({
+    Icon,
+    trend,
+  }: {
+    Icon: StatCard["icon"];
+    trend?: Trend;
+  }) => (
+    <Icon
+      size={20}
+      className={
+        trend === "up"
+          ? "text-green-400"
+          : trend === "down"
+            ? "text-red-400"
+            : "text-blue-400"
+      }
+    />
   );
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
-      <BotConfigModal 
+      <BotConfigModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onSuccess={fetchBots}
@@ -190,41 +254,57 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
       <div className="max-w-7xl mx-auto">
         {/* Header Actions */}
         <div className="flex justify-between items-center mb-6">
-            <div>
-                 <h1 className="text-2xl font-bold text-foreground">Mis Bots</h1>
-                 <p className="text-muted-foreground text-sm">
-                   {isSuperAdmin ? "Gestiona tus estrategias automatizadas" : "Visualiza tus bots asignados"}
-                 </p>
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Mis Bots</h1>
+            <p className="text-muted-foreground text-sm">
+              {isSuperAdmin
+                ? "Gestiona tus estrategias automatizadas"
+                : "Visualiza tus bots asignados"}
+            </p>
+          </div>
+          {isSuperAdmin && (
+            <div className="flex gap-2">
+              <Link href="/dashboard/configuracion">
+                <button className="bg-secondary hover:bg-secondary/80 text-foreground px-4 py-2 rounded-xl flex items-center gap-2 border border-border transition-all">
+                  <Server size={18} />
+                  <span className="hidden sm:inline">Conectar MT5</span>
+                </button>
+              </Link>
+              <button
+                onClick={handleCreate}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-xl flex items-center gap-2 shadow-lg shadow-primary/20 transition-all"
+              >
+                <Plus size={18} />
+                <span className="hidden sm:inline">Nuevo Bot</span>
+              </button>
             </div>
-            {isSuperAdmin && (
-              <div className="flex gap-2">
-                   <Link href="/dashboard/configuracion">
-                      <button className="bg-secondary hover:bg-secondary/80 text-foreground px-4 py-2 rounded-xl flex items-center gap-2 border border-border transition-all">
-                          <Server size={18} />
-                          <span className="hidden sm:inline">Conectar MT5</span>
-                      </button>
-                   </Link>
-                   <button onClick={handleCreate} className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-xl flex items-center gap-2 shadow-lg shadow-primary/20 transition-all">
-                      <Plus size={18} />
-                      <span className="hidden sm:inline">Nuevo Bot</span>
-                   </button>
-              </div>
-            )}
+          )}
         </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {statsCards.map((stat, index) => (
-            <div key={index} className="bg-card rounded-2xl p-5 border border-border">
+            <div
+              key={index}
+              className="bg-card rounded-2xl p-5 border border-border"
+            >
               <div className="flex items-start justify-between mb-3">
                 <p className="text-muted-foreground text-sm">{stat.label}</p>
                 <StatIcon Icon={stat.icon} trend={stat.trend} />
               </div>
-              <p className="text-foreground text-2xl md:text-3xl font-bold mb-1">{stat.value}</p>
+              <p className="text-foreground text-2xl md:text-3xl font-bold mb-1">
+                {stat.value}
+              </p>
               {stat.change && (
-                <p className={`text-sm ${stat.trend === "up" ? "text-green-400" : "text-muted-foreground"}`}>{stat.change}</p>
+                <p
+                  className={`text-sm ${stat.trend === "up" ? "text-green-400" : "text-muted-foreground"}`}
+                >
+                  {stat.change}
+                </p>
               )}
-              {stat.subtitle && <p className="text-sm text-muted-foreground">{stat.subtitle}</p>}
+              {stat.subtitle && (
+                <p className="text-sm text-muted-foreground">{stat.subtitle}</p>
+              )}
             </div>
           ))}
         </div>
@@ -233,7 +313,10 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
         <div className="bg-card rounded-2xl p-4 mb-6 border border-border">
           <div className="flex flex-col lg:flex-row gap-4 items-center">
             <div className="relative flex-1 w-full">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={20} />
+              <Search
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
+                size={20}
+              />
               <input
                 type="text"
                 placeholder="Buscar bots por nombre, símbolo..."
@@ -243,20 +326,24 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
               />
             </div>
             <div className="flex gap-2 w-full lg:w-auto">
-              {['all', 'active', 'paused'].map((filter) => (
-                  <button
-                    key={filter}
-                    className={`flex-1 lg:flex-none px-6 py-3 rounded-xl font-medium transition-all capitalize ${
-                      filterActive === filter
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-secondary hover:bg-background text-muted-foreground hover:text-foreground border border-border"
-                    }`}
-                    onClick={() => setFilterActive(filter as any)}
-                  >
-                    {filter === 'all' ? 'Todos' : filter === 'active' ? 'Activos' : 'Pausados'}
-                  </button>
+              {["all", "active", "paused"].map((filter) => (
+                <button
+                  key={filter}
+                  className={`flex-1 lg:flex-none px-6 py-3 rounded-xl font-medium transition-all capitalize ${
+                    filterActive === filter
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-secondary hover:bg-background text-muted-foreground hover:text-foreground border border-border"
+                  }`}
+                  onClick={() => setFilterActive(filter as BotStatus | "all")}
+                >
+                  {filter === "all"
+                    ? "Todos"
+                    : filter === "active"
+                      ? "Activos"
+                      : "Pausados"}
+                </button>
               ))}
-              
+
               <button
                 className={`p-3 rounded-xl transition-all ${view === "grid" ? "bg-primary text-primary-foreground" : "bg-secondary hover:bg-background text-muted-foreground border border-border"}`}
                 onClick={() => setView("grid")}
@@ -275,120 +362,178 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
 
         {/* Loading State */}
         {loading && (
-            <div className="flex justify-center items-center py-20">
-                <Loader2 className="animate-spin text-primary" size={40} />
-            </div>
+          <div className="flex justify-center items-center py-20">
+            <Loader2 className="animate-spin text-primary" size={40} />
+          </div>
         )}
 
         {/* Empty State */}
         {!loading && filteredBots.length === 0 && (
-            <div className="text-center py-20 bg-card rounded-3xl border border-border border-dashed">
-                <div className="bg-secondary w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <BotOff className="text-muted-foreground" size={32} />
-                </div>
-                {isSuperAdmin ? (
-                  <>
-                    <h3 className="text-xl font-bold mb-2">No tienes bots configurados</h3>
-                    <p className="text-muted-foreground mb-6">Crea tu primer bot para empezar a operar automáticamente.</p>
-                    <button onClick={handleCreate} className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-primary/20 transition-all">
-                        Crear mi primer Bot
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <h3 className="text-xl font-bold mb-2">Sin Bots Asignados</h3>
-                    <p className="text-muted-foreground mb-2">Aún no se te ha asignado ningún bot de trading.</p>
-                    <p className="text-muted-foreground">Por favor, contacta con el administrador para que te asigne un bot.</p>
-                  </>
-                )}
+          <div className="text-center py-20 bg-card rounded-3xl border border-border border-dashed">
+            <div className="bg-secondary w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+              <BotOff className="text-muted-foreground" size={32} />
             </div>
+            {isSuperAdmin ? (
+              <>
+                <h3 className="text-xl font-bold mb-2">
+                  No tienes bots configurados
+                </h3>
+                <p className="text-muted-foreground mb-6">
+                  Crea tu primer bot para empezar a operar automáticamente.
+                </p>
+                <button
+                  onClick={handleCreate}
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-primary/20 transition-all"
+                >
+                  Crear mi primer Bot
+                </button>
+              </>
+            ) : (
+              <>
+                <h3 className="text-xl font-bold mb-2">Sin Bots Asignados</h3>
+                <p className="text-muted-foreground mb-2">
+                  Aún no se te ha asignado ningún bot de trading.
+                </p>
+                <p className="text-muted-foreground">
+                  Por favor, contacta con el administrador para que te asigne un
+                  bot.
+                </p>
+              </>
+            )}
+          </div>
         )}
 
         {/* Bots Grid */}
         {!loading && filteredBots.length > 0 && (
-            <div className={view === "grid" ? "grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6" : "flex flex-col gap-4"}>
+          <div
+            className={
+              view === "grid"
+                ? "grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
+                : "flex flex-col gap-4"
+            }
+          >
             {filteredBots.map((bot) => {
-                const statusBtn = getStatusButton(bot.enabled);
-                const StatusIcon = statusBtn.icon;
-                const statusData = botStatuses[bot.magic_number];
+              const statusData = botStatuses[bot.magic_number];
 
-                return (
+              return (
                 <div
-                    key={bot.magic_number}
-                    className="bg-card rounded-3xl p-6 border border-border hover:border-ring/40 transition-all duration-300 group"
+                  key={bot.magic_number}
+                  className="bg-card rounded-3xl p-6 border border-border hover:border-ring/40 transition-all duration-300 group"
                 >
-                    {/* Header */}
-                    <div className="flex items-start justify-between mb-4">
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
-                        <div className="bg-blue-500 w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
+                      <div className="bg-blue-500 w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
                         <Zap size={24} className="text-white" />
-                        </div>
-                        <div>
-                        <h3 className="text-foreground font-bold text-lg">{bot.ea_name}</h3>
+                      </div>
+                      <div>
+                        <h3 className="text-foreground font-bold text-lg">
+                          {bot.ea_name}
+                        </h3>
                         <div className="flex gap-2 mt-1">
-                            <span className="bg-blue-500/10 text-blue-400 text-xs px-2 py-0.5 rounded border border-blue-500/20">
+                          <span className="bg-blue-500/10 text-blue-400 text-xs px-2 py-0.5 rounded border border-blue-500/20">
                             {bot.symbol}
-                            </span>
-                            <span className="bg-amber-500/10 text-amber-400 text-xs px-2 py-0.5 rounded border border-amber-500/20">
+                          </span>
+                          <span className="bg-amber-500/10 text-amber-400 text-xs px-2 py-0.5 rounded border border-amber-500/20">
                             {bot.timeframe}
-                            </span>
+                          </span>
                         </div>
-                        </div>
+                      </div>
                     </div>
-                    <span className={`text-xs px-3 py-1 rounded-full font-medium border ${getStatusColor(bot.enabled)}`}>
-                        {bot.enabled ? "Activo" : "Pausado"}
+                    <span
+                      className={`text-xs px-3 py-1 rounded-full font-medium border ${getStatusColor(bot.enabled)}`}
+                    >
+                      {bot.enabled ? "Iniciado" : "Detenido"}
                     </span>
-                    </div>
+                  </div>
 
-                    {/* Live Stats */}
-                    <div className="grid grid-cols-3 gap-4 mb-4 bg-secondary/30 p-4 rounded-xl relative overflow-hidden">
+                  {/* Live Stats */}
+                  <div className="grid grid-cols-3 gap-4 mb-4 bg-secondary/30 p-4 rounded-xl relative overflow-hidden">
                     {/* Blinking Live Indicator */}
                     {bot.enabled && (
-                        <div className="absolute top-2 right-2 flex items-center gap-1.5 animate-pulse">
-                            <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                            <span className="text-[10px] text-green-500 font-bold tracking-wider">LIVE</span>
-                        </div>
+                      <div className="absolute top-2 right-2 flex items-center gap-1.5 animate-pulse">
+                        <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                        <span className="text-[10px] text-green-500 font-bold tracking-wider">
+                          LIVE
+                        </span>
+                      </div>
                     )}
 
                     <div>
-                        <p className="text-muted-foreground text-xs mb-1">Trades</p>
-                        <p className="text-foreground text-sm font-bold">
-                            {statusData ? statusData.active_trades : "-"}
-                        </p>
+                      <p className="text-muted-foreground text-xs mb-1">
+                        Trades
+                      </p>
+                      <p className="text-foreground text-sm font-bold">
+                        {statusData ? statusData.active_trades : "-"}
+                      </p>
                     </div>
                     <div>
-                        <p className="text-muted-foreground text-xs mb-1">Profit</p>
-                        <p className={`text-sm font-bold ${statusData?.total_profit > 0 ? "text-green-400" : "text-foreground"}`}>
-                             {statusData ? `$${statusData.total_profit}` : "-"}
-                        </p>
+                      <p className="text-muted-foreground text-xs mb-1">
+                        Profit
+                      </p>
+                      <p
+                        className={`text-sm font-bold ${statusData?.total_profit > 0 ? "text-green-400" : "text-foreground"}`}
+                      >
+                        {statusData ? `$${statusData.total_profit}` : "-"}
+                      </p>
                     </div>
                     <div>
-                        <p className="text-muted-foreground text-xs mb-1">Lot Size</p>
-                        <p className="text-foreground text-sm font-bold">{bot.lot_size}</p>
+                      <p className="text-muted-foreground text-xs mb-1">
+                        Lot Size
+                      </p>
+                      <p className="text-foreground text-sm font-bold">
+                        {bot.lot_size}
+                      </p>
                     </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex flex-col gap-2">
+                    <div className="flex gap-2">
+                      {bot.enabled ? (
+                        <button
+                          onClick={() => handleStop(bot)}
+                          className="flex-1 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-medium transition-all flex items-center justify-center gap-2 shadow-lg"
+                        >
+                          Stop
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleStart(bot)}
+                          className="flex-1 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl font-medium transition-all flex items-center justify-center gap-2 shadow-lg"
+                        >
+                          Start
+                        </button>
+                      )}
+                      <button
+                        onClick={() => handleEdit(bot)}
+                        className="bg-secondary hover:bg-secondary/80 text-foreground p-2 rounded-xl border border-border"
+                      >
+                        <SettingsIcon size={20} />
+                      </button>
                     </div>
 
-                    {/* Action Buttons */}
                     <div className="flex gap-2">
-                    <button 
-                        onClick={() => handleEdit(bot)}
-                        className="flex-1 bg-secondary hover:bg-secondary/80 text-foreground px-4 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2 border border-border hover:border-blue-500/30"
-                    >
-                        <SettingsIcon size={18} className="text-blue-400" />
-                        Configurar
-                    </button>
-                    <button 
-                        onClick={() => handleToggleStatus(bot)}
-                        className={`flex-1 ${statusBtn.color} text-white px-4 py-3 rounded-xl font-medium transition-all flex items-center justify-center gap-2 shadow-lg hover:shadow-xl`}
-                    >
-                        <StatusIcon size={18} />
-                        {statusBtn.label}
-                    </button>
+                      <button
+                        onClick={() => handlePause(bot)}
+                        className="flex-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 px-4 py-2 rounded-xl font-medium transition-all flex items-center justify-center gap-2 border border-amber-500/20"
+                      >
+                        <Pause size={16} />
+                        Pausar
+                      </button>
+                      <button
+                        onClick={() => handleResume(bot)}
+                        className="flex-1 bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 px-4 py-2 rounded-xl font-medium transition-all flex items-center justify-center gap-2 border border-blue-500/20"
+                      >
+                        <Play size={16} />
+                        Reanudar
+                      </button>
                     </div>
+                  </div>
                 </div>
-                );
+              );
             })}
-            </div>
+          </div>
         )}
       </div>
     </div>

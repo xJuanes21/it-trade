@@ -9,6 +9,10 @@ import { StatsCardGrid } from "@/components/dashboard/overview/StatsCardGrid";
 import { TradingChart } from "@/components/dashboard/overview/TradingChart";
 import { statsData } from "@/components/dashboard/overview/data";
 
+export const metadata = {
+  title: "Dashboard",
+};
+
 export default function DashboardPage() {
   return (
     <MarketDataProvider>
@@ -43,14 +47,20 @@ export default function DashboardPage() {
               <div className="h-48">
                 <PerformanceDonut />
               </div>
-              <p className="mt-4 text-center text-xs text-slate-500">Distribución de ingresos por segmento</p>
+              <p className="mt-4 text-center text-xs text-slate-500">
+                Distribución de ingresos por segmento
+              </p>
             </div>
             <div className="lg:col-span-2 rounded-2xl border border-[#2a3050] bg-[#11152a] p-6">
-              <p className="text-sm text-slate-400">Serie comparativa (6 meses)</p>
+              <p className="text-sm text-slate-400">
+                Serie comparativa (6 meses)
+              </p>
               <div className="h-48">
                 <AreaChartWidget />
               </div>
-              <p className="mt-4 text-center text-xs text-slate-500">Evolución acumulada</p>
+              <p className="mt-4 text-center text-xs text-slate-500">
+                Evolución acumulada
+              </p>
             </div>
           </div>
 

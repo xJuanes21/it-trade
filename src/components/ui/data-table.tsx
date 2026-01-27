@@ -24,6 +24,7 @@ interface DataTableProps<T> {
   actions?: ReactNode;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function DataTable<T extends Record<string, any>>({
   title,
   subtitle,
@@ -105,7 +106,7 @@ export function DataTable<T extends Record<string, any>>({
               ) : data.length > 0 ? (
                 data.map((item, index) => (
                   <tr
-                    key={item.id || index}
+                    key={(item.id as string | number) || index}
                     className="transition hover:bg-[#0f152a] focus-within:bg-[#0f152a]"
                   >
                     {columns.map((column) => (
@@ -113,14 +114,19 @@ export function DataTable<T extends Record<string, any>>({
                         key={column.key}
                         className={`px-4 py-3 ${alignClass[column.align || "left"]} ${column.className || ""}`}
                       >
-                        {column.render ? column.render(item) : (item[column.key] ?? "-")}
+                        {column.render
+                          ? column.render(item)
+                          : ((item[column.key] as ReactNode) ?? "-")}
                       </td>
                     ))}
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={columns.length} className="px-4 py-10 text-center text-slate-500">
+                  <td
+                    colSpan={columns.length}
+                    className="px-4 py-10 text-center text-slate-500"
+                  >
                     {emptyMessage}
                   </td>
                 </tr>

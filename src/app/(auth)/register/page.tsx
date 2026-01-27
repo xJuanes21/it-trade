@@ -2,7 +2,7 @@ import React from "react";
 import { RegisterForm } from "@/components/forms/register-form";
 
 export const metadata = {
-  title: "Register | iTtrade",
+  title: "Registro",
 };
 
 export default function RegisterPage() {
