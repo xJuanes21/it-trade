@@ -1,4 +1,4 @@
-import { CreateEaConfigData, EaConfig, EaStatus, Mt5ConnectionData } from "@/types/ea";
+import { CreateEaConfigData, EaConfig, EaJsonConfig, EaStatus, Mt5ConnectionData } from "@/types/ea";
 
 export const eaService = {
   async connectMt5(data: Mt5ConnectionData): Promise<void> {
@@ -125,6 +125,26 @@ export const eaService = {
     }
   },
 
+  async getAllJsonConfigs(): Promise<{ success: boolean; configs: Array<{ magic_number: number; config: EaJsonConfig }> }> {
+    const response = await fetch("/api/v1/ea/json/list");
+    if (!response.ok) {
+        throw new Error("Failed to fetch all JSON configs");
+    }
+    return response.json();
+  },
+
+  async updateJsonConfig(magicNumber: number, data: Partial<EaJsonConfig>): Promise<void> {
+    const response = await fetch(`/api/v1/ea/json/${magicNumber}/update`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+        throw new Error("Failed to update JSON config");
+    }
+  },
+
   async startEa(magicNumber: number): Promise<void> {
     const response = await fetch(`/api/v1/ea/${magicNumber}/start`, {
       method: "POST",
@@ -143,6 +163,14 @@ export const eaService = {
     if (!response.ok) {
         throw new Error("Failed to stop EA");
     }
+  },
+
+  async getJsonConfig(magicNumber: number): Promise<EaJsonConfig | null> {
+    const response = await fetch(`/api/v1/ea/json/${magicNumber}`);
+    if (!response.ok) {
+        throw new Error("Failed to fetch JSON config");
+    }
+    return response.json();
   },
 
   async getEaStatus(magicNumber: number): Promise<EaStatus> {

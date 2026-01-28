@@ -22,7 +22,7 @@ import { toast } from "sonner";
 import Link from "next/link";
 import { eaService } from "@/services/ea.service";
 import { botAssignmentService } from "@/services/bot-assignment.service";
-import { EaConfig, EaStatus } from "@/types/ea";
+import { EaConfig, EaJsonConfig, EaStatus } from "@/types/ea";
 import BotConfigModal from "./BotConfigModal";
 
 // Types
@@ -74,6 +74,9 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
 
   const [bots, setBots] = useState<EaConfig[]>([]);
   const [botStatuses, setBotStatuses] = useState<Record<number, EaStatus>>({});
+  const [botConfigs, setBotConfigs] = useState<Record<number, EaJsonConfig>>(
+    {},
+  );
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBot, setSelectedBot] = useState<EaConfig | undefined>(
@@ -98,19 +101,49 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
 
       setBots(data);
 
-      // Fetch status for each bot to show "Live" data
+      // Fetch status and JSON config for each bot to show "Live" data and operational state
       const statuses: Record<number, EaStatus> = {};
+      const configs: Record<number, EaJsonConfig> = {};
+
+      try {
+        const jsonResponse = await eaService.getAllJsonConfigs();
+        if (jsonResponse.success && jsonResponse.configs) {
+          jsonResponse.configs.forEach((item) => {
+            configs[item.magic_number] = item.config;
+          });
+        }
+      } catch (e) {
+        console.error("Failed to load bulk JSON configs", e);
+      }
+
       await Promise.all(
         data.map(async (bot) => {
+          // Status call (balances, trades, etc)
           try {
             const status = await eaService.getEaStatus(bot.magic_number);
             statuses[bot.magic_number] = status;
           } catch (e) {
             console.error("Failed to load status for", bot.magic_number);
           }
+
+          // Fill defaults if missing from bulk fetch
+          if (!configs[bot.magic_number]) {
+            configs[bot.magic_number] = {
+              lotaje: bot.lot_size,
+              pause: false,
+              stop: !bot.enabled, // Fallback to bot config enabled field
+              magic_number: bot.magic_number,
+            };
+          }
         }),
       );
+
+      // Map and filter: Only keep bots that exist in the MT5 JSON configs
+      const filteredData = data.filter((bot) => configs[bot.magic_number]);
+
+      setBots(filteredData);
       setBotStatuses(statuses);
+      setBotConfigs(configs);
     } catch (error) {
       console.error(error);
       toast.error("Error al cargar bots");
@@ -121,8 +154,27 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
 
   const refreshStatusOnly = async () => {
     const statuses: Record<number, EaStatus> = {};
+    const configs: Record<number, EaJsonConfig> = {};
+
+    try {
+      const jsonResponse = await eaService.getAllJsonConfigs();
+      if (jsonResponse.success && jsonResponse.configs) {
+        jsonResponse.configs.forEach((item) => {
+          configs[item.magic_number] = item.config;
+        });
+      }
+    } catch (e) {
+      console.error("Failed to refresh bulk JSON configs", e);
+    }
+
+    // Filter currently loaded bots to ensure they still exist in the backend configs
+    const stillExistingBots = bots.filter((bot) => configs[bot.magic_number]);
+    if (stillExistingBots.length !== bots.length) {
+      setBots(stillExistingBots);
+    }
+
     await Promise.all(
-      bots.map(async (bot) => {
+      stillExistingBots.map(async (bot) => {
         try {
           const status = await eaService.getEaStatus(bot.magic_number);
           statuses[bot.magic_number] = status;
@@ -131,7 +183,9 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
         }
       }),
     );
+
     setBotStatuses((prev) => ({ ...prev, ...statuses }));
+    setBotConfigs((prev) => ({ ...prev, ...configs }));
   };
 
   useEffect(() => {
@@ -148,24 +202,44 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
 
   const handleStart = async (bot: EaConfig) => {
     try {
-      await eaService.startEa(bot.magic_number);
+      // 1. Persistence: Sync JSON state (stop: false)
+      // We do this first or ensure it happens to fix the transition error reported
+      await eaService.updateJsonConfig(bot.magic_number, { stop: false });
+
+      // 2. Operation: Start Instance
+      try {
+        await eaService.startEa(bot.magic_number);
+      } catch (opError) {
+        console.warn(
+          "Instance control (start) might be redundant or pending:",
+          opError,
+        );
+        // We continue if persistence succeeded
+      }
+
       toast.success("Bot iniciado", {
-        description: "El EA ha sido activado en MT5",
+        description: "El EA ha sido activado y persistido en MT5",
       });
-      fetchBots();
+      await fetchBots();
     } catch (error) {
+      console.error(error);
       toast.error("Error al iniciar el bot");
     }
   };
 
   const handleStop = async (bot: EaConfig) => {
     try {
+      // 1. Operation: Stop Instance
       await eaService.stopEa(bot.magic_number);
+      // 2. Persistence: Sync JSON state (stop: true)
+      await eaService.updateJsonConfig(bot.magic_number, { stop: true });
+
       toast.success("Bot detenido", {
-        description: "El bot se ha detenido y cerrado operaciones",
+        description: "El bot se ha detenido, cerrado operaciones y persistido",
       });
-      fetchBots();
+      await fetchBots();
     } catch (error) {
+      console.error(error);
       toast.error("Error al detener el bot");
     }
   };
@@ -176,7 +250,7 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
       toast.success("Bot pausado", {
         description: "Se ha enviado la señal de pausa al MT5",
       });
-      fetchBots();
+      await fetchBots();
     } catch (error) {
       toast.error("Error al pausar el bot");
     }
@@ -188,7 +262,7 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
       toast.success("Bot reanudado", {
         description: "El bot continuará operando",
       });
-      fetchBots();
+      await fetchBots();
     } catch (error) {
       toast.error("Error al reanudar el bot");
     }
@@ -440,11 +514,21 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
                         </div>
                       </div>
                     </div>
-                    <span
-                      className={`text-xs px-3 py-1 rounded-full font-medium border ${getStatusColor(bot.enabled)}`}
-                    >
-                      {bot.enabled ? "Iniciado" : "Detenido"}
-                    </span>
+                    <div className="flex flex-col items-end gap-1">
+                      <span
+                        className={`text-xs px-3 py-1 rounded-full font-medium border ${getStatusColor(!botConfigs[bot.magic_number]?.stop)}`}
+                      >
+                        {botConfigs[bot.magic_number]?.stop
+                          ? "Detenido"
+                          : "Iniciado"}
+                      </span>
+                      {!botConfigs[bot.magic_number]?.stop &&
+                        botConfigs[bot.magic_number]?.pause && (
+                          <span className="text-[10px] px-2 py-0.5 bg-amber-500/20 text-amber-500 border border-amber-500/30 rounded-full font-bold">
+                            PAUSADO
+                          </span>
+                        )}
+                    </div>
                   </div>
 
                   {/* Live Stats */}
@@ -490,7 +574,7 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
                   {/* Action Buttons */}
                   <div className="flex flex-col gap-2">
                     <div className="flex gap-2">
-                      {bot.enabled ? (
+                      {!botConfigs[bot.magic_number]?.stop ? (
                         <button
                           onClick={() => handleStop(bot)}
                           className="flex-1 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-medium transition-all flex items-center justify-center gap-2 shadow-lg"
@@ -516,14 +600,22 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
                     <div className="flex gap-2">
                       <button
                         onClick={() => handlePause(bot)}
-                        className="flex-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 px-4 py-2 rounded-xl font-medium transition-all flex items-center justify-center gap-2 border border-amber-500/20"
+                        disabled={
+                          botConfigs[bot.magic_number]?.stop ||
+                          botConfigs[bot.magic_number]?.pause
+                        }
+                        className="flex-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 px-4 py-2 rounded-xl font-medium transition-all flex items-center justify-center gap-2 border border-amber-500/20 disabled:opacity-30 disabled:cursor-not-allowed"
                       >
                         <Pause size={16} />
                         Pausar
                       </button>
                       <button
                         onClick={() => handleResume(bot)}
-                        className="flex-1 bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 px-4 py-2 rounded-xl font-medium transition-all flex items-center justify-center gap-2 border border-blue-500/20"
+                        disabled={
+                          botConfigs[bot.magic_number]?.stop ||
+                          !botConfigs[bot.magic_number]?.pause
+                        }
+                        className="flex-1 bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 px-4 py-2 rounded-xl font-medium transition-all flex items-center justify-center gap-2 border border-blue-500/20 disabled:opacity-30 disabled:cursor-not-allowed"
                       >
                         <Play size={16} />
                         Reanudar
