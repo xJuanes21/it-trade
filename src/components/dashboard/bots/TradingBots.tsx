@@ -563,34 +563,35 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
                         </p>
                       </div>
                     </div>
-                    <div className="flex flex-col items-end gap-1">
-                      <span
-                        className={`text-xs px-3 py-1 rounded-full font-medium border ${getStatusColor(!botConfigs[bot.magic_number]?.stop)}`}
-                      >
-                        {botConfigs[bot.magic_number]?.stop
-                          ? "Detenido"
-                          : "Iniciado"}
-                      </span>
-                      {!botConfigs[bot.magic_number]?.stop &&
-                        botConfigs[bot.magic_number]?.pause && (
-                          <span className="text-[10px] px-2 py-0.5 bg-amber-500/20 text-amber-500 border border-amber-500/30 rounded-full font-bold">
-                            PAUSADO
-                          </span>
-                        )}
+                    <div className="flex flex-col items-end">
+                      {botConfigs[bot.magic_number]?.stop ? (
+                        <span className="text-[10px] px-2 py-0.5 bg-red-500/20 text-red-500 border border-red-500/30 rounded-full font-bold uppercase tracking-wider">
+                          Detenido
+                        </span>
+                      ) : botConfigs[bot.magic_number]?.pause ? (
+                        <span className="text-[10px] px-2 py-0.5 bg-amber-500/20 text-amber-500 border border-amber-500/30 rounded-full font-bold uppercase tracking-wider">
+                          PAUSADO
+                        </span>
+                      ) : (
+                        <span className="text-[10px] px-2 py-0.5 bg-green-500/20 text-green-500 border border-green-500/30 rounded-full font-bold uppercase tracking-wider">
+                          Iniciado
+                        </span>
+                      )}
                     </div>
                   </div>
 
                   {/* Live Stats */}
                   <div className="grid grid-cols-3 gap-4 mb-4 bg-secondary/30 p-4 rounded-xl relative overflow-hidden">
                     {/* Blinking Live Indicator */}
-                    {bot.enabled && (
-                      <div className="absolute top-2 right-2 flex items-center gap-1.5 animate-pulse">
-                        <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-                        <span className="text-[10px] text-green-500 font-bold tracking-wider">
-                          LIVE
-                        </span>
-                      </div>
-                    )}
+                    {!botConfigs[bot.magic_number]?.stop &&
+                      !botConfigs[bot.magic_number]?.pause && (
+                        <div className="absolute top-2 right-2 flex items-center gap-1.5 animate-pulse">
+                          <div className="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+                          <span className="text-[10px] text-green-500 font-bold tracking-wider">
+                            LIVE
+                          </span>
+                        </div>
+                      )}
 
                     <div>
                       <p className="text-muted-foreground text-xs mb-1">
