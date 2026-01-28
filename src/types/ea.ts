@@ -37,7 +37,8 @@ export interface EaJsonConfig {
     lotaje: number;
     pause: boolean;
     stop: boolean;
-    magic_number?: number;
+    name?: string;
+    magic_number: number;
     created_at?: string;
     updated_at?: string;
 }

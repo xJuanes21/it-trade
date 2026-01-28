@@ -37,33 +37,43 @@ export default function BotAssignmentModal({
     try {
       setLoading(true);
 
-      // 1. Cargar todos los bots de la base de datos
-      const allBots = await eaService.getConfigs();
-
-      // 2. Cargar configuraciones reales del servidor MT5 (Strict Discovery)
-      let activeMagicNumbers: number[] = [];
+      // 1. Cargar configuraciones reales del servidor MT5 (Primary Source)
+      let allBots: EaConfig[] = [];
       try {
         const jsonResponse = await eaService.getAllJsonConfigs();
         if (jsonResponse.success && jsonResponse.configs) {
-          activeMagicNumbers = jsonResponse.configs.map(
-            (item) => item.magic_number,
-          );
+          // Map to simplified EaConfig structure
+          allBots = jsonResponse.configs.map((item) => ({
+            ea_name: item.config.name || `Bot ${item.magic_number}`,
+            magic_number: item.magic_number,
+            lot_size: item.config.lotaje,
+            enabled: !item.config.stop,
+            symbol: "", // Hidden
+            timeframe: "", // Hidden
+            stop_loss: 0,
+            take_profit: 0,
+            max_trades: 0,
+            trading_hours_start: 0,
+            trading_hours_end: 0,
+            risk_percent: 0,
+          }));
         }
       } catch (e) {
-        console.error("Failed to load MT5 configs for assignment filtering", e);
+        console.error("Failed to load MT5 configs", e);
       }
 
-      // 3. Filtrar: Solo mostrar bots que existen físicamente en el servidor
-      const realBots = allBots.filter((bot) =>
-        activeMagicNumbers.includes(bot.magic_number),
-      );
-      setAvailableBots(realBots);
+      setAvailableBots(allBots);
 
-      // 4. Cargar bots asignados al usuario
-      const assignedBots =
-        await botAssignmentService.getUserBotAssignments(userId);
-      const assignedIds = assignedBots.map((bot: EaConfig) => bot.magic_number);
-      setAssignedBotIds(assignedIds);
+      // 2. Cargar bots asignados al usuario
+      try {
+        const assignedBots =
+          await botAssignmentService.getUserBotAssignments(userId);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const assignedIds = assignedBots.map((bot: any) => bot.magic_number);
+        setAssignedBotIds(assignedIds);
+      } catch (e) {
+        console.error("Failed to load assignments", e);
+      }
     } catch (error) {
       console.error("Error loading bots:", error);
       toast.error("Error al cargar bots");

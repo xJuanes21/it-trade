@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Search,
   TrendingUp,
@@ -24,6 +24,7 @@ import { eaService } from "@/services/ea.service";
 import { botAssignmentService } from "@/services/bot-assignment.service";
 import { EaConfig, EaJsonConfig, EaStatus } from "@/types/ea";
 import BotConfigModal from "./BotConfigModal";
+import BotActionModal from "./BotActionModal";
 
 // Types
 type Trend = "up" | "down";
@@ -82,6 +83,10 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
   const [selectedBot, setSelectedBot] = useState<EaConfig | undefined>(
     undefined,
   );
+  const [selectedBotForAction, setSelectedBotForAction] = useState<
+    EaConfig | undefined
+  >(undefined);
+  const [isActionModalOpen, setIsActionModalOpen] = useState(false);
 
   const isSuperAdmin = userRole === "superadmin";
 
@@ -89,52 +94,70 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
     try {
       setLoading(true);
 
-      let data: EaConfig[];
+      // 1. Fetch Source of Truth: MT5 JSON Configs
+      const jsonResponse = await eaService.getAllJsonConfigs();
+      let mt5Configs: { magic_number: number; config: EaJsonConfig }[] = [];
 
-      if (isSuperAdmin) {
-        // Super admin ve todos los bots
-        data = await eaService.getConfigs();
-      } else {
-        // Usuario normal solo ve sus bots asignados
-        data = await botAssignmentService.getUserBotAssignments(userId);
+      if (jsonResponse.success && jsonResponse.configs) {
+        mt5Configs = jsonResponse.configs;
       }
 
-      setBots(data);
+      // 2. Filter for User Assignments (if not SuperAdmin)
+      if (!isSuperAdmin) {
+        try {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const assignments =
+            await botAssignmentService.getUserBotAssignments(userId);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const assignedMagicNumbers = assignments.map(
+            (a: any) => a.magic_number,
+          );
+          mt5Configs = mt5Configs.filter((item) =>
+            assignedMagicNumbers.includes(item.magic_number),
+          );
+        } catch (e) {
+          console.error("Failed to load user assignments", e);
+          mt5Configs = []; // Fail safe
+        }
+      }
 
-      // Fetch status and JSON config for each bot to show "Live" data and operational state
+      // 3. Map to UI Model (EaConfig) using placeholders for removed fields
+      const mappedBots: EaConfig[] = mt5Configs.map((item) => ({
+        ea_name: item.config.name || `Bot ${item.magic_number}`,
+        magic_number: item.magic_number,
+        lot_size: item.config.lotaje,
+        enabled: !item.config.stop,
+        symbol: "", // Hidden in UI
+        timeframe: "", // Hidden in UI
+        stop_loss: 0,
+        take_profit: 0,
+        max_trades: 0,
+        trading_hours_start: 0,
+        trading_hours_end: 0,
+        risk_percent: 0,
+      }));
+
+      setBots(mappedBots);
+
+      // 4. Retrieve Runtime Statuses
       const statuses: Record<number, EaStatus> = {};
       const configs: Record<number, EaJsonConfig> = {};
 
-      try {
-        const jsonResponse = await eaService.getAllJsonConfigs();
-        if (jsonResponse.success && jsonResponse.configs) {
-          jsonResponse.configs.forEach((item) => {
-            configs[item.magic_number] = item.config;
-          });
-        }
-      } catch (e) {
-        console.error("Failed to load bulk JSON configs", e);
-      }
+      mt5Configs.forEach((item) => {
+        configs[item.magic_number] = item.config;
+      });
 
       await Promise.all(
-        data.map(async (bot) => {
-          // Status call (balances, trades, etc)
-          // We only call this if we have a config in the bulk response (Strict Discovery)
-          if (configs[bot.magic_number]) {
-            try {
-              const status = await eaService.getEaStatus(bot.magic_number);
-              statuses[bot.magic_number] = status;
-            } catch (e) {
-              console.error("Failed to load status for", bot.magic_number);
-            }
+        mappedBots.map(async (bot) => {
+          try {
+            const status = await eaService.getEaStatus(bot.magic_number);
+            statuses[bot.magic_number] = status;
+          } catch (e) {
+            console.error("Failed to load status for", bot.magic_number);
           }
         }),
       );
 
-      // Strict Discovery Filter: Only keep bots that exist in the MT5 JSON configs
-      const filteredData = data.filter((bot) => configs[bot.magic_number]);
-
-      setBots(filteredData);
       setBotStatuses(statuses);
       setBotConfigs(configs);
     } catch (error) {
@@ -195,45 +218,40 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
 
   const handleStart = async (bot: EaConfig) => {
     try {
-      // 1. Persistence: Sync JSON state (stop: false)
-      // We do this first or ensure it happens to fix the transition error reported
+      // Persistence: Sync JSON state (stop: false)
       await eaService.updateJsonConfig(bot.magic_number, { stop: false });
 
-      // 2. Operation: Start Instance
-      try {
-        await eaService.startEa(bot.magic_number);
-      } catch (opError) {
-        console.warn(
-          "Instance control (start) might be redundant or pending:",
-          opError,
-        );
-        // We continue if persistence succeeded
-      }
-
-      toast.success("Bot iniciado", {
-        description: "El EA ha sido activado y persistido en MT5",
+      toast.success("Operaciones iniciadas", {
+        description: "Tu bot está activo y operando correctamente.",
       });
-      await fetchBots();
+
+      toast.info("Validando datos...", { duration: 3000 });
+      setTimeout(async () => {
+        await fetchBots();
+      }, 4000);
     } catch (error) {
       console.error(error);
-      toast.error("Error al iniciar el bot");
+      toast.error("No pudimos iniciar tu bot. Intenta de nuevo.");
     }
   };
 
   const handleStop = async (bot: EaConfig) => {
     try {
-      // 1. Operation: Stop Instance
-      await eaService.stopEa(bot.magic_number);
-      // 2. Persistence: Sync JSON state (stop: true)
+      // Persistence: Sync JSON state (stop: true)
       await eaService.updateJsonConfig(bot.magic_number, { stop: true });
 
-      toast.success("Bot detenido", {
-        description: "El bot se ha detenido, cerrado operaciones y persistido",
+      toast.success("Operaciones detenidas", {
+        description:
+          "Tu bot ha dejado de operar. No se abrirán nuevas posiciones.",
       });
-      await fetchBots();
+
+      toast.info("Validando datos...", { duration: 3000 });
+      setTimeout(async () => {
+        await fetchBots();
+      }, 4000);
     } catch (error) {
       console.error(error);
-      toast.error("Error al detener el bot");
+      toast.error("No pudimos detener tu bot. Intenta de nuevo.");
     }
   };
 
@@ -241,11 +259,16 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
     try {
       await eaService.pauseEa(bot.magic_number);
       toast.success("Bot pausado", {
-        description: "Se ha enviado la señal de pausa al MT5",
+        description:
+          "Tu bot está en pausa. Las operaciones actuales se mantienen, pero no abrirá nuevas.",
       });
-      await fetchBots();
+
+      toast.info("Validando datos...", { duration: 3000 });
+      setTimeout(async () => {
+        await fetchBots();
+      }, 4000);
     } catch (error) {
-      toast.error("Error al pausar el bot");
+      toast.error("No pudimos pausar tu bot. Intenta de nuevo.");
     }
   };
 
@@ -253,11 +276,15 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
     try {
       await eaService.resumeEa(bot.magic_number);
       toast.success("Bot reanudado", {
-        description: "El bot continuará operando",
+        description: "Tu bot ha vuelto a la acción y seguirá operando.",
       });
-      await fetchBots();
+
+      toast.info("Validando datos...", { duration: 3000 });
+      setTimeout(async () => {
+        await fetchBots();
+      }, 4000);
     } catch (error) {
-      toast.error("Error al reanudar el bot");
+      toast.error("No pudimos reanudar tu bot. Intenta de nuevo.");
     }
   };
 
@@ -269,6 +296,17 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
   const handleCreate = () => {
     setSelectedBot(undefined);
     setIsModalOpen(true);
+  };
+
+  const handleOpenActions = (bot: EaConfig) => {
+    setSelectedBotForAction(bot);
+    setIsActionModalOpen(true);
+  };
+
+  const handleEditFromAction = (bot: EaConfig) => {
+    setIsActionModalOpen(false); // Close action modal
+    setSelectedBot(bot); // Set for config modal
+    setIsModalOpen(true); // Open config modal
   };
 
   const filteredBots = useMemo(() => {
@@ -316,6 +354,22 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
         onClose={() => setIsModalOpen(false)}
         onSuccess={fetchBots}
         initialData={selectedBot}
+      />
+
+      <BotActionModal
+        isOpen={isActionModalOpen}
+        onClose={() => setIsActionModalOpen(false)}
+        bot={selectedBotForAction}
+        config={
+          selectedBotForAction
+            ? botConfigs[selectedBotForAction.magic_number]
+            : undefined
+        }
+        onStart={handleStart}
+        onStop={handleStop}
+        onPause={handlePause}
+        onResume={handleResume}
+        onConfigure={handleEditFromAction}
       />
 
       <div className="max-w-7xl mx-auto">
@@ -497,14 +551,9 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
                         <h3 className="text-foreground font-bold text-lg">
                           {bot.ea_name}
                         </h3>
-                        <div className="flex gap-2 mt-1">
-                          <span className="bg-blue-500/10 text-blue-400 text-xs px-2 py-0.5 rounded border border-blue-500/20">
-                            {bot.symbol}
-                          </span>
-                          <span className="bg-amber-500/10 text-amber-400 text-xs px-2 py-0.5 rounded border border-amber-500/20">
-                            {bot.timeframe}
-                          </span>
-                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          ID: {bot.magic_number}
+                        </p>
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-1">
@@ -564,57 +613,17 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
                     </div>
                   </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex flex-col gap-2">
-                    <div className="flex gap-2">
-                      {!botConfigs[bot.magic_number]?.stop ? (
-                        <button
-                          onClick={() => handleStop(bot)}
-                          className="flex-1 bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-xl font-medium transition-all flex items-center justify-center gap-2 shadow-lg"
-                        >
-                          Stop
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleStart(bot)}
-                          className="flex-1 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-xl font-medium transition-all flex items-center justify-center gap-2 shadow-lg"
-                        >
-                          Start
-                        </button>
-                      )}
+                  {/* Action Button (Gear Icon) - Opens Action Modal */}
+                  {isSuperAdmin && (
+                    <div className="flex justify-end mt-4 pt-4 border-t border-border/50">
                       <button
-                        onClick={() => handleEdit(bot)}
-                        className="bg-secondary hover:bg-secondary/80 text-foreground p-2 rounded-xl border border-border"
+                        onClick={() => handleOpenActions(bot)}
+                        className="p-2 hover:bg-secondary rounded-lg transition-colors text-muted-foreground hover:text-foreground"
                       >
                         <SettingsIcon size={20} />
                       </button>
                     </div>
-
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handlePause(bot)}
-                        disabled={
-                          botConfigs[bot.magic_number]?.stop ||
-                          botConfigs[bot.magic_number]?.pause
-                        }
-                        className="flex-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 px-4 py-2 rounded-xl font-medium transition-all flex items-center justify-center gap-2 border border-amber-500/20 disabled:opacity-30 disabled:cursor-not-allowed"
-                      >
-                        <Pause size={16} />
-                        Pausar
-                      </button>
-                      <button
-                        onClick={() => handleResume(bot)}
-                        disabled={
-                          botConfigs[bot.magic_number]?.stop ||
-                          !botConfigs[bot.magic_number]?.pause
-                        }
-                        className="flex-1 bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 px-4 py-2 rounded-xl font-medium transition-all flex items-center justify-center gap-2 border border-blue-500/20 disabled:opacity-30 disabled:cursor-not-allowed"
-                      >
-                        <Play size={16} />
-                        Reanudar
-                      </button>
-                    </div>
-                  </div>
+                  )}
                 </div>
               );
             })}

@@ -109,14 +109,15 @@ export const eaService = {
     }
   },
 
-  async createJsonConfig(magicNumber: number, lotaje: number): Promise<void> {
+  async createJsonConfig(magicNumber: number, lotaje: number, name?: string): Promise<void> {
     const response = await fetch(`/api/v1/ea/json/${magicNumber}/create`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         lotaje,
         pause: false,
-        stop: false
+        stop: false,
+        name: name || `Bot ${magicNumber}`
       }),
     });
 
