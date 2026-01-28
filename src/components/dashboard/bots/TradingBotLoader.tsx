@@ -35,7 +35,7 @@ export default function TradingBotLoader({
       "Deteniendo nuevas operaciones...",
       "Cerrando conexiones activas...",
       "Guardando estado del bot...",
-      "Generando reporte final...",
+      "Liberando recursos del servidor...",
       "Desconectando del mercado...",
       "Bot detenido correctamente",
     ],
