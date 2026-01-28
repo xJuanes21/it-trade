@@ -605,7 +605,7 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
                     </div>
                     <div>
                       <p className="text-muted-foreground text-xs mb-1">
-                        Lot Size
+                        Lotaje
                       </p>
                       <p className="text-foreground text-sm font-bold">
                         {bot.lot_size}
