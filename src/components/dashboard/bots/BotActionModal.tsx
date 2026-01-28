@@ -1,19 +1,29 @@
 "use client";
 
 import React from "react";
-import { Play, Pause, BotOff, Settings, X, Activity } from "lucide-react";
+import {
+  Play,
+  Pause,
+  BotOff,
+  Settings,
+  X,
+  Activity,
+  Loader2,
+} from "lucide-react";
 import { EaConfig, EaJsonConfig } from "@/types/ea";
+import { toast } from "sonner";
 
 interface BotActionModalProps {
   isOpen: boolean;
   onClose: () => void;
   bot: EaConfig | undefined;
   config: EaJsonConfig | undefined;
-  onStart: (bot: EaConfig) => void;
+  onStart: (bot: EaConfig, lotaje: number) => void;
   onStop: (bot: EaConfig) => void;
   onPause: (bot: EaConfig) => void;
   onResume: (bot: EaConfig) => void;
   onConfigure: (bot: EaConfig) => void;
+  onUpdateLotaje: (bot: EaConfig, lotaje: number) => Promise<void>;
 }
 
 export default function BotActionModal({
@@ -26,8 +36,33 @@ export default function BotActionModal({
   onPause,
   onResume,
   onConfigure,
+  onUpdateLotaje,
 }: BotActionModalProps) {
+  const [localLotaje, setLocalLotaje] = React.useState<number>(0.01);
+  const [isUpdatingLotaje, setIsUpdatingLotaje] = React.useState(false);
+
+  React.useEffect(() => {
+    if (bot && isOpen) {
+      setLocalLotaje(bot.lot_size);
+    }
+  }, [bot, isOpen]);
+
   if (!isOpen || !bot) return null;
+
+  const handleLotajeBlur = async () => {
+    if (localLotaje !== bot.lot_size && localLotaje > 0) {
+      try {
+        setIsUpdatingLotaje(true);
+        await onUpdateLotaje(bot, localLotaje);
+        toast.success("Lotaje actualizado");
+      } catch (error) {
+        toast.error("Error al actualizar lotaje");
+        setLocalLotaje(bot.lot_size); // Revert
+      } finally {
+        setIsUpdatingLotaje(false);
+      }
+    }
+  };
 
   const isStopped = config?.stop !== false; // Default to stopped if undefined or true
   const isPaused = config?.pause === true;
@@ -81,7 +116,7 @@ export default function BotActionModal({
         <div className="p-6 pt-2 grid grid-cols-2 gap-3">
           {isStopped ? (
             <button
-              onClick={() => onStart(bot)}
+              onClick={() => onStart(bot, localLotaje)}
               className="col-span-2 bg-green-500 hover:bg-green-600 text-white p-4 rounded-2xl font-bold text-lg shadow-lg shadow-green-500/20 transition-all flex items-center justify-center gap-3 active:scale-95"
             >
               <Play size={24} fill="currentColor" />
@@ -94,7 +129,7 @@ export default function BotActionModal({
                 className="bg-red-500 hover:bg-red-600 text-white p-4 rounded-2xl font-bold shadow-lg shadow-red-500/20 transition-all flex flex-col items-center justify-center gap-2 active:scale-95"
               >
                 <BotOff size={28} />
-                DETENER OPERACIONES
+                STOP
               </button>
 
               {isPaused ? (

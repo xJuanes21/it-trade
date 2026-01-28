@@ -25,6 +25,7 @@ import { botAssignmentService } from "@/services/bot-assignment.service";
 import { EaConfig, EaJsonConfig, EaStatus } from "@/types/ea";
 import BotConfigModal from "./BotConfigModal";
 import BotActionModal from "./BotActionModal";
+import TradingBotLoader from "./TradingBotLoader";
 
 // Types
 type Trend = "up" | "down";
@@ -87,6 +88,12 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
     EaConfig | undefined
   >(undefined);
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
+
+  // Loader UI State
+  const [isLoaderOpen, setIsLoaderOpen] = useState(false);
+  const [loaderMode, setLoaderMode] = useState<"starting" | "stopping">(
+    "starting",
+  );
 
   const isSuperAdmin = userRole === "superadmin";
 
@@ -216,19 +223,19 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
     return () => clearInterval(interval);
   }, [bots]);
 
-  const handleStart = async (bot: EaConfig) => {
+  const handleStart = async (bot: EaConfig, lotajeOverride?: number) => {
     try {
       // Persistence: Sync JSON state (stop: false)
-      await eaService.updateJsonConfig(bot.magic_number, { stop: false });
-
-      toast.success("Operaciones iniciadas", {
-        description: "Tu bot está activo y operando correctamente.",
+      await eaService.updateJsonConfig(bot.magic_number, {
+        stop: false,
+        lotaje: lotajeOverride ?? bot.lot_size,
       });
 
-      toast.info("Validando datos...", { duration: 3000 });
-      setTimeout(async () => {
-        await fetchBots();
-      }, 4000);
+      setIsActionModalOpen(false);
+
+      // Open Loader Animation
+      setLoaderMode("starting");
+      setIsLoaderOpen(true);
     } catch (error) {
       console.error(error);
       toast.error("No pudimos iniciar tu bot. Intenta de nuevo.");
@@ -240,15 +247,11 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
       // Persistence: Sync JSON state (stop: true)
       await eaService.updateJsonConfig(bot.magic_number, { stop: true });
 
-      toast.success("Operaciones detenidas", {
-        description:
-          "Tu bot ha dejado de operar. No se abrirán nuevas posiciones.",
-      });
+      setIsActionModalOpen(false);
 
-      toast.info("Validando datos...", { duration: 3000 });
-      setTimeout(async () => {
-        await fetchBots();
-      }, 4000);
+      // Open Loader Animation
+      setLoaderMode("stopping");
+      setIsLoaderOpen(true);
     } catch (error) {
       console.error(error);
       toast.error("No pudimos detener tu bot. Intenta de nuevo.");
@@ -258,15 +261,8 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
   const handlePause = async (bot: EaConfig) => {
     try {
       await eaService.pauseEa(bot.magic_number);
-      toast.success("Bot pausado", {
-        description:
-          "Tu bot está en pausa. Las operaciones actuales se mantienen, pero no abrirá nuevas.",
-      });
-
-      toast.info("Validando datos...", { duration: 3000 });
-      setTimeout(async () => {
-        await fetchBots();
-      }, 4000);
+      toast.success("Bot pausado");
+      setTimeout(fetchBots, 2000);
     } catch (error) {
       toast.error("No pudimos pausar tu bot. Intenta de nuevo.");
     }
@@ -275,14 +271,8 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
   const handleResume = async (bot: EaConfig) => {
     try {
       await eaService.resumeEa(bot.magic_number);
-      toast.success("Bot reanudado", {
-        description: "Tu bot ha vuelto a la acción y seguirá operando.",
-      });
-
-      toast.info("Validando datos...", { duration: 3000 });
-      setTimeout(async () => {
-        await fetchBots();
-      }, 4000);
+      toast.success("Bot reanudado");
+      setTimeout(fetchBots, 2000);
     } catch (error) {
       toast.error("No pudimos reanudar tu bot. Intenta de nuevo.");
     }
@@ -307,6 +297,16 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
     setIsActionModalOpen(false); // Close action modal
     setSelectedBot(bot); // Set for config modal
     setIsModalOpen(true); // Open config modal
+  };
+
+  const handleUpdateLotaje = async (bot: EaConfig, lotaje: number) => {
+    await eaService.updateJsonConfig(bot.magic_number, { lotaje });
+    await fetchBots(); // Soft refresh to update local list
+  };
+
+  const handleLoaderComplete = () => {
+    setIsLoaderOpen(false);
+    fetchBots(); // Final refresh when animation ends
   };
 
   const filteredBots = useMemo(() => {
@@ -370,6 +370,13 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
         onPause={handlePause}
         onResume={handleResume}
         onConfigure={handleEditFromAction}
+        onUpdateLotaje={handleUpdateLotaje}
+      />
+
+      <TradingBotLoader
+        isOpen={isLoaderOpen}
+        mode={loaderMode}
+        onComplete={handleLoaderComplete}
       />
 
       <div className="max-w-7xl mx-auto">
