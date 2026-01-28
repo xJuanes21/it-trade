@@ -1,5 +1,4 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
@@ -16,7 +15,7 @@ const createConfigSchema = z.object({
   trading_hours_end: z.coerce.number().int().min(0).max(23),
   risk_percent: z.coerce.number().min(0).max(100),
   enabled: z.boolean().optional().default(true),
-  custom_params: z.record(z.string(), z.any()).optional(),
+  custom_params: z.record(z.string(), z.unknown()).optional(),
 });
 
 export async function POST(req: Request) {
@@ -35,52 +34,27 @@ export async function POST(req: Request) {
 
     const data = result.data;
 
-    const existing = await prisma.eaConfig.findUnique({
-      where: { magicNumber: data.magic_number }
+    // PROXY to External API
+    const externalResponse = await fetch('https://mt5.ittradew.com/api/v1/ea/config', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'accept': 'application/json'
+      },
+      body: JSON.stringify(data),
+      cache: 'no-store'
     });
 
-    if (existing) {
-       return NextResponse.json({ message: "Magic number already exists" }, { status: 409 });
+    if (!externalResponse.ok) {
+        const errorData = await externalResponse.json().catch(() => ({}));
+        return NextResponse.json(
+            { message: errorData.message || `Upstream Error: ${externalResponse.status}` }, 
+            { status: externalResponse.status }
+        );
     }
 
-    const newConfig = await prisma.eaConfig.create({
-      data: {
-        userId: session.user.id,
-        eaName: data.ea_name,
-        magicNumber: data.magic_number,
-        symbol: data.symbol,
-        timeframe: data.timeframe,
-        lotSize: data.lot_size,
-        stopLoss: data.stop_loss,
-        takeProfit: data.take_profit,
-        maxTrades: data.max_trades,
-        tradingHoursStart: data.trading_hours_start,
-        tradingHoursEnd: data.trading_hours_end,
-        riskPercent: data.risk_percent,
-        enabled: data.enabled,
-        customParams: data.custom_params ?? {},
-      },
-    });
-
-    const response = {
-       ea_name: newConfig.eaName,
-       magic_number: newConfig.magicNumber,
-       symbol: newConfig.symbol,
-       timeframe: newConfig.timeframe,
-       lot_size: newConfig.lotSize,
-       stop_loss: newConfig.stopLoss,
-       take_profit: newConfig.takeProfit,
-       max_trades: newConfig.maxTrades,
-       trading_hours_start: newConfig.tradingHoursStart,
-       trading_hours_end: newConfig.tradingHoursEnd,
-       risk_percent: newConfig.riskPercent,
-       enabled: newConfig.enabled,
-       custom_params: newConfig.customParams,
-       created_at: newConfig.createdAt,
-       updated_at: newConfig.updatedAt,
-    };
-
-    return NextResponse.json(response);
+    const responseData = await externalResponse.json();
+    return NextResponse.json(responseData);
 
   } catch (error) {
     console.error("Error creating EA Config:", error);
@@ -88,7 +62,7 @@ export async function POST(req: Request) {
   }
 }
 
-export async function GET(req: Request) {
+export async function GET(_req: Request) {
     try {
         const session = await auth();
         if (!session || !session.user?.id) {

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import TradingBots from "@/components/dashboard/bots/TradingBots";
 
 export const metadata = {
-  title: "Bots | iTtrade",
+  title: "Bots",
 };
 
 export default async function BotsPage() {
@@ -15,9 +15,9 @@ export default async function BotsPage() {
   }
 
   return (
-    <TradingBots 
-      userRole={session.user.role || "user"} 
-      userId={session.user.id || ""} 
+    <TradingBots
+      userRole={session.user.role || "user"}
+      userId={session.user.id || ""}
     />
   );
 }

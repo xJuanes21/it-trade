@@ -4,6 +4,10 @@ import { redirect } from "next/navigation";
 import { isSuperAdmin } from "@/lib/auth-utils";
 import UsersTable from "@/components/dashboard/usuarios/UsersTable";
 
+export const metadata = {
+  title: "Usuarios",
+};
+
 export default async function UsuariosPage() {
   const session = await auth();
 
@@ -14,7 +18,7 @@ export default async function UsuariosPage() {
 
   // Verificar que sea superadmin
   if (!isSuperAdmin(session.user.role)) {
-    redirect("/dashboard");  
+    redirect("/dashboard");
   }
 
   // Cargar usuarios desde la base de datos

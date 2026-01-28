@@ -3,6 +3,30 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { isSuperAdmin } from "@/lib/auth-utils";
 
+interface EAConfigInDB {
+  id: string;
+  magicNumber: number;
+  eaName: string;
+  symbol: string;
+  timeframe: string;
+  lotSize: number;
+  stopLoss: number;
+  takeProfit: number;
+  maxTrades: number;
+  tradingHoursStart: number;
+  tradingHoursEnd: number;
+  riskPercent: number;
+  enabled: boolean;
+  customParams: unknown;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface DBAssignment {
+  eaConfig: EAConfigInDB;
+  createdAt: Date;
+}
+
 /**
  * GET /api/v1/bot-assignments/[userId]
  * Obtiene los bots asignados a un usuario específico
@@ -65,21 +89,21 @@ export async function GET(
     });
 
     // Retornar solo los EaConfigs para facilitar el uso en el frontend
-    const bots = assignments.map((assignment: any) => ({
-      ...assignment.eaConfig,
+    const bots = (assignments as unknown as DBAssignment[]).map((assign) => ({
+      ...assign.eaConfig,
       // Renombrar campos para coincidir con la interfaz EaConfig del frontend
-      ea_name: assignment.eaConfig.eaName,
-      magic_number: assignment.eaConfig.magicNumber,
-      lot_size: assignment.eaConfig.lotSize,
-      stop_loss: assignment.eaConfig.stopLoss,
-      take_profit: assignment.eaConfig.takeProfit,
-      max_trades: assignment.eaConfig.maxTrades,
-      trading_hours_start: assignment.eaConfig.tradingHoursStart,
-      trading_hours_end: assignment.eaConfig.tradingHoursEnd,
-      risk_percent: assignment.eaConfig.riskPercent,
-      custom_params: assignment.eaConfig.customParams,
-      created_at: assignment.eaConfig.createdAt,
-      updated_at: assignment.eaConfig.updatedAt,
+      ea_name: assign.eaConfig.eaName,
+      magic_number: assign.eaConfig.magicNumber,
+      lot_size: assign.eaConfig.lotSize,
+      stop_loss: assign.eaConfig.stopLoss,
+      take_profit: assign.eaConfig.takeProfit,
+      max_trades: assign.eaConfig.maxTrades,
+      trading_hours_start: assign.eaConfig.tradingHoursStart,
+      trading_hours_end: assign.eaConfig.tradingHoursEnd,
+      risk_percent: assign.eaConfig.riskPercent,
+      custom_params: assign.eaConfig.customParams,
+      created_at: assign.eaConfig.createdAt,
+      updated_at: assign.eaConfig.updatedAt,
     }));
 
     return NextResponse.json(bots);
@@ -162,10 +186,10 @@ export async function POST(
       where: { magicNumber },
     });
 
-    // Si no está en BD local, verificar en API externo
+    // Si no está en BD local, verificar en API externo (JSON list)
     if (!bot) {
       try {
-        const externalResponse = await fetch('https://mt5.ittradew.com/api/v1/ea/configs', {
+        const externalResponse = await fetch('https://mt5.ittradew.com/api/v1/ea/json/list/all', {
           headers: {
             'accept': 'application/json'
           },
@@ -173,29 +197,44 @@ export async function POST(
         });
 
         if (externalResponse.ok) {
-          const externalBots = await externalResponse.json();
-          const externalBot = externalBots.find((b: any) => b.magic_number === magicNumber);
+          const externalData = await externalResponse.json();
+          // Type definition matching the JSON response structure
+          interface JsonBotConfig {
+            magic_number: number;
+            config: {
+              lotaje: number;
+              pause: boolean;
+              stop: boolean;
+              name?: string;
+            };
+          }
           
-          if (externalBot) {
-            // Bot existe en API externo, crear entrada en BD local para poder asignarlo
-            bot = await prisma.eaConfig.create({
-              data: {
-                userId: user.id,
-                eaName: externalBot.ea_name,
-                magicNumber: externalBot.magic_number,
-                symbol: externalBot.symbol,
-                timeframe: externalBot.timeframe,
-                lotSize: externalBot.lot_size,
-                stopLoss: externalBot.stop_loss,
-                takeProfit: externalBot.take_profit,
-                maxTrades: externalBot.max_trades,
-                tradingHoursStart: externalBot.trading_hours_start,
-                tradingHoursEnd: externalBot.trading_hours_end,
-                riskPercent: externalBot.risk_percent,
-                enabled: externalBot.enabled,
-                customParams: externalBot.custom_params || {},
-              },
-            });
+          if (externalData.success && Array.isArray(externalData.configs)) {
+            const externalBots = externalData.configs as JsonBotConfig[];
+            const foundBot = externalBots.find((b) => b.magic_number === magicNumber);
+            
+            if (foundBot) {
+              // Bot existe en API externo, crear entrada en BD local para poder asignarlo (Shadow Record)
+              bot = await prisma.eaConfig.create({
+                data: {
+                  userId: user.id,
+                  eaName: foundBot.config.name || `Bot ${foundBot.magic_number}`,
+                  magicNumber: foundBot.magic_number,
+                  // Placeholder values required by Schema but not present in JSON
+                  symbol: "General", 
+                  timeframe: "M1",
+                  lotSize: foundBot.config.lotaje,
+                  stopLoss: 0,
+                  takeProfit: 0,
+                  maxTrades: 1, // Default safe value
+                  tradingHoursStart: 0,
+                  tradingHoursEnd: 24,
+                  riskPercent: 0,
+                  enabled: !foundBot.config.stop,
+                  customParams: {},
+                },
+              });
+            }
           }
         }
       } catch (error) {

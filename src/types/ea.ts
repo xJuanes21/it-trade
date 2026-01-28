@@ -11,9 +11,10 @@ export interface EaConfig {
     trading_hours_end: number;
     risk_percent: number;
     enabled: boolean;
-    custom_params?: Record<string, any>;
+    custom_params?: Record<string, unknown>;
     created_at?: string;
     updated_at?: string;
+    config_file_path?: string;
 }
 
 export interface CreateEaConfigData {
@@ -29,7 +30,17 @@ export interface CreateEaConfigData {
     trading_hours_end: number;
     risk_percent: number;
     enabled?: boolean;
-    custom_params?: Record<string, any>;
+    custom_params?: Record<string, unknown>;
+}
+
+export interface EaJsonConfig {
+    lotaje: number;
+    pause: boolean;
+    stop: boolean;
+    name?: string;
+    magic_number: number;
+    created_at?: string;
+    updated_at?: string;
 }
 
 export interface EaStatus {
