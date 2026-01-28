@@ -36,13 +36,32 @@ export default function BotAssignmentModal({
   const loadBots = async () => {
     try {
       setLoading(true);
-      
-      // Cargar todos los bots disponibles
+
+      // 1. Cargar todos los bots de la base de datos
       const allBots = await eaService.getConfigs();
-      setAvailableBots(allBots);
-      
-      // Cargar bots asignados al usuario
-      const assignedBots = await botAssignmentService.getUserBotAssignments(userId);
+
+      // 2. Cargar configuraciones reales del servidor MT5 (Strict Discovery)
+      let activeMagicNumbers: number[] = [];
+      try {
+        const jsonResponse = await eaService.getAllJsonConfigs();
+        if (jsonResponse.success && jsonResponse.configs) {
+          activeMagicNumbers = jsonResponse.configs.map(
+            (item) => item.magic_number,
+          );
+        }
+      } catch (e) {
+        console.error("Failed to load MT5 configs for assignment filtering", e);
+      }
+
+      // 3. Filtrar: Solo mostrar bots que existen físicamente en el servidor
+      const realBots = allBots.filter((bot) =>
+        activeMagicNumbers.includes(bot.magic_number),
+      );
+      setAvailableBots(realBots);
+
+      // 4. Cargar bots asignados al usuario
+      const assignedBots =
+        await botAssignmentService.getUserBotAssignments(userId);
       const assignedIds = assignedBots.map((bot: EaConfig) => bot.magic_number);
       setAssignedBotIds(assignedIds);
     } catch (error) {
@@ -57,24 +76,24 @@ export default function BotAssignmentModal({
     setAssignedBotIds((prev) =>
       prev.includes(magicNumber)
         ? prev.filter((id) => id !== magicNumber)
-        : [...prev, magicNumber]
+        : [...prev, magicNumber],
     );
   };
 
   const handleSave = async () => {
     try {
       setSaving(true);
-      
+
       await botAssignmentService.updateUserAssignments(userId, assignedBotIds);
-      
+
       toast.success("Asignaciones actualizadas", {
         description: `Bots asignados a ${userName}`,
       });
-      
+
       if (onSuccess) {
         onSuccess();
       }
-      
+
       onClose();
     } catch (error) {
       console.error("Error saving assignments:", error);
@@ -116,7 +135,9 @@ export default function BotAssignmentModal({
               <div className="bg-secondary w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Bot className="text-muted-foreground" size={32} />
               </div>
-              <h3 className="text-lg font-semibold mb-2">No hay bots disponibles</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                No hay bots disponibles
+              </h3>
               <p className="text-muted-foreground">
                 Crea algunos bots para poder asignarlos a usuarios
               </p>
@@ -125,7 +146,7 @@ export default function BotAssignmentModal({
             <div className="space-y-3">
               {availableBots.map((bot) => {
                 const isAssigned = assignedBotIds.includes(bot.magic_number);
-                
+
                 return (
                   <div
                     key={bot.magic_number}
@@ -138,9 +159,11 @@ export default function BotAssignmentModal({
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                          isAssigned ? "bg-primary" : "bg-blue-500"
-                        } shadow-lg`}>
+                        <div
+                          className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                            isAssigned ? "bg-primary" : "bg-blue-500"
+                          } shadow-lg`}
+                        >
                           <Bot size={20} className="text-white" />
                         </div>
                         <div>
@@ -157,14 +180,18 @@ export default function BotAssignmentModal({
                           </div>
                         </div>
                       </div>
-                      
+
                       {/* Checkbox indicator */}
-                      <div className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
-                        isAssigned
-                          ? "border-primary bg-primary"
-                          : "border-muted-foreground/30"
-                      }`}>
-                        {isAssigned && <Check size={16} className="text-white" />}
+                      <div
+                        className={`w-6 h-6 rounded-md border-2 flex items-center justify-center transition-all ${
+                          isAssigned
+                            ? "border-primary bg-primary"
+                            : "border-muted-foreground/30"
+                        }`}
+                      >
+                        {isAssigned && (
+                          <Check size={16} className="text-white" />
+                        )}
                       </div>
                     </div>
                   </div>

@@ -119,26 +119,19 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
       await Promise.all(
         data.map(async (bot) => {
           // Status call (balances, trades, etc)
-          try {
-            const status = await eaService.getEaStatus(bot.magic_number);
-            statuses[bot.magic_number] = status;
-          } catch (e) {
-            console.error("Failed to load status for", bot.magic_number);
-          }
-
-          // Fill defaults if missing from bulk fetch
-          if (!configs[bot.magic_number]) {
-            configs[bot.magic_number] = {
-              lotaje: bot.lot_size,
-              pause: false,
-              stop: !bot.enabled, // Fallback to bot config enabled field
-              magic_number: bot.magic_number,
-            };
+          // We only call this if we have a config in the bulk response (Strict Discovery)
+          if (configs[bot.magic_number]) {
+            try {
+              const status = await eaService.getEaStatus(bot.magic_number);
+              statuses[bot.magic_number] = status;
+            } catch (e) {
+              console.error("Failed to load status for", bot.magic_number);
+            }
           }
         }),
       );
 
-      // Map and filter: Only keep bots that exist in the MT5 JSON configs
+      // Strict Discovery Filter: Only keep bots that exist in the MT5 JSON configs
       const filteredData = data.filter((bot) => configs[bot.magic_number]);
 
       setBots(filteredData);
@@ -185,7 +178,7 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
     );
 
     setBotStatuses((prev) => ({ ...prev, ...statuses }));
-    setBotConfigs((prev) => ({ ...prev, ...configs }));
+    setBotConfigs(configs); // Refresh all configs from bulk
   };
 
   useEffect(() => {
