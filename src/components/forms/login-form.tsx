@@ -1,37 +1,57 @@
-"use client"
+"use client";
 
-import Link from "next/link"
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { useFormState, useFormStatus } from "react-dom"
-import { authenticate, signInWithGoogle, type ActionResult } from "@/lib/auth-actions"
-import { Button } from "@/components/ui/button"
-import { InputWithIcon } from "@/components/ui/input-with-icon"
-import { PasswordInput } from "@/components/ui/password-input"
-import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Mail } from "lucide-react"
-import { toast } from "sonner"
+import Link from "next/link";
+import { useEffect, useActionState } from "react";
+import { useRouter } from "next/navigation";
+import { useFormStatus } from "react-dom";
+import {
+  authenticate,
+  signInWithGoogle,
+  type ActionResult,
+} from "@/lib/auth-actions";
+import { Button } from "@/components/ui/button";
+import { InputWithIcon } from "@/components/ui/input-with-icon";
+import { PasswordInput } from "@/components/ui/password-input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Mail, ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
 
 function LoginSubmitButton() {
-  const { pending } = useFormStatus()
+  const { pending } = useFormStatus();
   return (
-    <Button className="mt-2 w-full bg-primary text-white hover:bg-primary/90" disabled={pending}>
+    <Button
+      className="mt-2 w-full bg-primary text-white hover:bg-primary/90"
+      disabled={pending}
+    >
       {pending ? "Iniciando sesión..." : "INICIAR SESIÓN →"}
     </Button>
-  )
+  );
 }
 
 function GoogleButton() {
-  const { pending } = useFormStatus()
+  const { pending } = useFormStatus();
   return (
-    <Button 
-      variant="outline" 
+    <Button
+      variant="outline"
       className="w-full border-none bg-white text-black hover:bg-gray-200"
       disabled={pending}
       type="submit"
     >
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="18"
+        height="18"
+        viewBox="0 0 48 48"
+        aria-hidden="true"
+      >
         <path
           fill="#FFC107"
           d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"
@@ -51,24 +71,36 @@ function GoogleButton() {
       </svg>
       {pending ? "Conectando..." : "CONTINUAR CON GOOGLE"}
     </Button>
-  )
+  );
 }
 
 export function LoginForm() {
-  const router = useRouter()
-  const [state, formAction] = useFormState<ActionResult | null, FormData>(authenticate, null)
+  const router = useRouter();
+  const [state, formAction] = useActionState<ActionResult | null, FormData>(
+    authenticate,
+    null,
+  );
 
   useEffect(() => {
-    if (!state) return
-    if (state.error) toast.error(state.error)
-    if (state.success) toast.success(state.success)
-    if (state.redirectTo) router.push(state.redirectTo)
-  }, [state, router])
+    if (!state) return;
+    if (state.error) toast.error(state.error);
+    if (state.success) toast.success(state.success);
+    if (state.redirectTo) router.push(state.redirectTo);
+  }, [state, router]);
 
   return (
     <Card className="border-border bg-card">
       <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl text-center text-white">Bienvenido de Nuevo</CardTitle>
+        <Link
+          href="/"
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-4 transition-colors w-fit"
+        >
+          <ArrowLeft size={16} />
+          Volver al inicio
+        </Link>
+        <CardTitle className="text-2xl text-center text-white">
+          Bienvenido de Nuevo
+        </CardTitle>
         <CardDescription className="text-center text-muted-foreground">
           Ingresa tus credenciales para acceder a tu cuenta
         </CardDescription>
@@ -93,7 +125,12 @@ export function LoginForm() {
                 ¿Olvidaste tu contraseña?
               </Link>
             </div>
-            <PasswordInput id="password" name="password" placeholder="••••••••" required />
+            <PasswordInput
+              id="password"
+              name="password"
+              placeholder="••••••••"
+              required
+            />
           </div>
           <LoginSubmitButton />
         </form>
@@ -103,7 +140,9 @@ export function LoginForm() {
             <span className="w-full border-t border-muted" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">O continua con</span>
+            <span className="bg-card px-2 text-muted-foreground">
+              O continua con
+            </span>
           </div>
         </div>
 
@@ -120,5 +159,5 @@ export function LoginForm() {
         </div>
       </CardFooter>
     </Card>
-  )
+  );
 }

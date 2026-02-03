@@ -38,16 +38,28 @@ export const authConfig: NextAuthConfig = {
             email: true,
             emailVerified: true,
             image: true,
-            passwordHash: true,
+            credential: { select: { passwordHash: true } },
             role: true,
+            isApproved: true,
+            isActive: true,
           }
         });
         
-        if (!user || !user.passwordHash) return null;
+        if (!user || !user.credential?.passwordHash) return null;
+
+        if (!user.isApproved) {
+            console.log("User not approved:", user.email);
+            throw new Error("AccessDenied: Pending Approval"); 
+        }
+
+        if (user.isActive === false) { 
+             console.log("User disabled:", user.email);
+             throw new Error("AccessDenied: Account Disabled");
+        }
         
         const passwordsMatch = await bcrypt.compare(
           credentials.password.toString(),
-          user.passwordHash
+          user.credential.passwordHash
         );
 
         if (passwordsMatch) {

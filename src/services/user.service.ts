@@ -38,7 +38,9 @@ export async function createUser(data: CreateUserData): Promise<User> {
     data: {
       name,
       email,
-      passwordHash,
+      credential: {
+        create: { passwordHash }
+      },
     },
     select: {
       id: true,
