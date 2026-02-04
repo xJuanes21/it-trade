@@ -10,11 +10,25 @@ export default auth((req) => {
   
   // Si no hay sesión, dejar que NextAuth maneje la redirección
   if (!req.auth?.user) {
-    return NextResponse.redirect(new URL("/login", req.url))
+    if (pathname.startsWith("/dashboard")) {
+      return NextResponse.redirect(new URL("/login", req.url))
+    }
+    return NextResponse.next()
+  }
+
+  const user = req.auth.user
+
+  // Bloquear acceso si no está aprobado o está inactivo (excepto para superadmin tal vez, 
+  // pero el schema dice que superadmin es un rol, no un bypass de aprobación)
+  if (!user.isApproved || !user.isActive) {
+    if (pathname.startsWith("/dashboard")) {
+      const error = !user.isApproved ? "PendingApproval" : "AccountDisabled"
+      return NextResponse.redirect(new URL(`/login?error=${error}`, req.url))
+    }
   }
 
   // Verificar acceso basado en rol
-  const userRole = (req.auth.user.role || "user") as UserRole
+  const userRole = (user.role || "user") as UserRole
   
   if (!canAccessRoute(userRole, pathname)) {
     // Redirigir a dashboard según el rol

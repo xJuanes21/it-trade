@@ -82,6 +82,22 @@ export function LoginForm() {
   );
 
   useEffect(() => {
+    // Handle error from query params (needed for OAuth redirects like Google)
+    const urlParams = new URLSearchParams(window.location.search);
+    const errorParam = urlParams.get("error");
+
+    if (errorParam === "PendingApproval") {
+      toast.error(
+        "Tu cuenta está pendiente de aprobación por un administrador.",
+      );
+    } else if (errorParam === "AccountDisabled") {
+      toast.error("Tu cuenta ha sido inhabilitada. Contacta al soporte.");
+    } else if (errorParam === "CredentialsSignin") {
+      toast.error("Credenciales inválidas");
+    } else if (errorParam) {
+      toast.error("Ocurrió un error al iniciar sesión.");
+    }
+
     if (!state) return;
     if (state.error) toast.error(state.error);
     if (state.success) toast.success(state.success);

@@ -71,6 +71,8 @@ export const authConfig: NextAuthConfig = {
             emailVerified: user.emailVerified,
             image: user.image,
             role: user.role as "user" | "superadmin",
+            isApproved: user.isApproved,
+            isActive: user.isActive,
           };
         }
         return null;
@@ -81,22 +83,44 @@ export const authConfig: NextAuthConfig = {
     signIn: "/login",
   },
   callbacks: {
+    async signIn({ user, account, profile }) {
+      // Si el usuario ya existe, verificar si está aprobado y activo
+      // Para nuevos usuarios de OAuth, se crearán con isApproved: false por defecto (según schema)
+      if (account?.provider !== "credentials" && user?.email) {
+        const { prisma } = await import("@/lib/prisma");
+        const dbUser = await prisma.user.findUnique({
+          where: { email: user.email },
+          select: { isApproved: true, isActive: true }
+        });
+
+        // Si el usuario existe y no está aprobado o activo, bloquear el login
+        if (dbUser) {
+          if (!dbUser.isApproved) return "/login?error=PendingApproval";
+          if (!dbUser.isActive) return "/login?error=AccountDisabled";
+        }
+      }
+      return true;
+    },
     async jwt({ token, user, account }) {
       // En el primer login, cargar el rol desde el usuario
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.isApproved = user.isApproved;
+        token.isActive = user.isActive;
       }
       
       // Si no tenemos el rol en el token, cargarlo desde la base de datos
-      if (!token.role && token.sub) {
+      if ((!token.role || token.isApproved === undefined) && token.sub) {
         const { prisma } = await import("@/lib/prisma");
         const dbUser = await prisma.user.findUnique({ 
           where: { id: token.sub },
-          select: { role: true }
+          select: { role: true, isApproved: true, isActive: true }
         });
-        if (dbUser?.role) {
+        if (dbUser) {
           token.role = dbUser.role as "user" | "superadmin";
+          token.isApproved = dbUser.isApproved;
+          token.isActive = dbUser.isActive;
         }
       }
       
@@ -110,6 +134,10 @@ export const authConfig: NextAuthConfig = {
       if (token.role) {
         session.user.role = token.role as "user" | "superadmin";
       }
+      // Pasar estados de aprobación y actividad
+      session.user.isApproved = token.isApproved as boolean;
+      session.user.isActive = token.isActive as boolean;
+      
       return session;
     }
   }
