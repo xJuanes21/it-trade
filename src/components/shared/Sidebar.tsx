@@ -93,10 +93,23 @@ const NavLinks = ({
   </nav>
 );
 
-export default function Sidebar() {
+interface SidebarProps {
+  user?: {
+    name?: string | null;
+    email?: string | null;
+    role?: string | null;
+    isApproved?: boolean;
+    isActive?: boolean;
+  };
+}
+
+export default function Sidebar({ user: initialUser }: SidebarProps) {
   const pathname = usePathname() ?? "";
   const { data: session } = useSession();
-  const userRole = (session?.user?.role || "user") as UserRole;
+
+  // Usar el usuario inicial del servidor si está disponible, sino usar la sesión del cliente
+  const user = initialUser || session?.user;
+  const userRole = (user?.role || "user") as UserRole;
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");

@@ -94,6 +94,10 @@ export function LoginForm() {
       toast.error("Tu cuenta ha sido inhabilitada. Contacta al soporte.");
     } else if (errorParam === "CredentialsSignin") {
       toast.error("Credenciales inválidas");
+    } else if (errorParam === "OAuthAccountNotLinked") {
+      toast.error(
+        "Este correo ya está asociado a otra cuenta (posiblemente creada con contraseña). Por favor, inicia sesión con tu método original.",
+      );
     } else if (errorParam) {
       toast.error("Ocurrió un error al iniciar sesión.");
     }

@@ -8,6 +8,7 @@ export const authConfig: NextAuthConfig = {
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      allowDangerousEmailAccountLinking: true,
       authorization: {
         params: {
           prompt: "consent",
@@ -84,17 +85,17 @@ export const authConfig: NextAuthConfig = {
   },
   callbacks: {
     async signIn({ user, account, profile }) {
-      // Si el usuario ya existe, verificar si está aprobado y activo
-      // Para nuevos usuarios de OAuth, se crearán con isApproved: false por defecto (según schema)
-      if (account?.provider !== "credentials" && user?.email) {
+      console.log("SI_CB:", account?.provider, user?.email);
+      
+      if (account?.provider === "google" && user?.email) {
         const { prisma } = await import("@/lib/prisma");
         const dbUser = await prisma.user.findUnique({
           where: { email: user.email },
           select: { isApproved: true, isActive: true }
         });
 
-        // Si el usuario existe y no está aprobado o activo, bloquear el login
         if (dbUser) {
+          console.log("SI_CB_DB:", dbUser.isApproved, dbUser.isActive);
           if (!dbUser.isApproved) return "/login?error=PendingApproval";
           if (!dbUser.isActive) return "/login?error=AccountDisabled";
         }
@@ -110,8 +111,9 @@ export const authConfig: NextAuthConfig = {
         token.isActive = user.isActive;
       }
       
-      // Si no tenemos el rol en el token, cargarlo desde la base de datos
-      if ((!token.role || token.isApproved === undefined) && token.sub) {
+      // CARGA DINÁMICA: Si no tenemos el rol o si el usuario AÚN no está aprobado, 
+      // re-consultar la DB para ver si ya lo aprobaron.
+      if ((!token.role || !token.isApproved || token.isActive === false) && token.sub) {
         const { prisma } = await import("@/lib/prisma");
         const dbUser = await prisma.user.findUnique({ 
           where: { id: token.sub },
