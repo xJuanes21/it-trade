@@ -112,13 +112,11 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
       // 2. Filter for User Assignments (if not SuperAdmin)
       if (!isSuperAdmin) {
         try {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const assignments =
             await botAssignmentService.getUserBotAssignments(userId);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const assignedMagicNumbers = assignments.map(
-            (a: any) => a.magic_number,
-          );
+          const assignedMagicNumbers = (
+            assignments as { magic_number: number }[]
+          ).map((a) => a.magic_number);
           mt5Configs = mt5Configs.filter((item) =>
             assignedMagicNumbers.includes(item.magic_number),
           );

@@ -12,6 +12,7 @@ interface ConfirmationModalProps {
   confirmText?: string;
   cancelText?: string;
   variant?: "danger" | "primary";
+  isLoading?: boolean;
 }
 
 export function ConfirmationModal({
@@ -23,8 +24,10 @@ export function ConfirmationModal({
   confirmText = "Confirmar",
   cancelText = "Cancelar",
   variant = "primary",
+  isLoading: externalLoading,
 }: ConfirmationModalProps) {
-  const [isLoading, setIsLoading] = useState(false);
+  const [internalLoading, setInternalLoading] = useState(false);
+  const isLoading = externalLoading ?? internalLoading;
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -43,14 +46,14 @@ export function ConfirmationModal({
   if (!isOpen) return null;
 
   const handleConfirm = async () => {
-    setIsLoading(true);
+    setInternalLoading(true);
     try {
       await onConfirm();
       onClose();
     } catch (error) {
       console.error("Error in confirmation modal:", error);
     } finally {
-      setIsLoading(false);
+      setInternalLoading(false);
     }
   };
 

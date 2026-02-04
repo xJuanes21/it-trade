@@ -129,7 +129,7 @@ export function UserRequestList({ users }: { users: PendingUser[] }) {
         description="¿Estás seguro de que deseas rechazar esta solicitud? Esta acción eliminará permanentemente al usuario y no se puede deshacer."
         confirmText="Rechazar y Eliminar"
         variant="danger"
-        isConfirming={loadingId === userToReject} // Pass loading state to modal
+        isLoading={loadingId === userToReject} // Pass loading state to modal
       />
     </>
   );

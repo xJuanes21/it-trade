@@ -47,7 +47,8 @@ export async function authenticate(
         case "CredentialsSignin":
         case "CallbackRouteError": // Often wraps the thrown error
              // Try to see if the cause message matches (sometimes double wrapped)
-             const errMessage = (error.cause as any)?.err?.message || error.message;
+             const cause = error.cause as { err?: { message?: string } } | undefined;
+             const errMessage = cause?.err?.message || error.message;
              if (errMessage?.includes("Pending Approval")) return { error: "Tu cuenta está pendiente de aprobación." };
              if (errMessage?.includes("Account Disabled")) return { error: "Tu cuenta ha sido inhabilitada." };
             

@@ -44,12 +44,7 @@ export default function TradingBotLoader({
   const currentMessages = messages[mode];
 
   useEffect(() => {
-    if (!isOpen) {
-      setProgress(0);
-      setCurrentMessageIndex(0);
-      setIsCompleted(false);
-      return;
-    }
+    if (!isOpen) return;
 
     const intervalTime = 100; // Update every 100ms
     const totalSteps = (duration * 1000) / intervalTime;
