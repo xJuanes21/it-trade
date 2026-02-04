@@ -71,6 +71,7 @@ export function getMenuItems(role: UserRole): NavItem[] {
   if (role === "superadmin") {
     return [
       { href: "/dashboard", label: "HOME", icon: "Home" },
+      { href: "/dashboard/requests", label: "SOLICITUDES", icon: "Mail" },
       { href: "/dashboard/bots", label: "BOTS", icon: "Bot" },
       { href: "/dashboard/usuarios", label: "USUARIOS", icon: "Users" },
     ];

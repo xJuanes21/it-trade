@@ -77,7 +77,18 @@ export default function RootLayout({
       >
         <AppProviders>
           {children}
-          <Toaster richColors position="top-right" />
+          <Toaster
+            richColors
+            position="top-right"
+            toastOptions={{
+              style: {
+                background: "var(--background)",
+                border: "1px solid #3b82f6",
+                color: "var(--foreground)",
+              },
+              className: "bg-background text-foreground border-blue-500",
+            }}
+          />
         </AppProviders>
       </body>
     </html>

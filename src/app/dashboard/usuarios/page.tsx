@@ -28,6 +28,7 @@ export default async function UsuariosPage() {
       name: true,
       email: true,
       role: true,
+      isActive: true,
       createdAt: true,
       emailVerified: true,
     },

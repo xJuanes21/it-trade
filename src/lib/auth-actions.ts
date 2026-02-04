@@ -31,10 +31,27 @@ export async function authenticate(
       redirectTo: "/dashboard",
     };
   } catch (error) {
+    if (error instanceof Error) {
+        // NextAuth wraps generic errors, but sometimes custom throws propagate as CallbackRouteError
+        // Checking message content is the most reliable way for custom throws in credentials
+        if (error.message.includes("AccessDenied: Pending Approval") || error.message.includes("Pending Approval")) {
+            return { error: "Tu cuenta está pendiente de aprobación por un administrador." };
+        }
+        if (error.message.includes("AccessDenied: Account Disabled") || error.message.includes("Account Disabled")) {
+            return { error: "Tu cuenta ha sido inhabilitada. Contacta al soporte." };
+        }
+    }
+
     if (error instanceof AuthError) {
       switch (error.type) {
         case "CredentialsSignin":
-          return { error: "Credenciales inválidas" };
+        case "CallbackRouteError": // Often wraps the thrown error
+             // Try to see if the cause message matches (sometimes double wrapped)
+             const errMessage = (error.cause as any)?.err?.message || error.message;
+             if (errMessage?.includes("Pending Approval")) return { error: "Tu cuenta está pendiente de aprobación." };
+             if (errMessage?.includes("Account Disabled")) return { error: "Tu cuenta ha sido inhabilitada." };
+            
+             return { error: "Credenciales inválidas" };
         default:
           return { error: "Error de autenticación" };
       }
@@ -69,15 +86,17 @@ export async function register(
       data: { 
         name, 
         email, 
-        passwordHash,
         role: "user", // Asignar rol user por defecto
+        credential: {
+          create: { passwordHash }
+        }
       } 
     });
 
     // Auto-login after registration could be attempted here,
     // but for simplicity/safety we ask them to login.
     // Or we can call authenticate logic.
-    return { success: "Cuenta creada. Por favor inicia sesión.", redirectTo: "/login" };
+    return { success: "Registro exitoso. Tu cuenta está pendiente de aprobación por un administrador.", redirectTo: "/login" };
 
   } catch (error) {
     console.error("Register action error", error);
