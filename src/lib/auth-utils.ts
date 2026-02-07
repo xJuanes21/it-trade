@@ -74,7 +74,7 @@ export function getMenuItems(role: UserRole): NavItem[] {
       { href: "/dashboard", label: "HOME", icon: "Home" },
       { href: "/dashboard/overview", label: "OVERVIEW", icon: "Activity" },
       { href: "/dashboard/requests", label: "SOLICITUDES", icon: "Mail" },
-      { href: "/dashboard/traders", label: "TRADERS", icon: "Bot" },
+      { href: "/dashboard/traders", label: "TRADERS", icon: "ChartNoAxesCombined" },
       { href: "/dashboard/usuarios", label: "USUARIOS", icon: "Users" },
     ];
   }
@@ -83,7 +83,7 @@ export function getMenuItems(role: UserRole): NavItem[] {
   return [
     { href: "/dashboard", label: "HOME", icon: "Home" },
     { href: "/dashboard/overview", label: "OVERVIEW", icon: "Activity" },
-    { href: "/dashboard/traders", label: "TRADERS", icon: "Bot" },
+    { href: "/dashboard/traders", label: "TRADERS", icon: "ChartNoAxesCombined" },
     { href: "/dashboard/wallets", label: "WALLETS", icon: "Wallet" },
     { href: "/dashboard/operaciones", label: "OPERACIONES", icon: "Activity" },
     { href: "/dashboard/convert", label: "CONVERSOR", icon: "Calculator" },

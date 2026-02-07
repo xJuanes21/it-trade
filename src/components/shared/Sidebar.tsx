@@ -8,7 +8,7 @@ import {
   Menu,
   Mail,
   Home,
-  Bot,
+  ChartNoAxesCombined,
   Wallet,
   Activity,
   Calculator,
@@ -22,7 +22,7 @@ import { getMenuItems, SETTINGS_ITEM, type UserRole } from "@/lib/auth-utils";
 // Map icon names to components
 const iconMap: Record<string, LucideIcon> = {
   Home,
-  Bot,
+  ChartNoAxesCombined,
   Wallet,
   Activity,
   Calculator,
