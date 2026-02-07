@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import TradingBots from "@/components/dashboard/bots/TradingBots";
 
 export const metadata = {
-  title: "Bots",
+  title: "Traders",
 };
 
 export default async function BotsPage() {

@@ -36,7 +36,7 @@ export default function Mt5ConnectForm() {
       toast.success("Conexión exitosa", {
         description: "Sus credenciales se han guardado de forma segura.",
       });
-      router.push("/dashboard/bots");
+      router.push("/dashboard/traders");
     } catch (error) {
       console.error(error);
       toast.error("Error de conexión", {
@@ -55,8 +55,8 @@ export default function Mt5ConnectForm() {
           Conectar cuenta MT5
         </h2>
         <p className="text-muted-foreground mt-2">
-          Ingrese sus credenciales de MetaTrader 5 para permitir que los bots operen en su cuenta.
-          Su contraseña se almacena de forma encriptada.
+          Ingrese sus credenciales de MetaTrader 5 para permitir que los bots
+          operen en su cuenta. Su contraseña se almacena de forma encriptada.
         </p>
       </div>
 

@@ -10,13 +10,14 @@ export type UserRole = "user" | "superadmin";
 export const PROTECTED_ROUTES: Record<string, UserRole[]> = {
   "/dashboard/usuarios": ["superadmin"],
   // Bots es accesible para ambos roles
-  "/dashboard/bots": ["user", "superadmin"],
+  "/dashboard/traders": ["user", "superadmin"],
   // Rutas accesibles solo por users
   "/dashboard": ["user", "superadmin"],
   "/dashboard/wallets": ["user", "superadmin"],
   "/dashboard/operaciones": ["user", "superadmin"],
   "/dashboard/convert": ["user", "superadmin"],
   "/dashboard/configuracion": ["user", "superadmin"],
+  "/dashboard/overview": ["user", "superadmin"],
 };
 
 /**
@@ -71,8 +72,9 @@ export function getMenuItems(role: UserRole): NavItem[] {
   if (role === "superadmin") {
     return [
       { href: "/dashboard", label: "HOME", icon: "Home" },
+      { href: "/dashboard/overview", label: "OVERVIEW", icon: "Activity" },
       { href: "/dashboard/requests", label: "SOLICITUDES", icon: "Mail" },
-      { href: "/dashboard/bots", label: "BOTS", icon: "Bot" },
+      { href: "/dashboard/traders", label: "TRADERS", icon: "Bot" },
       { href: "/dashboard/usuarios", label: "USUARIOS", icon: "Users" },
     ];
   }
@@ -80,7 +82,8 @@ export function getMenuItems(role: UserRole): NavItem[] {
   // Usuario normal
   return [
     { href: "/dashboard", label: "HOME", icon: "Home" },
-    { href: "/dashboard/bots", label: "BOTS", icon: "Bot" },
+    { href: "/dashboard/overview", label: "OVERVIEW", icon: "Activity" },
+    { href: "/dashboard/traders", label: "TRADERS", icon: "Bot" },
     { href: "/dashboard/wallets", label: "WALLETS", icon: "Wallet" },
     { href: "/dashboard/operaciones", label: "OPERACIONES", icon: "Activity" },
     { href: "/dashboard/convert", label: "CONVERSOR", icon: "Calculator" },

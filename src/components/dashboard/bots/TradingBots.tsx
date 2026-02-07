@@ -128,7 +128,7 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
 
       // 3. Map to UI Model (EaConfig) using placeholders for removed fields
       const mappedBots: EaConfig[] = mt5Configs.map((item) => ({
-        ea_name: item.config.name || `Bot ${item.magic_number}`,
+        ea_name: item.config.name || `Trader ${item.magic_number}`,
         magic_number: item.magic_number,
         lot_size: item.config.lotaje,
         enabled: !item.config.stop,
@@ -167,7 +167,7 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
       setBotConfigs(configs);
     } catch (error) {
       console.error(error);
-      toast.error("Error al cargar bots");
+      toast.error("Error al cargar traders");
     } finally {
       setLoading(false);
     }
@@ -236,7 +236,7 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
       setIsLoaderOpen(true);
     } catch (error) {
       console.error(error);
-      toast.error("No pudimos iniciar tu bot. Intenta de nuevo.");
+      toast.error("No pudimos iniciar tu trader. Intenta de nuevo.");
     }
   };
 
@@ -252,27 +252,27 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
       setIsLoaderOpen(true);
     } catch (error) {
       console.error(error);
-      toast.error("No pudimos detener tu bot. Intenta de nuevo.");
+      toast.error("No pudimos detener tu trader. Intenta de nuevo.");
     }
   };
 
   const handlePause = async (bot: EaConfig) => {
     try {
       await eaService.pauseEa(bot.magic_number);
-      toast.success("Bot pausado");
+      toast.success("Trader pausado");
       setTimeout(fetchBots, 2000);
     } catch (error) {
-      toast.error("No pudimos pausar tu bot. Intenta de nuevo.");
+      toast.error("No pudimos pausar tu trader. Intenta de nuevo.");
     }
   };
 
   const handleResume = async (bot: EaConfig) => {
     try {
       await eaService.resumeEa(bot.magic_number);
-      toast.success("Bot reanudado");
+      toast.success("Trader reanudado");
       setTimeout(fetchBots, 2000);
     } catch (error) {
-      toast.error("No pudimos reanudar tu bot. Intenta de nuevo.");
+      toast.error("No pudimos reanudar tu trader. Intenta de nuevo.");
     }
   };
 
@@ -381,11 +381,11 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
         {/* Header Actions */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Mis Bots</h1>
+            <h1 className="text-2xl font-bold text-foreground">Mis Traders</h1>
             <p className="text-muted-foreground text-sm">
               {isSuperAdmin
                 ? "Gestiona tus estrategias automatizadas"
-                : "Visualiza tus bots asignados"}
+                : "Visualiza tus traders asignados"}
             </p>
           </div>
           {isSuperAdmin && (
@@ -401,7 +401,7 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
                 className="bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2 rounded-xl flex items-center gap-2 shadow-lg shadow-primary/20 transition-all"
               >
                 <Plus size={18} />
-                <span className="hidden sm:inline">Nuevo Bot</span>
+                <span className="hidden sm:inline">Nuevo Trader</span>
               </button>
             </div>
           )}
@@ -445,7 +445,7 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
               />
               <input
                 type="text"
-                placeholder="Buscar bots por nombre, símbolo..."
+                placeholder="Buscar traders por nombre, símbolo..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full bg-secondary text-foreground pl-12 pr-4 py-3 rounded-xl border border-border focus:outline-none focus:ring-2 focus:ring-ring"
@@ -502,27 +502,29 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
             {isSuperAdmin ? (
               <>
                 <h3 className="text-xl font-bold mb-2">
-                  No tienes bots configurados
+                  No tienes traders configurados
                 </h3>
                 <p className="text-muted-foreground mb-6">
-                  Crea tu primer bot para empezar a operar automáticamente.
+                  Crea tu primer trader para empezar a operar automáticamente.
                 </p>
                 <button
                   onClick={handleCreate}
                   className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-3 rounded-xl font-medium shadow-lg hover:shadow-primary/20 transition-all"
                 >
-                  Crear mi primer Bot
+                  Crear mi primer Trader
                 </button>
               </>
             ) : (
               <>
-                <h3 className="text-xl font-bold mb-2">Sin Bots Asignados</h3>
+                <h3 className="text-xl font-bold mb-2">
+                  Sin Traders Asignados
+                </h3>
                 <p className="text-muted-foreground mb-2">
-                  Aún no se te ha asignado ningún bot de trading.
+                  Aún no se te ha asignado ningún trader.
                 </p>
                 <p className="text-muted-foreground">
                   Por favor, contacta con el administrador para que te asigne un
-                  bot.
+                  trader.
                 </p>
               </>
             )}

@@ -8,11 +8,13 @@ export function ActivityPanel() {
   const { activityFeed, isLoading, refetch } = useMarketData();
 
   return (
-    <div className="rounded-2xl border border-[#2a3050] bg-[#11152a] p-6 text-white shadow-xl">
+    <div className="glass-widget widget-hover p-6 text-white h-[500px] flex flex-col">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <h3 className="text-lg font-semibold">Actividad</h3>
-          <p className="text-xs text-slate-500">Operaciones derivadas del snapshot actual</p>
+          <p className="text-xs text-slate-500">
+            Operaciones derivadas del snapshot actual
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <button className="flex items-center gap-2 rounded-lg border border-[#2a3050] bg-[#0d1121] px-3 py-1.5 text-sm text-slate-300 hover:border-[#3a4060]">
@@ -25,11 +27,14 @@ export function ActivityPanel() {
             disabled={isLoading}
             aria-label="Refrescar actividad"
           >
-            <RefreshCcw size={16} className={isLoading ? "animate-spin text-blue-400" : ""} />
+            <RefreshCcw
+              size={16}
+              className={isLoading ? "animate-spin text-blue-400" : ""}
+            />
           </button>
         </div>
       </div>
-      <div className="max-h-120 space-y-3 overflow-y-auto pr-1">
+      <div className="flex-1 overflow-y-auto pr-1 space-y-3 custom-scrollbar">
         {isLoading && !activityFeed.length
           ? [...Array(6)].map((_, index) => (
               <div
@@ -68,12 +73,20 @@ export function ActivityPanel() {
               </div>
               <div>
                 <p className="font-medium">{item.symbol}</p>
-                <p className={item.action === "Buy" ? "text-xs text-emerald-400" : "text-xs text-rose-400"}>
+                <p
+                  className={
+                    item.action === "Buy"
+                      ? "text-xs text-emerald-400"
+                      : "text-xs text-rose-400"
+                  }
+                >
                   {item.action}
                 </p>
               </div>
             </div>
-            <p className={`font-semibold ${item.action === "Buy" ? "text-emerald-300" : "text-rose-300"}`}>
+            <p
+              className={`font-semibold ${item.action === "Buy" ? "text-emerald-300" : "text-rose-300"}`}
+            >
               ${item.price.toFixed(item.precision)}
             </p>
           </div>

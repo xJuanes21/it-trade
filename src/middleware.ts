@@ -32,7 +32,7 @@ export default auth((req) => {
   
   if (!canAccessRoute(userRole, pathname)) {
     // Redirigir a dashboard según el rol
-    const redirectPath = userRole === "superadmin" ? "/dashboard/bots" : "/dashboard"
+    const redirectPath = userRole === "superadmin" ? "/dashboard/traders" : "/dashboard"
     return NextResponse.redirect(new URL(redirectPath, req.url))
   }
 

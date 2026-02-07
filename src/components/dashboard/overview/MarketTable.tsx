@@ -31,18 +31,23 @@ export function MarketTable() {
         { label: "Símbolos", value: snapshot.totalSymbols },
         { label: "Tradables", value: snapshot.tradableCount },
         { label: "Sin liquidez", value: snapshot.zeroLiquidityCount },
-        { label: "Spread medio", value: `${snapshot.averageSpread.toFixed(2)} pips` },
+        {
+          label: "Spread medio",
+          value: `${snapshot.averageSpread.toFixed(2)} pips`,
+        },
       ]
     : [];
 
   const stateLabel = useMemo(() => {
     if (isLoading) return "Actualizando mercado…";
     if (error) return "Error al sincronizar";
-    return lastUpdated ? `Actualizado ${lastUpdated.toLocaleTimeString()}` : "Sin actualizar";
+    return lastUpdated
+      ? `Actualizado ${lastUpdated.toLocaleTimeString()}`
+      : "Sin actualizar";
   }, [error, isLoading, lastUpdated]);
 
   return (
-    <div className="rounded-2xl border border-[#2a3050] bg-[#0b0f1e] p-6 text-white shadow-xl">
+    <div className="glass-widget widget-hover p-6 text-white">
       <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-sm text-blue-300">Mercado MT5</p>
@@ -87,7 +92,10 @@ export function MarketTable() {
             disabled={isLoading}
             className="flex items-center gap-2 rounded-2xl border border-[#2a3050] bg-[#050816] px-4 py-2 text-sm text-slate-300 transition hover:border-blue-500 disabled:opacity-50"
           >
-            <RefreshCcw size={16} className={isLoading ? "animate-spin text-blue-400" : ""} />
+            <RefreshCcw
+              size={16}
+              className={isLoading ? "animate-spin text-blue-400" : ""}
+            />
             Sync
           </button>
         </div>
@@ -162,27 +170,42 @@ export function MarketTable() {
                       key={instrument.symbol}
                       onClick={() => setSelectedSymbol(instrument.symbol)}
                       className={`cursor-pointer transition ${
-                        isSelected ? "bg-[#11203f]" : "hover:bg-[#0f152a] focus-within:bg-[#0f152a]"
+                        isSelected
+                          ? "bg-[#11203f]"
+                          : "hover:bg-[#0f152a] focus-within:bg-[#0f152a]"
                       }`}
                       aria-selected={isSelected}
                     >
-                      <td className="px-4 py-3 font-semibold text-white">{instrument.symbol}</td>
-                      <td className="px-4 py-3 text-slate-400">{instrument.description}</td>
+                      <td className="px-4 py-3 font-semibold text-white">
+                        {instrument.symbol}
+                      </td>
+                      <td className="px-4 py-3 text-slate-400">
+                        {instrument.description}
+                      </td>
                       <td className="px-4 py-3 text-right tabular-nums text-blue-200">
                         {instrument.bid.toFixed(instrument.digits)}
                       </td>
                       <td className="px-4 py-3 text-right tabular-nums text-emerald-200">
                         {instrument.ask.toFixed(instrument.digits)}
                       </td>
-                      <td className="px-4 py-3 text-right tabular-nums">{instrument.spread.toFixed(2)}</td>
-                      <td className="px-4 py-3 text-right tabular-nums">{instrument.spreadPips.toFixed(4)}</td>
-                      <td className="px-4 py-3 text-right tabular-nums">{instrument.contractSize}</td>
+                      <td className="px-4 py-3 text-right tabular-nums">
+                        {instrument.spread.toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 text-right tabular-nums">
+                        {instrument.spreadPips.toFixed(4)}
+                      </td>
+                      <td className="px-4 py-3 text-right tabular-nums">
+                        {instrument.contractSize}
+                      </td>
                     </tr>
                   );
                 })
               ) : (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-slate-500">
+                  <td
+                    colSpan={7}
+                    className="px-4 py-10 text-center text-slate-500"
+                  >
                     No hay resultados para los filtros actuales.
                   </td>
                 </tr>

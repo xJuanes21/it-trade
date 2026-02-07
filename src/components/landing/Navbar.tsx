@@ -27,7 +27,7 @@ export default function Navbar() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="relative h-12 w-12 transition-transform duration-300 group-hover:scale-110">
+            <div className="relative h-24 w-24 transition-transform duration-300 group-hover:scale-110">
               <Image
                 src="/logo.svg"
                 alt="IT Trade Logo"
@@ -35,9 +35,6 @@ export default function Navbar() {
                 className="object-contain"
               />
             </div>
-            <span className="text-xl font-bold tracking-tight text-white">
-              IT <span className="text-blue-500">TRADE</span>
-            </span>
           </Link>
 
           <div className="hidden md:flex md:items-center md:gap-10">
