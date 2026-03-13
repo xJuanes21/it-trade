@@ -4,6 +4,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { ThemeToggle } from "@/components/shared/ThemeToggle";
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -20,7 +21,7 @@ export default function Navbar() {
     <nav
       className={`sticky top-0 z-50 w-full transition-all duration-300 ${
         scrolled
-          ? "bg-background/80 backdrop-blur-md border-b border-white/5 py-2 shadow-lg shadow-black/20"
+          ? "bg-background/80 backdrop-blur-md border-b border-border py-2 shadow-lg"
           : "bg-transparent py-4"
       }`}
     >
@@ -40,21 +41,21 @@ export default function Navbar() {
           <div className="hidden md:flex md:items-center md:gap-10">
             <Link
               href="#features"
-              className="text-sm font-medium text-gray-400 hover:text-white transition-colors relative group"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors relative group"
             >
               Características
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-500 transition-all duration-300 group-hover:w-full"></span>
             </Link>
             <Link
               href="#stats"
-              className="text-sm font-medium text-gray-400 hover:text-white transition-colors relative group"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors relative group"
             >
               Rendimiento
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-500 transition-all duration-300 group-hover:w-full"></span>
             </Link>
             <Link
               href="#how-it-works"
-              className="text-sm font-medium text-gray-400 hover:text-white transition-colors relative group"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors relative group"
             >
               Cómo Funciona
               <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-500 transition-all duration-300 group-hover:w-full"></span>
@@ -64,17 +65,20 @@ export default function Navbar() {
           <div className="flex items-center gap-6">
             <Link
               href="/login"
-              className="text-sm font-medium text-gray-400 hover:text-white transition-colors hidden sm:block"
+              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors hidden sm:block"
             >
               Iniciar Sesión
             </Link>
             <Link
               href="/register"
-              className="neumorphic-button flex items-center gap-2 rounded-full border border-blue-500/20 bg-blue-600/10 px-6 py-2.5 text-sm font-bold text-white transition-all hover:bg-blue-600 hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] group"
+              className="neumorphic-button flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-6 py-2.5 text-sm font-bold text-foreground transition-all hover:bg-primary hover:text-primary-foreground hover:shadow-lg group"
             >
               Comenzar
               <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
             </Link>
+            <div className="ml-4 flex items-center">
+              <ThemeToggle />
+            </div>
           </div>
         </div>
       </div>

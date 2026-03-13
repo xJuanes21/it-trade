@@ -18,7 +18,7 @@ export const EquityCurve = ({ data }: EquityCurveProps) => {
       className="glass-widget-darker widget-hover p-4 md:p-5 stat-fade-in"
       style={{ animationDelay: "0.3s" }}
     >
-      <h3 className="text-xs md:text-sm font-semibold text-gray-400 mb-3">
+      <h3 className="text-xs md:text-sm font-semibold text-muted-foreground mb-3">
         Equity Curve
       </h3>
       <ResponsiveContainer width="100%" height={150}>
@@ -38,11 +38,13 @@ export const EquityCurve = ({ data }: EquityCurveProps) => {
           />
           <Tooltip
             contentStyle={{
-              background: "rgba(10, 15, 35, 0.95)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
+              background: "var(--card)",
+              border: "1px solid var(--border)",
               borderRadius: "12px",
               fontSize: "12px",
+              color: "var(--foreground)"
             }}
+            itemStyle={{ color: "var(--foreground)" }}
           />
         </AreaChart>
       </ResponsiveContainer>
@@ -60,7 +62,7 @@ export const PnLDistribution = ({ data }: PnLDistributionProps) => {
       className="glass-widget-darker widget-hover p-4 md:p-5 stat-fade-in"
       style={{ animationDelay: "0.4s" }}
     >
-      <h3 className="text-xs md:text-sm font-semibold text-gray-400 mb-3">
+      <h3 className="text-xs md:text-sm font-semibold text-muted-foreground mb-3">
         Daily P&L Distribution
       </h3>
       <ResponsiveContainer width="100%" height={120}>
@@ -68,11 +70,13 @@ export const PnLDistribution = ({ data }: PnLDistributionProps) => {
           <Bar dataKey="pnl" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
           <Tooltip
             contentStyle={{
-              background: "rgba(10, 15, 35, 0.95)",
-              border: "1px solid rgba(255, 255, 255, 0.1)",
+              background: "var(--card)",
+              border: "1px solid var(--border)",
               borderRadius: "12px",
               fontSize: "12px",
+              color: "var(--foreground)"
             }}
+            itemStyle={{ color: "var(--foreground)" }}
           />
         </BarChart>
       </ResponsiveContainer>

@@ -18,23 +18,23 @@ export const PnLSummary = ({
     >
       <div className="flex justify-between items-start mb-4">
         <div>
-          <div className="text-xs text-gray-400 mb-1 font-semibold uppercase tracking-wider">
+          <div className="text-xs text-muted-foreground mb-1 font-semibold uppercase tracking-wider">
             Gain %
           </div>
-          <div className="text-xl md:text-2xl font-bold text-emerald-400">
+          <div className="text-xl md:text-2xl font-bold text-emerald-500 dark:text-emerald-400">
             +{gains.percent}%
           </div>
         </div>
         <div className="text-right">
-          <div className="text-xs text-gray-400 mb-1 font-semibold uppercase tracking-wider">
+          <div className="text-xs text-muted-foreground mb-1 font-semibold uppercase tracking-wider">
             NET P&L
           </div>
-          <div className="text-xl md:text-2xl font-bold text-blue-400">
+          <div className="text-xl md:text-2xl font-bold text-primary">
             +${netPnL.toLocaleString()}
           </div>
         </div>
       </div>
-      <div className="text-xs text-gray-400 font-medium">
+      <div className="text-xs text-muted-foreground font-medium">
         +${gains.absolute.toLocaleString()} Abs
       </div>
     </div>

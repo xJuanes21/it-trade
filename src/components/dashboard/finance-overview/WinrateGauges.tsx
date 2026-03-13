@@ -20,7 +20,8 @@ export const SemiCircleProgress = ({
           <path
             d="M 10 60 A 50 50 0 0 1 110 60"
             fill="none"
-            stroke="rgba(71, 85, 105, 0.3)"
+            stroke="currentColor"
+            className="text-muted/30"
             strokeWidth="12"
             strokeLinecap="round"
           />
@@ -36,12 +37,12 @@ export const SemiCircleProgress = ({
           />
         </svg>
         <div className="absolute inset-0 flex items-end justify-center pb-2">
-          <span className="text-xl md:text-2xl font-bold text-white">
+          <span className="text-xl md:text-2xl font-bold text-foreground">
             {percentage.toFixed(1)}%
           </span>
         </div>
       </div>
-      <p className="text-[10px] md:text-xs text-gray-400 font-medium uppercase tracking-wider">
+      <p className="text-[10px] md:text-xs text-muted-foreground font-medium uppercase tracking-wider">
         {label}
       </p>
     </div>

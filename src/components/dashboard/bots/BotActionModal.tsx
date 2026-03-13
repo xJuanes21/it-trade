@@ -117,7 +117,7 @@ export default function BotActionModal({
           {isStopped ? (
             <button
               onClick={() => onStart(bot, localLotaje)}
-              className="col-span-2 bg-green-500 hover:bg-green-600 text-white p-4 rounded-2xl font-bold text-lg shadow-lg shadow-green-500/20 transition-all flex items-center justify-center gap-3 active:scale-95"
+              className="col-span-2 bg-green-500 hover:bg-green-600 text-primary-foreground p-4 rounded-2xl font-bold text-lg shadow-lg shadow-green-500/20 transition-all flex items-center justify-center gap-3 active:scale-95"
             >
               <Play size={24} fill="currentColor" />
               INICIAR OPERACIONES
@@ -126,7 +126,7 @@ export default function BotActionModal({
             <>
               <button
                 onClick={() => onStop(bot)}
-                className="bg-red-500 hover:bg-red-600 text-white p-4 rounded-2xl font-bold shadow-lg shadow-red-500/20 transition-all flex flex-col items-center justify-center gap-2 active:scale-95"
+                className="bg-red-500 hover:bg-red-600 text-primary-foreground p-4 rounded-2xl font-bold shadow-lg shadow-red-500/20 transition-all flex flex-col items-center justify-center gap-2 active:scale-95"
               >
                 <BotOff size={28} />
                 STOP
@@ -135,7 +135,7 @@ export default function BotActionModal({
               {isPaused ? (
                 <button
                   onClick={() => onResume(bot)}
-                  className="bg-blue-500 hover:bg-blue-600 text-white p-4 rounded-2xl font-bold shadow-lg shadow-blue-500/20 transition-all flex flex-col items-center justify-center gap-2 active:scale-95"
+                  className="bg-blue-500 hover:bg-blue-600 text-primary-foreground p-4 rounded-2xl font-bold shadow-lg shadow-blue-500/20 transition-all flex flex-col items-center justify-center gap-2 active:scale-95"
                 >
                   <Play size={28} fill="currentColor" />
                   REANUDAR
@@ -143,7 +143,7 @@ export default function BotActionModal({
               ) : (
                 <button
                   onClick={() => onPause(bot)}
-                  className="bg-amber-500 hover:bg-amber-600 text-white p-4 rounded-2xl font-bold shadow-lg shadow-amber-500/20 transition-all flex flex-col items-center justify-center gap-2 active:scale-95"
+                  className="bg-amber-500 hover:bg-amber-600 text-primary-foreground p-4 rounded-2xl font-bold shadow-lg shadow-amber-500/20 transition-all flex flex-col items-center justify-center gap-2 active:scale-95"
                 >
                   <Pause size={28} fill="currentColor" />
                   PAUSAR

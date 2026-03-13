@@ -13,6 +13,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
     }
 
+
     // 1. Get Local Accounts (Ownership Source of Truth)
     const localAccounts = await prisma.mt5Account.findMany({
       where: {
@@ -42,7 +43,7 @@ export async function GET(req: Request) {
         if (externalResponse.status === 404) {
              return NextResponse.json([]);
         }
-        return NextResponse.json({ message: "Upstream Error" }, { status: externalResponse.status });
+        return NextResponse.json({ message: "Failed to fetch accounts from proxy" }, { status: externalResponse.status });
       }
 
       const externalData = await externalResponse.json();
@@ -63,8 +64,8 @@ export async function GET(req: Request) {
       return NextResponse.json(externalData);
 
     } catch (error) {
-      console.error("Proxy error:", error);
-      return NextResponse.json({ message: "Upstream Error" }, { status: 502 });
+      console.error("Proxy error fetching accounts:", error);
+      return NextResponse.json({ message: "Error connecting to MT5 Proxy" }, { status: 502 });
     }
 
   } catch (error) {

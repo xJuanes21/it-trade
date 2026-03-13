@@ -47,28 +47,28 @@ export function MarketTable() {
   }, [error, isLoading, lastUpdated]);
 
   return (
-    <div className="glass-widget widget-hover p-6 text-white">
+    <div className="glass-widget widget-hover p-6 text-foreground">
       <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-sm text-blue-300">Mercado MT5</p>
+          <p className="text-sm text-primary">Mercado MT5</p>
           <h2 className="text-2xl font-semibold">Visión de Símbolos</h2>
-          <p className="text-xs text-slate-500">{stateLabel}</p>
+          <p className="text-xs text-muted-foreground">{stateLabel}</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative">
-            <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
+            <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <input
               type="text"
               placeholder="Buscar símbolo o descripción"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
-              className="w-64 rounded-2xl border border-[#2a3050] bg-[#050816] py-2 pl-10 pr-4 text-sm text-white placeholder:text-slate-500 focus:border-blue-500 focus:outline-none"
+              className="w-64 rounded-2xl border border-border bg-card py-2 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
             />
           </div>
           <select
             value={limit}
             onChange={(event) => setLimit(Number(event.target.value))}
-            className="rounded-2xl border border-[#2a3050] bg-[#050816] px-4 py-2 text-sm text-white focus:border-blue-500 focus:outline-none"
+            className="rounded-2xl border border-border bg-card px-4 py-2 text-sm text-foreground focus:border-primary focus:outline-none"
           >
             {limits.map((value) => (
               <option key={value} value={value}>
@@ -80,8 +80,8 @@ export function MarketTable() {
             onClick={() => setShowOnlyTradable((prev) => !prev)}
             className={`flex items-center gap-2 rounded-2xl border px-4 py-2 text-sm transition ${
               showOnlyTradable
-                ? "border-emerald-500/50 bg-emerald-500/20 text-emerald-200"
-                : "border-[#2a3050] bg-[#050816] text-slate-300 hover:border-[#3a4060]"
+                ? "border-emerald-500/50 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                : "border-border bg-card text-muted-foreground hover:border-primary/50"
             }`}
           >
             <Sparkles size={16} />
@@ -90,11 +90,11 @@ export function MarketTable() {
           <button
             onClick={refetch}
             disabled={isLoading}
-            className="flex items-center gap-2 rounded-2xl border border-[#2a3050] bg-[#050816] px-4 py-2 text-sm text-slate-300 transition hover:border-blue-500 disabled:opacity-50"
+            className="flex items-center gap-2 rounded-2xl border border-border bg-card px-4 py-2 text-sm text-muted-foreground transition hover:border-primary disabled:opacity-50"
           >
             <RefreshCcw
               size={16}
-              className={isLoading ? "animate-spin text-blue-400" : ""}
+              className={isLoading ? "animate-spin text-primary" : ""}
             />
             Sync
           </button>
@@ -102,7 +102,7 @@ export function MarketTable() {
       </header>
 
       {error ? (
-        <div className="rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm text-rose-200">
+        <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
           {error}
         </div>
       ) : null}
@@ -112,19 +112,19 @@ export function MarketTable() {
           {totals.map((card) => (
             <div
               key={card.label}
-              className="rounded-2xl border border-[#161c33] bg-[#0f1426] p-4 text-sm text-slate-400"
+              className="rounded-2xl border border-border bg-card p-4 text-sm text-muted-foreground"
             >
               <p>{card.label}</p>
-              <p className="text-2xl font-semibold text-white">{card.value}</p>
+              <p className="text-2xl font-semibold text-foreground">{card.value}</p>
             </div>
           ))}
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-2xl border border-[#161c33]">
+      <div className="overflow-hidden rounded-2xl border border-border">
         <div className="max-h-[480px] overflow-auto">
-          <table className="min-w-full divide-y divide-[#161c33] text-sm">
-            <thead className="bg-[#0f152a] text-xs uppercase tracking-wide text-slate-400">
+          <table className="min-w-full divide-y divide-border text-sm">
+            <thead className="bg-secondary text-xs uppercase tracking-wide text-muted-foreground">
               <tr>
                 <th className="px-4 py-3 text-left">Símbolo</th>
                 <th className="px-4 py-3 text-left">Descripción</th>
@@ -135,30 +135,30 @@ export function MarketTable() {
                 <th className="px-4 py-3 text-right">Contract</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#161c33] bg-[#050816]">
+            <tbody className="divide-y divide-border bg-card">
               {isLoading && !visibleInstruments.length ? (
                 [...Array(limit)].map((_, index) => (
                   <tr key={`skeleton-${index}`} className="animate-pulse">
                     <td className="px-4 py-3">
-                      <div className="h-3 w-24 rounded bg-[#111831]" />
+                      <div className="h-3 w-24 rounded bg-muted" />
                     </td>
                     <td className="px-4 py-3">
-                      <div className="h-3 w-40 rounded bg-[#111831]" />
+                      <div className="h-3 w-40 rounded bg-muted" />
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <div className="ml-auto h-3 w-16 rounded bg-[#111831]" />
+                      <div className="ml-auto h-3 w-16 rounded bg-muted" />
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <div className="ml-auto h-3 w-16 rounded bg-[#111831]" />
+                      <div className="ml-auto h-3 w-16 rounded bg-muted" />
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <div className="ml-auto h-3 w-20 rounded bg-[#111831]" />
+                      <div className="ml-auto h-3 w-20 rounded bg-muted" />
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <div className="ml-auto h-3 w-20 rounded bg-[#111831]" />
+                      <div className="ml-auto h-3 w-20 rounded bg-muted" />
                     </td>
                     <td className="px-4 py-3 text-right">
-                      <div className="ml-auto h-3 w-20 rounded bg-[#111831]" />
+                      <div className="ml-auto h-3 w-20 rounded bg-muted" />
                     </td>
                   </tr>
                 ))
@@ -171,21 +171,21 @@ export function MarketTable() {
                       onClick={() => setSelectedSymbol(instrument.symbol)}
                       className={`cursor-pointer transition ${
                         isSelected
-                          ? "bg-[#11203f]"
-                          : "hover:bg-[#0f152a] focus-within:bg-[#0f152a]"
+                          ? "bg-primary/20"
+                          : "hover:bg-secondary focus-within:bg-secondary"
                       }`}
                       aria-selected={isSelected}
                     >
-                      <td className="px-4 py-3 font-semibold text-white">
+                      <td className="px-4 py-3 font-semibold text-foreground">
                         {instrument.symbol}
                       </td>
-                      <td className="px-4 py-3 text-slate-400">
+                      <td className="px-4 py-3 text-muted-foreground">
                         {instrument.description}
                       </td>
-                      <td className="px-4 py-3 text-right tabular-nums text-blue-200">
+                      <td className="px-4 py-3 text-right tabular-nums text-blue-600 dark:text-blue-300">
                         {instrument.bid.toFixed(instrument.digits)}
                       </td>
-                      <td className="px-4 py-3 text-right tabular-nums text-emerald-200">
+                      <td className="px-4 py-3 text-right tabular-nums text-emerald-600 dark:text-emerald-400">
                         {instrument.ask.toFixed(instrument.digits)}
                       </td>
                       <td className="px-4 py-3 text-right tabular-nums">
@@ -204,7 +204,7 @@ export function MarketTable() {
                 <tr>
                   <td
                     colSpan={7}
-                    className="px-4 py-10 text-center text-slate-500"
+                    className="px-4 py-10 text-center text-muted-foreground"
                   >
                     No hay resultados para los filtros actuales.
                   </td>

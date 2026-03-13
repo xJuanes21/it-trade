@@ -97,7 +97,7 @@ export default function OperationsTable() {
               </div>
             </div>
             <div className="flex gap-3">
-              <button className="bg-[#374151] hover:bg-[#4b5563] text-white px-5 py-2.5 rounded-xl font-medium transition-all flex items-center gap-2">
+              <button className="bg-secondary hover:bg-secondary/80 text-secondary-foreground px-5 py-2.5 rounded-xl font-medium transition-all flex items-center gap-2">
                 <Edit2 size={18} />
                 Edit
               </button>
@@ -147,9 +147,9 @@ export default function OperationsTable() {
         </div>
 
         {/* Table */}
-        <div className="bg-[#0f1420] rounded-2xl overflow-hidden">
+        <div className="bg-card rounded-2xl overflow-hidden border border-border">
           {/* Table Header */}
-          <div className="grid grid-cols-[50px_250px_120px_100px_100px_150px_150px_150px_80px] gap-4 px-6 py-4 border-b border-[#1a1f35] text-muted-foreground text-sm">
+          <div className="grid grid-cols-[50px_250px_120px_100px_100px_150px_150px_150px_80px] gap-4 px-6 py-4 border-b border-border text-muted-foreground text-sm">
             <div className="text-center">#</div>
             <div>Name</div>
             <div>Price</div>
@@ -172,11 +172,11 @@ export default function OperationsTable() {
             {portfolio.map((coin) => (
               <div
                 key={coin.symbol}
-                className="grid grid-cols-[50px_250px_120px_100px_100px_150px_150px_150px_80px] gap-4 px-6 py-4 border-b border-[#1a1f35] hover:bg-[#151a2e] transition-colors items-center"
+                className="grid grid-cols-[50px_250px_120px_100px_100px_150px_150px_150px_80px] gap-4 px-6 py-4 border-b border-border hover:bg-muted/50 transition-colors items-center"
               >
                 {/* Rank with Star */}
                 <div className="flex items-center gap-2 justify-center">
-                  <button className={`${coin.favorite ? "text-yellow-400" : "text-gray-700"} hover:text-yellow-400 transition-colors`}>
+                  <button className={`${coin.favorite ? "text-yellow-400" : "text-muted-foreground/50"} hover:text-yellow-400 transition-colors`}>
                     <Star size={16} fill={coin.favorite ? "currentColor" : "none"} />
                   </button>
                   <span className="text-foreground text-sm font-medium">{coin.rank}</span>
@@ -185,7 +185,7 @@ export default function OperationsTable() {
                 {/* Name */}
                 <div className="flex items-center gap-3">
                   <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold"
+                    className="w-9 h-9 rounded-full flex items-center justify-center text-primary-foreground font-bold"
                     style={{ backgroundColor: coin.color }}
                   >
                     {coin.symbol.charAt(0)}
@@ -222,10 +222,10 @@ export default function OperationsTable() {
 
                 {/* Actions */}
                 <div className="flex gap-1 justify-center">
-                  <button className="bg-[#1a1f35] hover:bg-[#252b45] text-muted-foreground hover:text-foreground p-2 rounded-lg transition-all">
+                  <button className="bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground p-2 rounded-lg transition-all">
                     <Menu size={16} />
                   </button>
-                  <button className="bg-[#1a1f35] hover:bg-[#252b45] text-muted-foreground hover:text-foreground p-2 rounded-lg transition-all">
+                  <button className="bg-secondary hover:bg-secondary/80 text-muted-foreground hover:text-foreground p-2 rounded-lg transition-all">
                     <MoreHorizontal size={16} />
                   </button>
                 </div>

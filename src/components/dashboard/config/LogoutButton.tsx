@@ -18,7 +18,7 @@ export function LogoutButton() {
     <Button
       onClick={handleLogout}
       disabled={isPending}
-      className="w-full bg-destructive hover:bg-destructive/90 text-white"
+      className="w-full bg-destructive hover:bg-destructive/90 text-primary-foreground"
     >
       <LogOut className="mr-2 h-4 w-4" />
       {isPending ? "Cerrando sesión..." : "Cerrar sesión"}

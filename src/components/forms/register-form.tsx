@@ -28,7 +28,7 @@ function RegisterSubmitButton() {
   const { pending } = useFormStatus();
   return (
     <Button
-      className="w-full bg-primary hover:bg-primary/90 text-white mt-2"
+      className="w-full bg-primary hover:bg-primary/90 text-primary-foreground mt-2"
       disabled={pending}
     >
       {pending ? "Creando cuenta..." : "CREAR CUENTA →"}
@@ -41,7 +41,7 @@ function GoogleButton() {
   return (
     <Button
       variant="outline"
-      className="w-full bg-white text-black hover:bg-gray-200 border-none"
+      className="w-full border border-border bg-card text-foreground hover:bg-secondary"
       disabled={pending}
       type="submit"
     >
@@ -98,7 +98,7 @@ export function RegisterForm() {
           <ArrowLeft size={16} />
           Volver al inicio
         </Link>
-        <CardTitle className="text-2xl text-center text-white">
+        <CardTitle className="text-2xl text-center text-foreground">
           Crear Cuenta
         </CardTitle>
         <CardDescription className="text-center text-muted-foreground">

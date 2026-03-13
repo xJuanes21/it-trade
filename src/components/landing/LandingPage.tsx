@@ -9,7 +9,7 @@ import CallToAction from "./CallToAction";
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-[#0a0e1a] text-white selection:bg-blue-500/30">
+    <div className="min-h-screen bg-background text-foreground selection:bg-primary/30">
       <Navbar />
       <main>
         <Hero />

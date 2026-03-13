@@ -88,7 +88,7 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#060818] flex items-center justify-center text-white">
+      <div className="min-h-screen bg-background flex items-center justify-center text-foreground">
         <div className="flex flex-col items-center gap-4">
           <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
           <div className="animate-pulse text-blue-400">
@@ -101,7 +101,7 @@ export default function DashboardPage() {
 
   return (
     <MarketDataProvider>
-      <div className="min-h-screen bg-[#060818] text-white">
+      <div className="min-h-screen bg-background text-foreground">
         {showConnectModal && (
           <AccountConnectModal
             onSuccess={handleAccountConnected}
@@ -168,25 +168,25 @@ export default function DashboardPage() {
           </>
         ) : (
           !showConnectModal && (
-            <div className="min-h-screen flex flex-col items-center justify-center text-white p-4">
+            <div className="min-h-screen flex flex-col items-center justify-center text-foreground p-4">
               <div className="glass-dark rounded-2xl p-8 max-w-md w-full text-center border border-slate-700/50">
                 {/* Note: I need to import Share2 or use a generic icon. Since Share2 was in TradingDashboard, I'll use simple text or assume imports if I can add them. 
                       Wait, previous imports didn't have Share2. I should add it.
                   */}
                 <h3 className="text-xl font-bold mb-2">Conexión Requerida</h3>
-                <p className="text-slate-400 mb-8">
+                <p className="text-muted-foreground mb-8">
                   Para visualizar el dashboard, necesitas conectar una cuenta de
                   MT5 válida.
                 </p>
                 <a
                   href="/dashboard/configuracion"
-                  className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-6 rounded-xl transition-colors w-full justify-center"
+                  className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-primary-foreground font-semibold py-3 px-6 rounded-xl transition-colors w-full justify-center"
                 >
                   Ir a Configuración
                 </a>
                 <button
                   onClick={() => setShowConnectModal(true)}
-                  className="mt-4 text-sm text-slate-500 hover:text-white transition-colors"
+                  className="mt-4 text-sm text-slate-500 hover:text-foreground transition-colors"
                 >
                   Volver a intentar aquí
                 </button>

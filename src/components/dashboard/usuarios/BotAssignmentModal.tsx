@@ -174,7 +174,7 @@ export default function BotAssignmentModal({
                             isAssigned ? "bg-primary" : "bg-blue-500"
                           } shadow-lg`}
                         >
-                          <Bot size={20} className="text-white" />
+                          <Bot size={20} className="text-primary-foreground" />
                         </div>
                         <div>
                           <h4 className="font-semibold text-foreground">
@@ -200,7 +200,7 @@ export default function BotAssignmentModal({
                         }`}
                       >
                         {isAssigned && (
-                          <Check size={16} className="text-white" />
+                          <Check size={16} className="text-primary-foreground" />
                         )}
                       </div>
                     </div>

@@ -8,28 +8,28 @@ export function ActivityPanel() {
   const { activityFeed, isLoading, refetch } = useMarketData();
 
   return (
-    <div className="glass-widget widget-hover p-6 text-white h-[500px] flex flex-col">
+    <div className="glass-widget widget-hover p-6 text-foreground h-[500px] flex flex-col">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <h3 className="text-lg font-semibold">Actividad</h3>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-muted-foreground">
             Operaciones derivadas del snapshot actual
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <button className="flex items-center gap-2 rounded-lg border border-[#2a3050] bg-[#0d1121] px-3 py-1.5 text-sm text-slate-300 hover:border-[#3a4060]">
+          <button className="flex items-center gap-2 rounded-lg border border-border bg-secondary px-3 py-1.5 text-sm text-secondary-foreground hover:border-primary/50">
             Hoy
             <ChevronDown size={14} />
           </button>
           <button
-            className="rounded-lg border border-[#2a3050] bg-[#0d1121] p-2 text-slate-300 transition hover:border-blue-500 disabled:opacity-50"
+            className="rounded-lg border border-border bg-secondary p-2 text-secondary-foreground transition hover:border-primary disabled:opacity-50"
             onClick={() => refetch()}
             disabled={isLoading}
             aria-label="Refrescar actividad"
           >
             <RefreshCcw
               size={16}
-              className={isLoading ? "animate-spin text-blue-400" : ""}
+              className={isLoading ? "animate-spin text-primary" : ""}
             />
           </button>
         </div>
@@ -39,22 +39,22 @@ export function ActivityPanel() {
           ? [...Array(6)].map((_, index) => (
               <div
                 key={`activity-skeleton-${index}`}
-                className="flex items-center justify-between rounded-xl border border-[#2a3050] bg-[#0a0e1a] p-4"
+                className="flex items-center justify-between rounded-xl border border-border bg-card p-4"
               >
                 <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-[#131a33]" />
+                  <div className="h-10 w-10 rounded-full bg-muted" />
                   <div className="space-y-2">
-                    <div className="h-3 w-20 rounded bg-[#131a33]" />
-                    <div className="h-2 w-12 rounded bg-[#131a33]" />
+                    <div className="h-3 w-20 rounded bg-muted" />
+                    <div className="h-2 w-12 rounded bg-muted" />
                   </div>
                 </div>
-                <div className="h-3 w-12 rounded bg-[#131a33]" />
+                <div className="h-3 w-12 rounded bg-muted" />
               </div>
             ))
           : null}
 
         {!isLoading && !activityFeed.length ? (
-          <div className="rounded-xl border border-[#2a3050] bg-[#0a0e1a] p-4 text-sm text-slate-400">
+          <div className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
             No hay actividad disponible para los símbolos actuales.
           </div>
         ) : null}
@@ -62,11 +62,11 @@ export function ActivityPanel() {
         {activityFeed.map((item) => (
           <div
             key={item.id}
-            className="flex items-center justify-between rounded-xl border border-[#2a3050] bg-[#0a0e1a] p-4 text-sm text-slate-200 transition hover:border-[#3a4060]"
+            className="flex items-center justify-between rounded-xl border border-border bg-card p-4 text-sm text-card-foreground transition hover:border-primary/50"
           >
             <div className="flex items-center gap-3">
               <div
-                className="flex h-10 w-10 items-center justify-center rounded-full font-bold text-white"
+                className="flex h-10 w-10 items-center justify-center rounded-full font-bold text-primary-foreground"
                 style={{ backgroundColor: item.color }}
               >
                 {item.symbol.charAt(0)}
@@ -76,8 +76,8 @@ export function ActivityPanel() {
                 <p
                   className={
                     item.action === "Buy"
-                      ? "text-xs text-emerald-400"
-                      : "text-xs text-rose-400"
+                      ? "text-xs text-emerald-500 dark:text-emerald-400"
+                      : "text-xs text-destructive"
                   }
                 >
                   {item.action}
@@ -85,7 +85,7 @@ export function ActivityPanel() {
               </div>
             </div>
             <p
-              className={`font-semibold ${item.action === "Buy" ? "text-emerald-300" : "text-rose-300"}`}
+              className={`font-semibold ${item.action === "Buy" ? "text-emerald-500 dark:text-emerald-300" : "text-destructive"}`}
             >
               ${item.price.toFixed(item.precision)}
             </p>

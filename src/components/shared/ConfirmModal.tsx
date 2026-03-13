@@ -30,7 +30,7 @@ export function ConfirmModal({
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm transition-opacity">
-      <div className="bg-[#0f172a] rounded-2xl border border-white/10 shadow-2xl max-w-md w-full overflow-hidden stat-fade-in relative">
+      <div className="bg-card rounded-2xl border border-border shadow-2xl max-w-md w-full overflow-hidden stat-fade-in relative">
         {/* Top Gradient */}
         <div
           className={`h-1 w-full ${type === "danger" ? "bg-red-500" : "bg-blue-500"}`}
@@ -38,7 +38,7 @@ export function ConfirmModal({
 
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors"
+          className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors"
           disabled={isLoading}
         >
           <X size={20} />
@@ -53,12 +53,12 @@ export function ConfirmModal({
                 className={`w-6 h-6 ${type === "danger" ? "text-red-400" : "text-blue-400"}`}
               />
             </div>
-            <h3 className="text-xl font-bold text-white leading-tight">
+            <h3 className="text-xl font-bold text-foreground leading-tight">
               {title}
             </h3>
           </div>
 
-          <p className="text-slate-400 text-sm leading-relaxed mb-8">
+          <p className="text-muted-foreground text-sm leading-relaxed mb-8">
             {message}
           </p>
 
@@ -66,14 +66,14 @@ export function ConfirmModal({
             <button
               onClick={onClose}
               disabled={isLoading}
-              className="flex-1 px-6 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-semibold transition-all text-sm disabled:opacity-50"
+              className="flex-1 px-6 py-3 rounded-xl bg-secondary hover:bg-secondary/80 text-secondary-foreground font-semibold transition-all text-sm disabled:opacity-50"
             >
               {cancelText}
             </button>
             <button
               onClick={onConfirm}
               disabled={isLoading}
-              className={`flex-1 px-6 py-3 rounded-xl font-semibold transition-all text-sm flex items-center justify-center gap-2 text-white
+              className={`flex-1 px-6 py-3 rounded-xl font-semibold transition-all text-sm flex items-center justify-center gap-2 text-primary-foreground
                 ${
                   type === "danger"
                     ? "bg-red-600 hover:bg-red-500 shadow-lg shadow-red-500/20"
@@ -82,7 +82,7 @@ export function ConfirmModal({
             >
               {isLoading ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
                   Procesando...
                 </>
               ) : (

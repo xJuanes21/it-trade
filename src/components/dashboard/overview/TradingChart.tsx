@@ -145,7 +145,7 @@ export function TradingChart() {
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: "rgba(10, 15, 35, 0.95)",
+            backgroundColor: "rgba(10, 15, 35, 0.95)", // We can leave this as dark to keep the tooltip contrast, or change to var(--popover)
             titleColor: "#fff",
             bodyColor: "#9ca3af",
             borderColor: "rgba(255, 255, 255, 0.1)",
@@ -212,7 +212,7 @@ export function TradingChart() {
               <button
                 type="button"
                 onClick={() => setDropdownOpen((open) => !open)}
-                className="flex w-full items-center justify-between rounded-2xl border border-white/10 glass-inset px-4 py-2 text-left text-lg font-semibold text-white transition hover:border-blue-400 focus-visible:border-blue-500 focus-visible:outline-none"
+                className="flex w-full items-center justify-between rounded-2xl border border-border glass-inset px-4 py-2 text-left text-lg font-semibold text-foreground transition hover:border-primary/50 focus-visible:border-primary focus-visible:outline-none"
               >
                 <span className="truncate">
                   {selectedInstrument
@@ -225,14 +225,14 @@ export function TradingChart() {
                 />
               </button>
               {isDropdownOpen ? (
-                <div className="absolute z-30 mt-2 w-full rounded-2xl border border-[#1e2650] bg-[#050816]/95 p-3 shadow-2xl backdrop-blur">
-                  <div className="mb-3 flex items-center gap-2 rounded-2xl border border-white/5 glass-inset px-3 py-2 text-sm text-slate-300">
-                    <Search size={14} className="text-slate-500" />
+                <div className="absolute z-30 mt-2 w-full rounded-2xl border border-border bg-popover/95 p-3 shadow-2xl backdrop-blur">
+                  <div className="mb-3 flex items-center gap-2 rounded-2xl border border-border glass-inset px-3 py-2 text-sm text-foreground">
+                    <Search size={14} className="text-muted-foreground" />
                     <input
                       value={symbolQuery}
                       onChange={(event) => setSymbolQuery(event.target.value)}
                       placeholder="Buscar símbolo"
-                      className="flex-1 bg-transparent text-sm text-white placeholder:text-slate-500 focus:outline-none"
+                      className="flex-1 bg-transparent text-sm text-foreground placeholder:text-muted-foreground focus:outline-none"
                     />
                   </div>
                   <div className="max-h-64 space-y-1 overflow-y-auto pr-1">
@@ -250,14 +250,14 @@ export function TradingChart() {
                             }}
                             className={`flex w-full flex-col rounded-xl border px-3 py-2 text-left text-sm transition ${
                               active
-                                ? "border-blue-500/50 bg-blue-500/10 text-white"
-                                : "border-transparent glass-inset text-slate-200 hover:border-blue-500/30"
+                                ? "border-primary/50 bg-primary/10 text-primary-foreground"
+                                : "border-transparent glass-inset text-foreground hover:border-primary/30"
                             }`}
                           >
                             <span className="font-semibold">
                               {instrument.symbol}
                             </span>
-                            <span className="text-xs text-slate-400">
+                            <span className="text-xs text-muted-foreground">
                               {instrument.description}
                             </span>
                           </button>
@@ -280,8 +280,8 @@ export function TradingChart() {
                 onClick={() => setTimeframe(key)}
                 className={`rounded-full px-3 py-1 text-xs transition ${
                   timeframe === key
-                    ? "border border-blue-500/50 bg-blue-500/20 text-blue-200"
-                    : "border border-transparent glass-inset text-slate-400 hover:border-white/20"
+                    ? "border border-primary/50 bg-primary/20 text-primary"
+                    : "border border-transparent glass-inset text-muted-foreground hover:border-border"
                 }`}
               >
                 {timeframeConfig[key].label}
@@ -290,32 +290,32 @@ export function TradingChart() {
             <button
               onClick={() => refetch()}
               disabled={isLoading}
-              className="flex items-center gap-2 rounded-full border border-white/10 glass-inset px-3 py-1 text-xs text-slate-300 transition hover:border-blue-500 disabled:opacity-50"
+              className="flex items-center gap-2 rounded-full border border-border glass-inset px-3 py-1 text-xs text-foreground transition hover:border-primary disabled:opacity-50"
             >
               <RefreshCcw
                 size={14}
-                className={isLoading ? "animate-spin text-blue-400" : ""}
+                className={isLoading ? "animate-spin text-primary" : ""}
               />
               Sync
             </button>
           </div>
         </div>
         <div>
-          <p className="text-sm text-slate-400">{description}</p>
+          <p className="text-sm text-muted-foreground">{description}</p>
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-6 px-6 py-4 text-sm">
+      <div className="flex flex-wrap gap-6 px-6 py-4 text-sm bg-card">
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground/70">
             Último
           </p>
-          <p className="text-2xl font-semibold text-white">
+          <p className="text-2xl font-semibold text-foreground">
             {lastPrice.toFixed(5)}
           </p>
         </div>
         <div>
-          <p className="text-xs uppercase tracking-wide text-slate-500">
+          <p className="text-xs uppercase tracking-wide text-muted-foreground/70">
             Variación
           </p>
           <p
@@ -329,18 +329,18 @@ export function TradingChart() {
         {detail ? (
           <>
             <div>
-              <p className="text-xs uppercase tracking-wide text-slate-500">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground/70">
                 Volumen mín.
               </p>
-              <p className="text-2xl font-semibold text-white">
+              <p className="text-2xl font-semibold text-foreground">
                 {detail.volume_min}
               </p>
             </div>
             <div>
-              <p className="text-xs uppercase tracking-wide text-slate-500">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground/70">
                 Volumen máx.
               </p>
-              <p className="text-2xl font-semibold text-white">
+              <p className="text-2xl font-semibold text-foreground">
                 {detail.volume_max}
               </p>
             </div>
@@ -348,7 +348,7 @@ export function TradingChart() {
         ) : null}
       </div>
 
-      <div className="flex-1 min-h-[320px] rounded-2xl border border-white/5 glass-inset p-4">
+      <div className="flex-1 min-h-[320px] rounded-2xl border border-border bg-card p-4">
         {error ? (
           <div className="flex h-full items-center justify-center text-sm text-rose-300">
             {error}

@@ -83,12 +83,12 @@ export default function UsersTable({ users }: UsersTableProps) {
       label: "Usuario",
       render: (user) => (
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-purple-600 text-sm font-bold text-white">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-purple-600 text-sm font-bold text-primary-foreground">
             {user.name?.charAt(0).toUpperCase() ||
               user.email.charAt(0).toUpperCase()}
           </div>
           <div>
-            <p className="font-medium text-white">
+            <p className="font-medium text-foreground">
               {user.name || "Sin nombre"}
             </p>
             <p className="text-xs text-slate-400">{user.email}</p>
@@ -101,7 +101,7 @@ export default function UsersTable({ users }: UsersTableProps) {
       label: "Rol",
       render: (user) => (
         <span
-          className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
+          className={`inline-flex rounded-full px-3 py-1 text-xs text-foreground font-medium ${
             user.role === "superadmin"
               ? "bg-purple-500/20 text-purple-200"
               : "bg-blue-500/20 text-blue-200"
@@ -130,10 +130,10 @@ export default function UsersTable({ users }: UsersTableProps) {
       align: "center",
       render: (user) => (
         <span
-          className={`inline-flex rounded-full px-3 py-1 text-xs font-medium ${
+          className={`inline-flex rounded-full px-3 py-1 text-xs font-medium  ${
             user.emailVerified
-              ? "bg-green-500/20 text-green-200"
-              : "bg-yellow-500/20 text-yellow-200"
+              ? "bg-green-500/20 text-foreground"
+              : "bg-yellow-500/20 text-foreground"
           }`}
         >
           {user.emailVerified ? "Sí" : "No"}

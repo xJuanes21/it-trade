@@ -15,6 +15,12 @@ export function PerformanceDonut() {
 
     if (chartRef.current) chartRef.current.destroy();
 
+    const isDark = document.documentElement.classList.contains("dark");
+    const textColor = isDark ? "#94a3b8" : "#64748b";
+    const tooltipBg = isDark ? "#1e293b" : "#ffffff";
+    const tooltipBorder = isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)";
+    const tooltipText = isDark ? "#f1f5f9" : "#1e293b";
+
     chartRef.current = new Chart(ctx, {
       type: "doughnut",
       data: {
@@ -35,10 +41,10 @@ export function PerformanceDonut() {
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: "#1a1f3a",
-            titleColor: "#fff",
-            bodyColor: "#9ca3af",
-            borderColor: "#2a3050",
+            backgroundColor: tooltipBg,
+            titleColor: tooltipText,
+            bodyColor: textColor,
+            borderColor: tooltipBorder,
             borderWidth: 1,
             padding: 12,
           },

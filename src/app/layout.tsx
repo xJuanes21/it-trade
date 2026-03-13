@@ -65,13 +65,41 @@ export const metadata: Metadata = {
   },
 };
 
+const themeScript = `
+  (function() {
+    try {
+      var d = document.documentElement;
+      var c = d.classList;
+      c.remove('light', 'dark');
+      var e = localStorage.getItem('it-trade-theme');
+      if (e === 'system' || !e) {
+        var t = '(prefers-color-scheme: dark)';
+        var m = window.matchMedia(t);
+        if (m.media !== t || m.matches) {
+          d.classList.add('dark');
+          d.style.colorScheme = 'dark';
+        } else {
+          d.classList.add('light');
+          d.style.colorScheme = 'light';
+        }
+      } else if (e) {
+        c.add(e || '');
+        d.style.colorScheme = e;
+      }
+    } catch (e) {}
+  })();
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
@@ -86,7 +114,7 @@ export default function RootLayout({
                 border: "1px solid #3b82f6",
                 color: "var(--foreground)",
               },
-              className: "bg-background text-foreground border-blue-500",
+              className: "bg-background text-foreground border-border",
             }}
           />
         </AppProviders>

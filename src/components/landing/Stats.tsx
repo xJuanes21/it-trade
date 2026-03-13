@@ -25,7 +25,7 @@ export default function Stats() {
               style={{ animationDelay: `${index * 150}ms` }}
             >
               <div className="flex flex-col items-center">
-                <h4 className="text-4xl md:text-6xl font-black text-white mb-3 tracking-tighter group-hover:scale-105 transition-transform">
+                <h4 className="text-4xl md:text-6xl font-black text-foreground mb-3 tracking-tighter group-hover:scale-105 transition-transform">
                   {item.value}
                 </h4>
                 <div className="h-1.5 w-12 bg-blue-600/20 rounded-full mb-4 group-hover:w-20 transition-all duration-300"></div>

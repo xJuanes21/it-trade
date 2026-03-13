@@ -19,10 +19,10 @@ interface TradeCountChartProps {
 export const TradeCountChart = ({ data }: TradeCountChartProps) => (
   <div className="glass-widget widget-hover p-4 h-[280px] flex flex-col">
     <div className="flex items-center justify-between mb-4">
-      <h3 className="text-[13px] font-semibold text-gray-400">
+      <h3 className="text-[13px] font-semibold text-muted-foreground">
         Total Operaciones
       </h3>
-      <span className="text-[11px] text-blue-400 font-bold bg-blue-400/10 px-2 py-0.5 rounded-full">
+      <span className="text-[11px] text-primary font-bold bg-primary/10 px-2 py-0.5 rounded-full">
         EN VIVO
       </span>
     </div>
@@ -45,11 +45,13 @@ export const TradeCountChart = ({ data }: TradeCountChartProps) => (
           />
           <Tooltip
             contentStyle={{
-              backgroundColor: "#0f172a",
-              border: "1px solid #1e293b",
+              backgroundColor: "var(--card)",
+              border: "1px solid var(--border)",
               borderRadius: "8px",
               fontSize: "11px",
+              color: "var(--foreground)"
             }}
+            itemStyle={{ color: "var(--foreground)" }}
           />
         </AreaChart>
       </ResponsiveContainer>
@@ -67,10 +69,10 @@ export const ProfitChart = ({ data }: ProfitChartProps) => {
   return (
     <div className="glass-widget widget-hover p-4 h-[280px] flex flex-col">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-[13px] font-semibold text-gray-400">
+        <h3 className="text-[13px] font-semibold text-muted-foreground">
           Ganancia Diaria
         </h3>
-        <span className="text-[18px] font-bold text-white">
+        <span className="text-[18px] font-bold text-foreground">
           ${totalProfit.toLocaleString("en-US", { minimumFractionDigits: 2 })}
         </span>
       </div>
@@ -89,16 +91,18 @@ export const ProfitChart = ({ data }: ProfitChartProps) => {
               dataKey="day"
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 10, fill: "#64748b" }}
+              tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
             />
             <Tooltip
-              cursor={{ fill: "rgba(255,255,255,0.05)" }}
+              cursor={{ fill: "var(--secondary)" }}
               contentStyle={{
-                backgroundColor: "#0f172a",
-                border: "1px solid #1e293b",
+                backgroundColor: "var(--card)",
+                border: "1px solid var(--border)",
                 borderRadius: "8px",
                 fontSize: "11px",
+                color: "var(--foreground)"
               }}
+              itemStyle={{ color: "var(--foreground)" }}
             />
           </BarChart>
         </ResponsiveContainer>

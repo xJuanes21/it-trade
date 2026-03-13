@@ -53,7 +53,7 @@ export const PerformanceMetrics = ({
         className="glass-widget-darker widget-hover p-4 md:p-5 stat-fade-in"
         style={{ animationDelay: "0.1s" }}
       >
-        <div className="text-2xl md:text-3xl font-bold text-white mb-1">
+        <div className="text-2xl md:text-3xl font-bold text-foreground mb-1">
           {dayWin}
         </div>
         <div className="text-xs text-gray-400 mb-2">Day Win / Day Loss</div>
@@ -63,7 +63,7 @@ export const PerformanceMetrics = ({
         className="glass-widget-darker widget-hover p-4 md:p-5 stat-fade-in"
         style={{ animationDelay: "0.15s" }}
       >
-        <div className="text-2xl md:text-3xl font-bold text-white mb-1">
+        <div className="text-2xl md:text-3xl font-bold text-foreground mb-1">
           {avgWin}
         </div>
         <div className="text-xs text-gray-400 mb-2">Avg Win / Avg Loss</div>

@@ -67,14 +67,14 @@ export function ConnectedAccountsList({
         isLoading={isDisconnecting}
       />
 
-      <div className="bg-[#1e293b] rounded-xl p-6 border border-slate-700/50">
+      <div className="bg-card rounded-xl p-6 border border-border">
         <div className="flex items-center gap-4 mb-6">
           <div className="w-12 h-12 bg-green-500/10 rounded-full flex items-center justify-center">
             <ShieldCheck className="w-6 h-6 text-green-400" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-white">Cuentas Conectadas</h2>
-            <p className="text-slate-400 text-sm">
+            <h2 className="text-xl font-bold text-foreground">Cuentas Conectadas</h2>
+            <p className="text-muted-foreground text-sm">
               Gestiona tus cuentas de MetaTrader 5 vinculadas.
             </p>
           </div>
@@ -84,7 +84,7 @@ export function ConnectedAccountsList({
           {accounts.map((account) => (
             <div
               key={account.id}
-              className="bg-[#0f172a] rounded-lg p-4 border border-slate-700 hover:border-blue-500 transition-colors group"
+              className="bg-secondary rounded-lg p-4 border border-border hover:border-blue-500 transition-colors group"
             >
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
@@ -92,10 +92,10 @@ export function ConnectedAccountsList({
                     <User className="w-5 h-5 text-blue-400" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-white">
+                    <h3 className="font-semibold text-foreground">
                       Login: {account.login}
                     </h3>
-                    <div className="flex items-center gap-2 text-xs text-slate-400 mt-1">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                       <Server size={12} />
                       <span>{account.server}</span>
                     </div>
@@ -103,7 +103,7 @@ export function ConnectedAccountsList({
                 </div>
 
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-800/50 px-3 py-1.5 rounded-full hidden sm:flex">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted px-3 py-1.5 rounded-full hidden sm:flex">
                     <Calendar size={12} />
                     <span>
                       Conectado:{" "}
@@ -114,7 +114,7 @@ export function ConnectedAccountsList({
                   <button
                     onClick={() => setIsModalOpen(true)}
                     disabled={isDisconnecting}
-                    className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
+                    className="p-2 text-muted-foreground hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-all"
                     title="Desconectar cuenta"
                   >
                     <Trash2 className="w-5 h-5" />
@@ -127,7 +127,7 @@ export function ConnectedAccountsList({
       </div>
 
       <div className="text-center">
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-muted-foreground">
           Al desconectar, podrás vincular una nueva cuenta inmediatamente.
         </p>
       </div>

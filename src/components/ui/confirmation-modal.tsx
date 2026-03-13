@@ -60,7 +60,7 @@ export function ConfirmationModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
       <div
-        className="relative w-full max-w-sm overflow-hidden bg-[#111111] border border-[var(--border)] rounded-xl shadow-2xl animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-sm overflow-hidden bg-background border border-border rounded-xl shadow-2xl animate-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
       >
@@ -71,10 +71,10 @@ export function ConfirmationModal({
             >
               <AlertTriangle size={20} />
             </div>
-            <h2 className="text-lg font-semibold text-white">{title}</h2>
+            <h2 className="text-lg font-semibold text-foreground">{title}</h2>
           </div>
 
-          <p className="text-sm text-gray-400 mb-6 leading-relaxed">
+          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
             {description}
           </p>
 
@@ -82,7 +82,7 @@ export function ConfirmationModal({
             <button
               onClick={onClose}
               disabled={isLoading}
-              className="px-4 py-2 text-sm font-medium text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+              className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
             >
               {cancelText}
             </button>
@@ -91,8 +91,8 @@ export function ConfirmationModal({
               disabled={isLoading}
               className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 ${
                 variant === "danger"
-                  ? "bg-red-500 hover:bg-red-600 text-white"
-                  : "bg-blue-600 hover:bg-blue-700 text-white"
+                  ? "bg-red-500 hover:bg-red-600 text-primary-foreground"
+                  : "bg-blue-600 hover:bg-blue-700 text-primary-foreground"
               }`}
             >
               {isLoading && <Loader2 size={14} className="animate-spin" />}

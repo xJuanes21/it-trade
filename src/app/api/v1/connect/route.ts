@@ -33,7 +33,13 @@ export async function POST(req: Request) {
         "Content-Type": "application/json",
         "Accept": "application/json"
       },
-      body: JSON.stringify({ login, password, server }),
+      body: JSON.stringify({ 
+        login: parseInt(login, 10), 
+        password, 
+        server,
+        timeout: 10000,
+        portable: false
+      }),
     });
 
     if (!externalResponse.ok) {
@@ -66,8 +72,8 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json({ 
-      success: true, 
+    return NextResponse.json({
+      success: true,
       accountId: account.id,
       externalData // Return external data just in case
     });

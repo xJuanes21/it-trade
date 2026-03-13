@@ -37,10 +37,10 @@ export const SymbolsTraded = ({ data }: SymbolsTradedProps) => {
   return (
     <div className="glass-widget widget-hover p-5 h-[280px] flex flex-col">
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-[13px] font-semibold text-gray-400">
+        <h3 className="text-[13px] font-semibold text-muted-foreground">
           Símbolos Más Operados
         </h3>
-        <span className="text-[11px] text-gray-500 font-medium">Histórico</span>
+        <span className="text-[11px] text-muted-foreground/60 font-medium">Histórico</span>
       </div>
 
       <div className="flex-1 w-full min-h-[120px]">
@@ -56,16 +56,18 @@ export const SymbolsTraded = ({ data }: SymbolsTradedProps) => {
               type="category"
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 11, fill: "#94a3b8", fontWeight: "bold" }}
+              tick={{ fontSize: 11, fill: "var(--muted-foreground)", fontWeight: "bold" }}
             />
             <Tooltip
-              cursor={{ fill: "rgba(255,255,255,0.05)" }}
+              cursor={{ fill: "var(--secondary)" }}
               contentStyle={{
-                backgroundColor: "#0f172a",
-                border: "1px solid #1e293b",
+                backgroundColor: "var(--card)",
+                border: "1px solid var(--border)",
                 borderRadius: "8px",
                 fontSize: "11px",
+                color: "var(--foreground)"
               }}
+              itemStyle={{ color: "var(--foreground)" }}
             />
             <Bar dataKey="trades" radius={[0, 4, 4, 0]} barSize={12}>
               {sortedData.slice(0, 5).map((entry, index) => (
@@ -91,9 +93,9 @@ export const SymbolsTraded = ({ data }: SymbolsTradedProps) => {
                 className="w-1.5 h-1.5 rounded-full"
                 style={{ backgroundColor: item.color }}
               />
-              <span className="text-gray-400 font-medium">{item.name}</span>
+              <span className="text-muted-foreground font-medium">{item.name}</span>
             </div>
-            <span className="text-white font-bold">{item.trades} ops</span>
+            <span className="text-foreground font-bold">{item.trades} ops</span>
           </div>
         ))}
       </div>

@@ -49,12 +49,12 @@ export default function Features() {
           <span className="text-blue-500 text-xs font-black uppercase tracking-[0.3em] mb-4 block">
             Potencia tu Capital
           </span>
-          <h2 className="text-4xl md:text-6xl font-black text-white mb-6 tracking-tighter">
+          <h2 className="text-4xl md:text-6xl font-black text-foreground mb-6 tracking-tighter">
             Tecnología de Punta <br />
-            <span className="text-gray-500">para tus Inversiones</span>
+            <span className="text-muted-foreground">para tus Inversiones</span>
           </h2>
           <div className="h-1.5 w-24 bg-blue-600 rounded-full mx-auto mb-8"></div>
-          <p className="text-gray-400 text-lg md:text-xl font-medium max-w-2xl mx-auto">
+          <p className="text-muted-foreground text-lg md:text-xl font-medium max-w-2xl mx-auto">
             Combinamos lo mejor del análisis técnico tradicional con el poder de
             la inteligencia artificial.
           </p>
@@ -64,18 +64,18 @@ export default function Features() {
           {features.map((feature, index) => (
             <div
               key={index}
-              className="neumorphic-outset hover:neumorphic-inset p-10 rounded-[2.5rem] transition-all duration-500 group animate-fade-in-up"
+              className="neumorphic-outset hover:-translate-y-2 hover:border-primary/30 hover:shadow-[0_10px_30px_rgba(37,99,235,0.1)] p-10 rounded-[2.5rem] transition-all duration-500 group animate-fade-in-up"
               style={{ animationDelay: `${index * 100}ms` }}
             >
-              <div className="w-16 h-16 neumorphic-outset rounded-2xl flex items-center justify-center mb-8 text-blue-500 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+              <div className="w-16 h-16 neumorphic-outset rounded-2xl flex items-center justify-center mb-8 text-blue-500 group-hover:scale-110 group-hover:text-foreground transition-all duration-300">
                 <feature.icon size={30} strokeWidth={2.5} />
               </div>
 
-              <h3 className="text-2xl font-black text-white mb-5 tracking-tight">
+              <h3 className="text-2xl font-black text-foreground mb-5 tracking-tight">
                 {feature.title}
               </h3>
 
-              <p className="text-gray-400 leading-relaxed font-medium group-hover:text-gray-300 transition-colors">
+              <p className="text-muted-foreground leading-relaxed font-medium group-hover:text-foreground transition-colors">
                 {feature.description}
               </p>
             </div>

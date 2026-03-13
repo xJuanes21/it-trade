@@ -19,13 +19,13 @@ export const DashboardHeader = ({
   isSyncing = false,
 }: DashboardHeaderProps) => {
   return (
-    <div className="border-b border-white/5 glass-widget !rounded-none backdrop-blur-md sticky top-0 z-10">
+    <div className="border-b border-border glass-widget !rounded-none backdrop-blur-md sticky top-0 z-10">
       <div className="px-6 py-3.5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold mb-0.5 text-white">
-            Hola, <span className="text-blue-400">{userName}</span>
+          <h1 className="text-xl font-bold mb-0.5 text-foreground">
+            Hola, <span className="text-primary">{userName}</span>
           </h1>
-          <div className="flex items-center gap-3 text-[12px] text-gray-400">
+          <div className="flex items-center gap-3 text-[12px] text-muted-foreground">
             <span className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
               Última Sinc: {lastSync}
@@ -33,7 +33,7 @@ export const DashboardHeader = ({
             <button
               onClick={onSync}
               disabled={isSyncing}
-              className={`flex items-center gap-1.5 hover:text-white transition-colors px-2 py-0.5 rounded-md hover:bg-white/5 border border-transparent hover:border-white/10 ${isSyncing ? "animate-pulse" : ""}`}
+              className={`flex items-center gap-1.5 hover:text-foreground transition-colors px-2 py-0.5 rounded-md hover:bg-secondary border border-transparent hover:border-border ${isSyncing ? "animate-pulse" : ""}`}
             >
               <RefreshCw
                 className={`w-3 h-3 ${isSyncing ? "animate-spin" : ""}`}
@@ -46,16 +46,16 @@ export const DashboardHeader = ({
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
-          <div className="flex items-center gap-2 glass-widget !rounded-xl px-3 py-1.5 border border-white/10">
-            <div className="w-1.5 h-1.5 rounded-full bg-yellow-400"></div>
-            <span className="text-[12px] font-semibold text-white uppercase">
+          <div className="flex items-center gap-2 glass-widget !rounded-xl px-3 py-1.5 border border-border">
+            <div className="w-1.5 h-1.5 rounded-full bg-yellow-500"></div>
+            <span className="text-[12px] font-semibold text-foreground uppercase">
               {accountType}
             </span>
-            <span className="text-[11px] text-gray-400">- ITW1149</span>
-            <Share2 className="w-3.5 h-3.5 text-gray-400 ml-1 cursor-pointer hover:text-white" />
+            <span className="text-[11px] text-muted-foreground">- ITW1149</span>
+            <Share2 className="w-3.5 h-3.5 text-muted-foreground ml-1 cursor-pointer hover:text-foreground" />
           </div>
 
-          <button className="glass-widget !rounded-xl px-3 py-1.5 text-[12px] hover:bg-white/5 border border-white/10 transition flex items-center gap-1.5 text-white">
+          <button className="glass-widget !rounded-xl px-3 py-1.5 text-[12px] hover:bg-secondary border border-border transition flex items-center gap-1.5 text-foreground">
             <svg
               className="w-3.5 h-3.5"
               fill="none"
@@ -79,13 +79,13 @@ export const DashboardHeader = ({
             <Edit className="w-3 h-3" />
           </button>
 
-          <button className="glass-widget !rounded-xl px-3 py-1.5 text-[12px] hover:bg-white/5 border border-white/10 transition flex items-center gap-1.5 text-white">
-            <Calendar className="w-3.5 h-3.5 text-blue-400" />
+          <button className="glass-widget !rounded-xl px-3 py-1.5 text-[12px] hover:bg-secondary border border-border transition flex items-center gap-1.5 text-foreground">
+            <Calendar className="w-3.5 h-3.5 text-primary" />
             Dic 23, 2025 - Hoy
           </button>
 
-          <button className="glass-widget !rounded-xl p-1.5 hover:bg-white/5 border border-white/10 transition">
-            <Filter className="w-4 h-4 text-blue-400" />
+          <button className="glass-widget !rounded-xl p-1.5 hover:bg-secondary border border-border transition">
+            <Filter className="w-4 h-4 text-primary" />
           </button>
         </div>
       </div>

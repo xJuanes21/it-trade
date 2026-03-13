@@ -15,6 +15,13 @@ export function GainsChart() {
 
     if (chartRef.current) chartRef.current.destroy();
 
+    const isDark = document.documentElement.classList.contains("dark");
+    const gridColor = isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)";
+    const textColor = isDark ? "#94a3b8" : "#64748b";
+    const tooltipBg = isDark ? "#1e293b" : "#ffffff";
+    const tooltipBorder = isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)";
+    const tooltipText = isDark ? "#f1f5f9" : "#1e293b";
+
     const gradient = ctx.createLinearGradient(0, 0, 0, 300);
     gradient.addColorStop(0, "rgba(59, 130, 246, 0.3)");
     gradient.addColorStop(1, "rgba(59, 130, 246, 0)");
@@ -50,10 +57,10 @@ export function GainsChart() {
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: "#1a1f3a",
-            titleColor: "#fff",
-            bodyColor: "#9ca3af",
-            borderColor: "#2a3050",
+            backgroundColor: tooltipBg,
+            titleColor: tooltipText,
+            bodyColor: textColor,
+            borderColor: tooltipBorder,
             borderWidth: 1,
             padding: 12,
             displayColors: false,
@@ -68,12 +75,12 @@ export function GainsChart() {
         scales: {
           x: {
             grid: { display: false },
-            ticks: { color: "#6b7280", font: { size: 11 } },
+            ticks: { color: textColor, font: { size: 11 } },
           },
           y: {
-            grid: { color: "#1a1f35" },
+            grid: { color: gridColor },
             ticks: {
-              color: "#6b7280",
+              color: textColor,
               font: { size: 11 },
               callback: (value) => `$${value}`,
             },

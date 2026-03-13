@@ -552,7 +552,7 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div className="bg-blue-500 w-12 h-12 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20 group-hover:scale-105 transition-transform">
-                        <Zap size={24} className="text-white" />
+                        <Zap size={24} className="text-primary-foreground" />
                       </div>
                       <div>
                         <h3 className="text-foreground font-bold text-lg">

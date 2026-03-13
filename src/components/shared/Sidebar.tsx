@@ -64,8 +64,8 @@ const NavLinks = ({
           key={item.href}
           className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-colors ${
             isItemActive
-              ? "bg-[#60a5fa] text-white"
-              : "text-white/80 hover:text-white hover:bg-[#60a5fa]"
+              ? "bg-primary text-primary-foreground"
+              : "text-foreground/80 hover:text-foreground hover:bg-muted"
           }`}
           href={item.href}
           onClick={onItemClick}
@@ -81,8 +81,8 @@ const NavLinks = ({
     <Link
       className={`mt-1 inline-flex items-center gap-3 px-4 py-2 rounded-xl text-[12px] font-medium transition-colors ${
         isActive(SETTINGS_ITEM.href)
-          ? "bg-[#60a5fa] text-white"
-          : "text-white/80 hover:text-white hover:bg-[#60a5fa]"
+          ? "bg-primary text-primary-foreground"
+          : "text-foreground/80 hover:text-foreground hover:bg-muted"
       }`}
       href={SETTINGS_ITEM.href}
       onClick={onItemClick}
@@ -132,7 +132,7 @@ export default function Sidebar({ user: initialUser }: SidebarProps) {
       </button>
 
       {/* Desktop sidebar (fixed) */}
-      <aside className="hidden md:block fixed left-0 top-0 bottom-0 w-64 bg-secondary text-white p-6 overflow-hidden">
+      <aside className="hidden md:block fixed left-0 top-0 bottom-0 w-64 bg-secondary text-secondary-foreground p-6 overflow-hidden">
         <div className="mb-8 flex flex-col items-center w-full">
           <Image
             src="/logo.svg"
@@ -155,10 +155,10 @@ export default function Sidebar({ user: initialUser }: SidebarProps) {
       {mobileOpen && (
         <>
           <div
-            className="fixed inset-0 bg-black/50 z-40"
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40"
             onClick={() => setMobileOpen(false)}
           />
-          <aside className="fixed left-0 top-0 bottom-0 w-64 bg-secondary text-white p-6 z-50 overflow-hidden">
+          <aside className="fixed left-0 top-0 bottom-0 w-64 bg-secondary text-secondary-foreground p-6 z-50 overflow-hidden">
             <div className="mb-8 flex flex-col items-center w-full">
               <Image
                 src="/logo.svg"

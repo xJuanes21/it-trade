@@ -26,7 +26,7 @@ export const TradingCalendar = ({
       {/* Calendar Header */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4 md:mb-6">
         <div className="flex items-center gap-3">
-          <button className="text-gray-400 hover:text-white transition p-1">
+          <button className="text-muted-foreground hover:text-foreground transition p-1">
             <svg
               className="w-5 h-5"
               fill="none"
@@ -42,7 +42,7 @@ export const TradingCalendar = ({
             </svg>
           </button>
           <h2 className="text-xl md:text-2xl font-bold">January 2026</h2>
-          <button className="text-gray-400 hover:text-white transition p-1">
+          <button className="text-gray-400 hover:text-foreground transition p-1">
             <svg
               className="w-5 h-5"
               fill="none"
@@ -62,20 +62,20 @@ export const TradingCalendar = ({
         {/* Trading Summary (Quick view) */}
         <div className="grid grid-cols-2 md:flex md:items-center gap-3 md:gap-6 text-xs md:text-sm">
           <div className="flex items-center gap-2">
-            <span className="text-blue-400 font-medium">Trades</span>
-            <span className="text-white font-bold">479</span>
+            <span className="text-primary font-medium">Trades</span>
+            <span className="text-foreground font-bold">479</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-emerald-400 font-medium">Wins</span>
-            <span className="text-white font-bold">368</span>
+            <span className="text-emerald-500 font-medium">Wins</span>
+            <span className="text-foreground font-bold">368</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-cyan-400 font-medium">Profits</span>
-            <span className="text-white font-bold">4598.14</span>
+            <span className="text-cyan-500 font-medium">Profits</span>
+            <span className="text-foreground font-bold">4598.14</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-purple-400 font-medium">Percent</span>
-            <span className="text-white font-bold">113.62%</span>
+            <span className="text-purple-500 font-medium">Percent</span>
+            <span className="text-foreground font-bold">113.62%</span>
           </div>
         </div>
       </div>
@@ -89,7 +89,7 @@ export const TradingCalendar = ({
               (day) => (
                 <div
                   key={day}
-                  className="text-center text-xs font-semibold text-gray-500 py-2"
+                  className="text-center text-xs font-semibold text-muted-foreground py-2"
                 >
                   {day}
                 </div>
@@ -119,10 +119,10 @@ export const TradingCalendar = ({
                             <span
                               className={`text-[10px] md:text-xs font-bold px-1 py-0.5 rounded ${
                                 day.roi
-                                  ? "bg-blue-500/20 text-blue-400"
+                                  ? "bg-primary/20 text-primary"
                                   : day.loss
-                                    ? "bg-red-500/20 text-red-400"
-                                    : "bg-gray-500/20 text-gray-400"
+                                    ? "bg-destructive/20 text-destructive"
+                                    : "bg-muted text-muted-foreground"
                               }`}
                             >
                               {day.trades}
@@ -131,18 +131,18 @@ export const TradingCalendar = ({
                         </div>
                         <div
                           className={`text-xs md:text-sm font-bold ${
-                            day.pnl >= 0 ? "text-emerald-400" : "text-red-400"
+                            day.pnl >= 0 ? "text-emerald-500 dark:text-emerald-400" : "text-destructive"
                           }`}
                         >
                           ${Math.abs(day.pnl).toFixed(2)}
                         </div>
-                        <div className="text-[10px] md:text-xs text-gray-400">
+                        <div className="text-[10px] md:text-xs text-muted-foreground">
                           {day.percent && day.percent > 0 ? "+" : ""}
                           {day.percent}%
                         </div>
                       </>
                     ) : (
-                      <span className="text-xs md:text-sm font-bold text-gray-600">
+                      <span className="text-xs md:text-sm font-bold text-muted-foreground/30">
                         {day.date}
                       </span>
                     )}
@@ -153,7 +153,7 @@ export const TradingCalendar = ({
               <div
                 className={`glass-widget p-2 md:p-3 min-h-[60px] md:min-h-[80px] flex flex-col justify-center items-center border-2 ${
                   weekTotals[weekIdx]?.isNegative
-                    ? "border-red-500/30"
+                    ? "border-destructive/30"
                     : "border-emerald-500/30"
                 }`}
               >
@@ -162,13 +162,13 @@ export const TradingCalendar = ({
                     <div
                       className={`text-sm md:text-lg font-bold ${
                         weekTotals[weekIdx].isNegative
-                          ? "text-red-400"
-                          : "text-emerald-400"
+                          ? "text-destructive"
+                          : "text-emerald-500 dark:text-emerald-400"
                       }`}
                     >
                       ${weekTotals[weekIdx].total}
                     </div>
-                    <div className="text-[10px] md:text-xs text-gray-400">
+                    <div className="text-[10px] md:text-xs text-muted-foreground">
                       {weekTotals[weekIdx].percent > 0 ? "+" : ""}
                       {weekTotals[weekIdx].percent}%
                     </div>
@@ -179,17 +179,17 @@ export const TradingCalendar = ({
           ))}
 
           {/* Month Total Row */}
-          <div className="grid grid-cols-8 gap-1 mt-4 pt-4 border-t border-gray-700">
+          <div className="grid grid-cols-8 gap-1 mt-4 pt-4 border-t border-border">
             {[1, 2, 3, 4, 5, 6, 7].map((i) => (
-              <div key={i} className="text-center text-gray-600 text-xs">
+              <div key={i} className="text-center text-muted-foreground/20 text-xs">
                 -
               </div>
             ))}
-            <div className="glass-widget p-3 md:p-4 border-2 border-blue-500/40">
-              <div className="text-lg md:text-2xl font-bold text-blue-400 text-center">
+            <div className="glass-widget p-3 md:p-4 border-2 border-primary/40">
+              <div className="text-lg md:text-2xl font-bold text-primary text-center">
                 ${monthTotal.total}
               </div>
-              <div className="text-xs md:text-sm text-gray-400 text-center">
+              <div className="text-xs md:text-sm text-muted-foreground text-center">
                 +{monthTotal.percent}%
               </div>
             </div>

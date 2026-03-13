@@ -60,7 +60,7 @@ export function AccountConnectModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="bg-[#0f172a] rounded-3xl p-8 border border-white/10 shadow-2xl max-w-lg w-full relative overflow-hidden">
+      <div className="bg-card rounded-3xl p-8 border border-border shadow-2xl max-w-lg w-full relative overflow-hidden">
         {/* Background Gradient */}
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500 to-purple-500" />
 
@@ -68,7 +68,7 @@ export function AccountConnectModal({
         {onClose && (
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"
+            className="absolute top-4 right-4 text-muted-foreground hover:text-foreground transition-colors p-2 rounded-full hover:bg-white/10"
           >
             <X size={20} />
           </button>
@@ -78,10 +78,10 @@ export function AccountConnectModal({
           <div className="mx-auto w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mb-4">
             <ShieldCheck className="w-8 h-8 text-blue-400" />
           </div>
-          <h2 className="text-2xl font-bold text-white mb-2">
+          <h2 className="text-2xl font-bold text-foreground mb-2">
             Conectar Cuenta de Trading
           </h2>
-          <p className="text-slate-400 text-sm">
+          <p className="text-muted-foreground text-sm">
             Para acceder al dashboard, necesitas conectar tu cuenta de
             MetaTrader 5.
           </p>
@@ -89,12 +89,12 @@ export function AccountConnectModal({
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
               <User size={14} className="text-blue-400" /> Login ID
             </label>
             <input
               {...register("login")}
-              className="w-full bg-[#1e293b] text-white p-3.5 rounded-xl border border-slate-700/50 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all placeholder:text-slate-600"
+              className="w-full bg-background text-foreground p-3.5 rounded-xl border border-border focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all placeholder:text-muted-foreground/50"
               placeholder="Ej: 50123456"
             />
             {errors.login && (
@@ -103,13 +103,13 @@ export function AccountConnectModal({
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
               <Key size={14} className="text-purple-400" /> Contraseña
             </label>
             <input
               type="password"
               {...register("password")}
-              className="w-full bg-[#1e293b] text-white p-3.5 rounded-xl border border-slate-700/50 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition-all placeholder:text-slate-600"
+              className="w-full bg-background text-foreground p-3.5 rounded-xl border border-border focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition-all placeholder:text-muted-foreground/50"
               placeholder="••••••••"
             />
             {errors.password && (
@@ -118,12 +118,12 @@ export function AccountConnectModal({
           </div>
 
           <div className="space-y-2">
-            <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
               <Server size={14} className="text-emerald-400" /> Servidor
             </label>
             <input
               {...register("server")}
-              className="w-full bg-[#1e293b] text-white p-3.5 rounded-xl border border-slate-700/50 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all placeholder:text-slate-600"
+              className="w-full bg-background text-foreground p-3.5 rounded-xl border border-border focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all placeholder:text-muted-foreground/50"
               placeholder="Ej: MetaQuotes-Demo"
             />
             {errors.server && (
@@ -134,7 +134,7 @@ export function AccountConnectModal({
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full mt-4 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold py-4 rounded-xl transition-all shadow-lg hover:shadow-blue-500/25 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full mt-4 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-primary-foreground font-bold py-4 rounded-xl transition-all shadow-lg hover:shadow-blue-500/25 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? (
               <>
@@ -146,7 +146,7 @@ export function AccountConnectModal({
           </button>
         </form>
 
-        <p className="text-center text-xs text-slate-500 mt-6">
+        <p className="text-center text-xs text-muted-foreground mt-6">
           Tus credenciales son encriptadas y almacenadas de forma segura.
         </p>
       </div>

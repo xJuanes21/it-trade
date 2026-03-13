@@ -16,7 +16,7 @@ export const ProgressBar = ({
 
   return (
     <div className="space-y-2">
-      <div className="flex justify-between text-xs text-gray-400">
+      <div className="flex justify-between text-xs text-muted-foreground">
         <span>{label}</span>
         {showValues && (
           <span>
@@ -24,7 +24,7 @@ export const ProgressBar = ({
           </span>
         )}
       </div>
-      <div className="flex h-2 rounded-full overflow-hidden bg-slate-800">
+      <div className="flex h-2 rounded-full overflow-hidden bg-muted">
         <div
           className="bg-gradient-to-r from-blue-500 to-blue-400 transition-all duration-500"
           style={{ width: `${winPercent}%` }}
@@ -57,12 +57,12 @@ export const MetricCard = ({
       style={{ animationDelay: delay }}
     >
       {title && (
-        <h3 className="text-xs font-semibold text-gray-400 mb-2">{title}</h3>
+        <h3 className="text-xs font-semibold text-muted-foreground mb-2">{title}</h3>
       )}
-      <div className="text-2xl md:text-3xl font-bold text-white mb-1">
+      <div className="text-2xl md:text-3xl font-bold text-foreground mb-1">
         {value}
       </div>
-      <div className="text-[10px] md:text-xs text-gray-400 mb-2">{label}</div>
+      <div className="text-[10px] md:text-xs text-muted-foreground mb-2">{label}</div>
       {max !== undefined && typeof value === "number" && (
         <ProgressBar value={value} max={max || 1} label="" />
       )}

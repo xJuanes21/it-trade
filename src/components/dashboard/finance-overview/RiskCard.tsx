@@ -26,19 +26,19 @@ export const RiskCard = ({ risk, delay = "0.45s" }: RiskCardProps) => {
         </div>
         <div className="flex justify-between items-center">
           <span className="text-gray-400 font-medium">Current Equity</span>
-          <span className="text-white font-bold">
+          <span className="text-foreground font-bold">
             ${risk.currentEquity.toLocaleString()}
           </span>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-gray-400 font-medium">Current Balance</span>
-          <span className="text-white font-bold">
+          <span className="text-foreground font-bold">
             ${risk.currentBalance.toLocaleString()}
           </span>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-gray-400 font-medium">Highest Balance</span>
-          <span className="text-white font-bold">
+          <span className="text-foreground font-bold">
             ${risk.highestBalance.toLocaleString()}
           </span>
         </div>

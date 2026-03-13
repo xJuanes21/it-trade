@@ -22,15 +22,15 @@ export async function GET(req: Request, { params }: { params: Promise<{ login: s
 
       if (!externalResponse.ok) {
         console.warn(`External dashboard operational fetch failed: ${externalResponse.status}`);
-        return NextResponse.json({ message: "Upstream Error" }, { status: externalResponse.status });
+        return NextResponse.json({ message: "Failed to fetch operational data" }, { status: externalResponse.status });
       }
 
       const data = await externalResponse.json();
       return NextResponse.json(data);
 
     } catch (error) {
-      console.error("Proxy error:", error);
-      return NextResponse.json({ message: "Upstream Error" }, { status: 502 });
+      console.error("Proxy error fetching Operational data:", error);
+      return NextResponse.json({ message: "Error connecting to MT5 Proxy" }, { status: 502 });
     }
 
   } catch (error) {

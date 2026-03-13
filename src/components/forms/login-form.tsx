@@ -28,7 +28,7 @@ function LoginSubmitButton() {
   const { pending } = useFormStatus();
   return (
     <Button
-      className="mt-2 w-full bg-primary text-white hover:bg-primary/90"
+      className="mt-2 w-full bg-primary text-primary-foreground hover:bg-primary/90"
       disabled={pending}
     >
       {pending ? "Iniciando sesión..." : "INICIAR SESIÓN →"}
@@ -41,7 +41,7 @@ function GoogleButton() {
   return (
     <Button
       variant="outline"
-      className="w-full border-none bg-white text-black hover:bg-gray-200"
+      className="w-full border border-border bg-card text-foreground hover:bg-secondary"
       disabled={pending}
       type="submit"
     >
@@ -118,7 +118,7 @@ export function LoginForm() {
           <ArrowLeft size={16} />
           Volver al inicio
         </Link>
-        <CardTitle className="text-2xl text-center text-white">
+        <CardTitle className="text-2xl text-center text-foreground">
           Bienvenido de Nuevo
         </CardTitle>
         <CardDescription className="text-center text-muted-foreground">

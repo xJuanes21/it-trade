@@ -50,12 +50,12 @@ export function UserRequestList({ users }: { users: PendingUser[] }) {
       label: "Usuarios",
       render: (user) => (
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 font-bold text-white">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 font-bold text-primary-foreground">
             {user.name?.charAt(0).toUpperCase() ||
               user.email.charAt(0).toUpperCase()}
           </div>
           <div>
-            <p className="font-medium text-white">
+            <p className="font-medium text-foreground">
               {user.name || "Sin nombre"}
             </p>
             <p className="text-xs text-gray-400">{user.email}</p>

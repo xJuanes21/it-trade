@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import type { PropsWithChildren } from "react";
+import { ThemeToggle } from "@/components/shared/ThemeToggle";
 
 const DEFAULT_BG = "/images/bg-login.svg";
 
@@ -18,9 +19,12 @@ export function AuthBackground({ children }: PropsWithChildren) {
 
   return (
     <div
-      className="min-h-screen bg-cover bg-center flex items-center justify-center p-4"
+      className="min-h-screen bg-cover bg-center flex items-center justify-center p-4 relative"
       style={{ backgroundImage: `url(${background})` }}
     >
+      <div className="absolute top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
       <div className="flex w-full max-w-xl flex-col items-center gap-6">
         <Image
           src="/logo.svg"

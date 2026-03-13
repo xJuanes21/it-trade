@@ -19,31 +19,31 @@ export const WinstreakPanel = ({ metrics }: WinstreakPanelProps) => {
       label: "Racha Actual",
       value: metrics.current_streak.toString(),
       subValue: "Ops",
-      color: "text-green-400",
+      color: "text-emerald-600 dark:text-emerald-400",
     },
     {
       label: "Mejor Racha",
       value: metrics.best_streak.toString(),
       subValue: "Ops",
-      color: "text-blue-400",
+      color: "text-primary",
     },
     {
       label: "Días Ganadores",
       value: `${metrics.won_days_month}/${metrics.total_days_month}`,
       subValue: "Este Mes",
-      color: "text-emerald-400",
+      color: "text-emerald-600 dark:text-emerald-400",
     },
     {
       label: "Ops Perdidas",
       value: metrics.lost_trades_week.toString(),
       subValue: "Esta Semana",
-      color: "text-rose-400",
+      color: "text-destructive",
     },
   ];
 
   return (
     <div className="glass-widget widget-hover p-5 h-full">
-      <h3 className="text-[13px] font-semibold text-gray-400 mb-6">
+      <h3 className="text-[13px] font-semibold text-muted-foreground mb-6">
         Métricas de Racha
       </h3>
 
@@ -51,10 +51,10 @@ export const WinstreakPanel = ({ metrics }: WinstreakPanelProps) => {
         {winstreakData.map((item, index) => (
           <div key={index} className="flex items-center justify-between group">
             <div className="space-y-0.5">
-              <p className="text-[11px] text-gray-500 uppercase font-bold tracking-wider">
+              <p className="text-[11px] text-muted-foreground uppercase font-bold tracking-wider">
                 {item.label}
               </p>
-              <p className="text-[10px] text-gray-600">{item.subValue}</p>
+              <p className="text-[10px] text-muted-foreground/60">{item.subValue}</p>
             </div>
             <div
               className={`text-2xl font-black ${item.color} group-hover:scale-110 transition-transform cursor-default font-mono`}
@@ -65,16 +65,16 @@ export const WinstreakPanel = ({ metrics }: WinstreakPanelProps) => {
         ))}
       </div>
 
-      <div className="mt-8 pt-6 border-t border-slate-800/50">
+      <div className="mt-8 pt-6 border-t border-border">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-[11px] text-gray-500 uppercase font-bold">
+          <span className="text-[11px] text-muted-foreground uppercase font-bold">
             Actividad de Trading
           </span>
-          <span className="text-[11px] text-emerald-400 font-bold">
+          <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-bold">
             {metrics.activity_percent}%
           </span>
         </div>
-        <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+        <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
           <div
             className="h-full bg-emerald-500 rounded-full shadow-[0_0_8px_rgba(16,185,129,0.4)]"
             style={{ width: `${metrics.activity_percent}%` }}

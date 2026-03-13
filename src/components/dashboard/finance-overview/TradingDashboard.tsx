@@ -129,10 +129,10 @@ const TradingDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#060818] flex items-center justify-center text-white">
+      <div className="min-h-screen bg-background flex items-center justify-center text-foreground">
         <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-          <div className="animate-pulse text-blue-400">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+          <div className="animate-pulse text-primary">
             Cargando Resumen Financiero...
           </div>
         </div>
@@ -141,7 +141,7 @@ const TradingDashboard = () => {
   }
 
   return (
-    <div className="text-white">
+    <div className="text-foreground">
       {showConnectModal && (
         <AccountConnectModal
           onSuccess={handleAccountConnected}
@@ -150,25 +150,25 @@ const TradingDashboard = () => {
       )}
 
       {!data && !showConnectModal && (
-        <div className="min-h-screen flex flex-col items-center justify-center text-white p-4">
+        <div className="min-h-screen flex flex-col items-center justify-center text-foreground p-4">
           <div className="glass-widget widget-hover p-8 max-w-md w-full text-center">
-            <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-              <Share2 className="w-8 h-8 text-blue-400" />
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <Share2 className="w-8 h-8 text-primary" />
             </div>
             <h3 className="text-xl font-bold mb-2">Conexión Requerida</h3>
-            <p className="text-slate-400 mb-8">
+            <p className="text-muted-foreground mb-8">
               Para visualizar el resumen financiero, necesitas conectar una
               cuenta de MT5 válida.
             </p>
             <a
               href="/dashboard/configuracion"
-              className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-6 rounded-xl transition-colors w-full justify-center"
+              className="inline-flex items-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-6 rounded-xl transition-colors w-full justify-center"
             >
               Ir a Configuración
             </a>
             <button
               onClick={() => setShowConnectModal(true)}
-              className="mt-4 text-sm text-slate-500 hover:text-white transition-colors"
+              className="mt-4 text-sm text-muted-foreground hover:text-foreground transition-colors"
             >
               Volver a intentar aquí
             </button>
@@ -183,9 +183,9 @@ const TradingDashboard = () => {
             <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
               <div>
                 <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
-                  Resumen <span className="text-blue-400">Financiero</span>
+                  Resumen <span className="text-primary">Financiero</span>
                 </h1>
-                <div className="flex items-center gap-3 mt-1 text-sm text-slate-400">
+                <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
                   <span className="flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                     Última Sync:{" "}
@@ -194,7 +194,7 @@ const TradingDashboard = () => {
                   <button
                     onClick={handleSync}
                     disabled={isSyncing}
-                    className={`hover:text-white transition-colors p-1.5 rounded-full hover:bg-white/5 flex items-center gap-1.5 border border-transparent hover:border-white/10 ${isSyncing ? "animate-pulse" : ""}`}
+                    className={`hover:text-foreground transition-colors p-1.5 rounded-full hover:bg-secondary/50 flex items-center gap-1.5 border border-transparent hover:border-border ${isSyncing ? "animate-pulse" : ""}`}
                     title="Sincronizar ahora"
                   >
                     <RefreshCw
@@ -207,21 +207,21 @@ const TradingDashboard = () => {
                 </div>
               </div>
               <div className="flex items-center gap-3 flex-wrap">
-                <div className="flex items-center gap-2 glass-widget !rounded-xl px-4 py-2 border border-white/10">
-                  <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
+                <div className="flex items-center gap-2 glass-widget !rounded-xl px-4 py-2 border border-border">
+                  <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
                   <span className="text-sm font-semibold">REAL</span>
-                  <span className="text-xs text-slate-400 font-mono">
+                  <span className="text-xs text-muted-foreground font-mono">
                     {data.meta.account_id}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 bg-slate-900/50 rounded-xl p-1 border border-slate-800">
-                  <button className="glass-widget !rounded-lg p-2 hover:bg-white/5 transition-colors">
+                <div className="flex items-center gap-2 bg-secondary rounded-xl p-1 border border-border">
+                  <button className="glass-widget !rounded-lg p-2 hover:bg-muted/50 transition-colors">
                     <Share2 className="w-4 h-4" />
                   </button>
-                  <button className="glass-widget !rounded-lg p-2 hover:bg-white/5 transition-colors">
+                  <button className="glass-widget !rounded-lg p-2 hover:bg-muted/50 transition-colors">
                     <Filter className="w-4 h-4" />
                   </button>
-                  <button className="glass-widget !rounded-lg px-4 py-2 text-sm hover:bg-white/5 transition-colors flex items-center gap-2 font-medium">
+                  <button className="glass-widget !rounded-lg px-4 py-2 text-sm hover:bg-muted/50 transition-colors flex items-center gap-2 font-medium">
                     <Calendar className="w-4 h-4" />
                     <span className="hidden sm:inline">Mes Actual</span>
                   </button>

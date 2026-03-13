@@ -5,8 +5,8 @@ type Props = {
 };
 
 const trendColors: Record<"up" | "down", string> = {
-  up: "text-emerald-400",
-  down: "text-rose-400",
+  up: "text-emerald-600 dark:text-emerald-400",
+  down: "text-destructive",
 };
 
 export function StatsCardGrid({ stats }: Props) {
@@ -15,20 +15,20 @@ export function StatsCardGrid({ stats }: Props) {
       {stats.map((stat) => (
         <div
           key={stat.label}
-          className="rounded-2xl border border-[#2a3050] bg-[#11152a] p-6 text-white shadow-xl"
+          className="rounded-2xl border border-border bg-card p-6 text-card-foreground shadow-xl"
         >
-          <div className="mb-3 flex items-center justify-between text-sm text-slate-400">
+          <div className="mb-3 flex items-center justify-between text-sm text-muted-foreground">
             <span>{stat.label}</span>
-            <stat.icon size={18} className="text-slate-500" />
+            <stat.icon size={18} className="text-muted-foreground/70" />
           </div>
-          <p className="text-3xl font-bold">{stat.value}</p>
+          <p className="text-3xl font-bold text-foreground">{stat.value}</p>
           {stat.change && stat.trend ? (
             <p className={`mt-2 flex items-center gap-1 text-sm font-semibold ${trendColors[stat.trend]}`}>
               {stat.change}
             </p>
           ) : null}
           {stat.subtitle ? (
-            <p className={`mt-1 text-sm ${stat.warning ? "text-amber-400" : "text-blue-300"}`}>{stat.subtitle}</p>
+            <p className={`mt-1 text-sm ${stat.warning ? "text-yellow-600 dark:text-amber-400" : "text-primary"}`}>{stat.subtitle}</p>
           ) : null}
         </div>
       ))}

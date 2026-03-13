@@ -42,13 +42,13 @@ export default function HowItWorks() {
           <span className="inline-block text-blue-400 text-sm font-bold uppercase tracking-wider mb-3 px-4 py-1.5 bg-blue-500/10 rounded-full border border-blue-500/20">
             Proceso Simple
           </span>
-          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-5 leading-tight">
+          <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-foreground mb-5 leading-tight">
             Empieza en{" "}
             <span className="bg-gradient-to-r from-blue-400 to-blue-600 bg-clip-text text-transparent">
               3 Simples Pasos
             </span>
           </h2>
-          <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
             No necesitas ser un experto en trading. Nuestra plataforma está
             diseñada para que cualquiera pueda empezar en minutos.
           </p>
@@ -66,7 +66,7 @@ export default function HowItWorks() {
               {/* Card */}
               <div className="relative bg-gradient-to-br from-gray-900/50 to-gray-900/30 backdrop-blur-sm rounded-3xl p-8 border border-gray-800/50 hover:border-blue-500/30 transition-all duration-500 hover:shadow-[0_0_40px_rgba(59,130,246,0.15)]">
                 {/* Step Number Badge */}
-                <div className="absolute -top-4 left-8 w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-blue-500/30">
+                <div className="absolute -top-4 left-8 w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-primary-foreground font-bold text-lg shadow-lg shadow-blue-500/30">
                   {step.order}
                 </div>
 
@@ -81,11 +81,11 @@ export default function HowItWorks() {
                 </div>
 
                 {/* Content */}
-                <h3 className="text-2xl font-bold text-white mb-4 group-hover:text-blue-50 transition-colors">
+                <h3 className="text-2xl font-bold text-foreground mb-4 group-hover:text-blue-500 transition-colors">
                   {step.title}
                 </h3>
 
-                <p className="text-gray-400 leading-relaxed group-hover:text-gray-300 transition-colors">
+                <p className="text-muted-foreground leading-relaxed group-hover:text-foreground transition-colors">
                   {step.description}
                 </p>
 

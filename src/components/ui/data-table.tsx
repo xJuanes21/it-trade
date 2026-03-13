@@ -51,7 +51,7 @@ export function DataTable<T extends Record<string, any>>({
   };
 
   return (
-    <div className="rounded-2xl border border-[#2a3050] bg-[#0b0f1e] p-6 text-white shadow-xl">
+    <div className="rounded-2xl border border-border bg-card p-6 text-card-foreground shadow-xl">
       {/* Header */}
       <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
@@ -61,13 +61,13 @@ export function DataTable<T extends Record<string, any>>({
         <div className="flex flex-wrap items-center gap-3">
           {searchable && (
             <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-slate-500" />
+              <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
               <input
                 type="text"
                 placeholder={searchPlaceholder}
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="w-64 rounded-2xl border border-[#2a3050] bg-[#050816] py-2 pl-10 pr-4 text-sm text-white placeholder:text-slate-500 focus:border-blue-500 focus:outline-none"
+                className="w-64 rounded-2xl border border-border bg-background py-2 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none"
               />
             </div>
           )}
@@ -76,10 +76,10 @@ export function DataTable<T extends Record<string, any>>({
       </header>
 
       {/* Table */}
-      <div className="overflow-hidden rounded-2xl border border-[#161c33]">
+      <div className="overflow-hidden rounded-2xl border border-border">
         <div className="max-h-[600px] overflow-auto">
-          <table className="min-w-full divide-y divide-[#161c33] text-sm">
-            <thead className="bg-[#0f152a] text-xs uppercase tracking-wide text-slate-400 sticky top-0">
+          <table className="min-w-full divide-y divide-border text-sm">
+            <thead className="bg-secondary text-xs uppercase tracking-wide text-muted-foreground sticky top-0">
               <tr>
                 {columns.map((column) => (
                   <th
@@ -91,14 +91,14 @@ export function DataTable<T extends Record<string, any>>({
                 ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#161c33] bg-[#050816]">
+            <tbody className="divide-y divide-border bg-card">
               {loading ? (
                 // Loading skeleton
                 [...Array(5)].map((_, index) => (
                   <tr key={`skeleton-${index}`} className="animate-pulse">
                     {columns.map((column) => (
                       <td key={column.key} className="px-4 py-3">
-                        <div className="h-3 w-32 rounded bg-[#111831]" />
+                        <div className="h-3 w-32 rounded bg-muted" />
                       </td>
                     ))}
                   </tr>
@@ -107,7 +107,7 @@ export function DataTable<T extends Record<string, any>>({
                 data.map((item, index) => (
                   <tr
                     key={(item.id as string | number) || index}
-                    className="transition hover:bg-[#0f152a] focus-within:bg-[#0f152a]"
+                    className="transition hover:bg-muted/50 focus-within:bg-muted/50"
                   >
                     {columns.map((column) => (
                       <td
@@ -125,7 +125,7 @@ export function DataTable<T extends Record<string, any>>({
                 <tr>
                   <td
                     colSpan={columns.length}
-                    className="px-4 py-10 text-center text-slate-500"
+                    className="px-4 py-10 text-center text-muted-foreground"
                   >
                     {emptyMessage}
                   </td>

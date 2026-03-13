@@ -194,7 +194,7 @@ export default function MisWallets() {
                 <div className="flex items-start justify-between mb-6">
                   <div className="flex items-center gap-3">
                     <div
-                      className={`${colorClass.icon} w-12 h-12 rounded-2xl flex items-center justify-center text-white`}
+                      className={`${colorClass.icon} w-12 h-12 rounded-2xl flex items-center justify-center text-primary-foreground`}
                     >
                       <IconComponent icon={wallet.icon} size={24} />
                     </div>
@@ -261,7 +261,7 @@ export default function MisWallets() {
                 {/* Actions */}
                 <div className="flex gap-2">
                   <button
-                    className={`${colorClass.button} flex-1 text-white px-4 py-3 rounded-xl font-medium transition-all duration-300 flex items-center justify-center gap-2 shadow-lg`}
+                    className={`${colorClass.button} flex-1 text-primary-foreground px-4 py-3 rounded-xl font-medium transition-all duration-300 flex items-center justify-center gap-2 shadow-lg`}
                   >
                     <Send size={18} />
                     Enviar
