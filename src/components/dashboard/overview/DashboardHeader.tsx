@@ -49,9 +49,10 @@ export const DashboardHeader = ({
           <div className="flex items-center gap-2 glass-widget !rounded-xl px-3 py-1.5 border border-border">
             <div className="w-1.5 h-1.5 rounded-full bg-yellow-500"></div>
             <span className="text-[12px] font-semibold text-foreground uppercase">
-              {accountType}
+              {accountType === "0" || (typeof accountType === "number" && accountType === 0) ? "MASTER" : 
+               accountType === "1" || (typeof accountType === "number" && accountType === 1) ? "SLAVE" : 
+               accountType}
             </span>
-            <span className="text-[11px] text-muted-foreground">- ITW1149</span>
             <Share2 className="w-3.5 h-3.5 text-muted-foreground ml-1 cursor-pointer hover:text-foreground" />
           </div>
 
@@ -81,7 +82,11 @@ export const DashboardHeader = ({
 
           <button className="glass-widget !rounded-xl px-3 py-1.5 text-[12px] hover:bg-secondary border border-border transition flex items-center gap-1.5 text-foreground">
             <Calendar className="w-3.5 h-3.5 text-primary" />
-            Dic 23, 2025 - Hoy
+            {new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toLocaleDateString(
+              "es-ES",
+              { month: "short", day: "2-digit", year: "numeric" },
+            )}{" "}
+            - Hoy
           </button>
 
           <button className="glass-widget !rounded-xl p-1.5 hover:bg-secondary border border-border transition">

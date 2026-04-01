@@ -2,22 +2,27 @@
  * Utilidades para manejo de roles y permisos
  */
 
-export type UserRole = "user" | "superadmin";
+export type UserRole = "user" | "superadmin" | "trader";
 
 /**
  * Define las rutas protegidas y qué roles pueden acceder
  */
 export const PROTECTED_ROUTES: Record<string, UserRole[]> = {
   "/dashboard/usuarios": ["superadmin"],
-  // Bots es accesible para ambos roles
-  "/dashboard/traders": ["user", "superadmin"],
-  // Rutas accesibles solo por users
-  "/dashboard": ["user", "superadmin"],
-  "/dashboard/wallets": ["user", "superadmin"],
-  "/dashboard/operaciones": ["user", "superadmin"],
-  "/dashboard/convert": ["user", "superadmin"],
-  "/dashboard/configuracion": ["user", "superadmin"],
-  "/dashboard/overview": ["user", "superadmin"],
+  // Bots es accesible para todos los roles
+  "/dashboard/traders": ["user", "superadmin", "trader"],
+  // Rutas accesibles por todos
+  "/dashboard": ["user", "superadmin", "trader"],
+  // "/dashboard/wallets": ["user", "superadmin", "trader"],
+  "/dashboard/operaciones": ["user", "superadmin", "trader"],
+  "/dashboard/convert": ["user", "superadmin", "trader"],
+  "/dashboard/configuracion": ["user", "superadmin", "trader"],
+  "/dashboard/overview": ["user", "superadmin", "trader"],
+
+  // Trading Models Routes
+  "/dashboard/copy-trader/accounts": ["user", "superadmin", "trader"],
+  "/dashboard/copy-trader/templates": ["user", "superadmin", "trader"],
+  "/dashboard/copy-trader/configs": ["superadmin", "trader"],
 };
 
 /**
@@ -28,28 +33,31 @@ export function isSuperAdmin(role?: string): boolean {
 }
 
 /**
+ * Verifica si un rol puede crear masters/templates
+ */
+export function canManageStrategies(role?: string): boolean {
+  return role === "superadmin" || role === "trader";
+}
+
+/**
  * Verifica si un rol puede acceder a una ruta específica
  */
 export function canAccessRoute(role: UserRole, path: string): boolean {
-  // Normalizar path (remover trailing slash)
-  const normalizedPath = path.endsWith("/") && path !== "/" 
-    ? path.slice(0, -1) 
+  const normalizedPath = path.endsWith("/") && path !== "/"
+    ? path.slice(0, -1)
     : path;
 
-  // Buscar la ruta exacta o el prefijo más específico
   const allowedRoles = PROTECTED_ROUTES[normalizedPath];
-  
+
   if (!allowedRoles) {
-    // Si la ruta no está en la lista, buscar por prefijo
-    const matchingRoute = Object.keys(PROTECTED_ROUTES).find(route => 
+    const matchingRoute = Object.keys(PROTECTED_ROUTES).find(route =>
       normalizedPath.startsWith(route)
     );
-    
+
     if (matchingRoute) {
       return PROTECTED_ROUTES[matchingRoute].includes(role);
     }
-    
-    // Por defecto, permitir acceso si no hay restricción específica
+
     return true;
   }
 
@@ -62,31 +70,59 @@ export function canAccessRoute(role: UserRole, path: string): boolean {
 export interface NavItem {
   href: string;
   label: string;
-  icon: string; // Nombre del icono de lucide-react
+  icon: string;
+  children?: NavItem[];
 }
 
 /**
  * Obtiene los items del menú según el rol del usuario
  */
 export function getMenuItems(role: UserRole): NavItem[] {
-  if (role === "superadmin") {
-    return [
-      { href: "/dashboard", label: "HOME", icon: "Home" },
-      { href: "/dashboard/overview", label: "OVERVIEW", icon: "Activity" },
-      { href: "/dashboard/requests", label: "SOLICITUDES", icon: "Mail" },
-      { href: "/dashboard/traders", label: "TRADERS", icon: "ChartNoAxesCombined" },
-      { href: "/dashboard/usuarios", label: "USUARIOS", icon: "Users" },
-    ];
-  }
-
-  // Usuario normal
-  return [
+  const baseItems = [
     { href: "/dashboard", label: "HOME", icon: "Home" },
     { href: "/dashboard/overview", label: "OVERVIEW", icon: "Activity" },
     { href: "/dashboard/traders", label: "TRADERS", icon: "ChartNoAxesCombined" },
-    { href: "/dashboard/wallets", label: "WALLETS", icon: "Wallet" },
-    { href: "/dashboard/operaciones", label: "OPERACIONES", icon: "Activity" },
-    { href: "/dashboard/convert", label: "CONVERSOR", icon: "Calculator" },
+  ];
+
+  const copyTraderGroup: NavItem = {
+    href: "#",
+    label: "MODELOS",
+    icon: "Copy",
+    children: [
+      { href: "/dashboard/copy-trader/accounts", label: role === "user" ? "MIS CUENTAS" : "CUENTAS", icon: "Activity" },
+      { href: "/dashboard/copy-trader/templates", label: role === "user" ? "PLANTILLAS" : "PLANTILLAS", icon: "Layout" },
+    ]
+  };
+
+  if (role === "superadmin" || role === "trader") {
+    // Add CONFIGS only for admins/traders
+    copyTraderGroup.children?.push({
+      href: "/dashboard/copy-trader/configs",
+      label: "CONFIGS",
+      icon: "Settings2"
+    });
+
+    const adminItems = [
+      ...baseItems,
+      copyTraderGroup
+    ];
+
+    if (role === "superadmin") {
+      adminItems.push(
+        { href: "/dashboard/requests", label: "SOLICITUDES", icon: "Mail" },
+        { href: "/dashboard/usuarios", label: "USUARIOS", icon: "Users" }
+      );
+    }
+
+    return adminItems;
+  }
+
+  // Usuario normal / Cliente
+  return [
+    ...baseItems,
+    copyTraderGroup,
+    // { href: "/dashboard/wallets", label: "WALLETS", icon: "Wallet" },
+    // { href: "/dashboard/operaciones", label: "OPERACIONES", icon: "Activity" },
   ];
 }
 

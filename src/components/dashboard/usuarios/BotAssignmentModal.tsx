@@ -37,7 +37,7 @@ export default function BotAssignmentModal({
     try {
       setLoading(true);
 
-      // 1. Cargar configuraciones reales del servidor MT5 (Primary Source)
+      // 1. Cargar configuraciones reales del Servidor de IT TRADE (Primary Source)
       let allBots: EaConfig[] = [];
       try {
         const jsonResponse = await eaService.getAllJsonConfigs();

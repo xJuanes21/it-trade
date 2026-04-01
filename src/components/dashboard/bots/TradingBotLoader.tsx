@@ -27,7 +27,7 @@ export default function TradingBotLoader({
       "Analizando pares de divisas...",
       "Cargando estrategias...",
       "Verificando parámetros de riesgo...",
-      "Sincronizando con MT5...",
+      "Sincronizando con el Servidor de IT TRADE...",
       "¡Bot listo para operar!",
     ],
     stopping: [

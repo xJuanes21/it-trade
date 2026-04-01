@@ -4,7 +4,10 @@ import { DataTable, Column } from "@/components/ui/data-table";
 import { useState } from "react";
 import { Settings, Power, CheckCircle, XCircle, Loader2 } from "lucide-react";
 import BotAssignmentModal from "./BotAssignmentModal";
-import { toggleUserStatus } from "@/lib/admin-actions";
+import { ModernSelect } from "@/components/ui/ModernSelect";
+import { toggleUserStatus, updateUserRole } from "@/lib/admin-actions";
+import { UserRole } from "@prisma/client";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 
@@ -12,7 +15,7 @@ interface User {
   id: string;
   name: string | null;
   email: string;
-  role: string;
+  role: UserRole;
   createdAt: Date;
   emailVerified: Date | null;
   isActive: boolean;
@@ -28,6 +31,7 @@ export default function UsersTable({ users }: UsersTableProps) {
   const [selectedUserName, setSelectedUserName] = useState<string>("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [roleLoadingId, setRoleLoadingId] = useState<string | null>(null);
 
   // Status Modal State
   const [statusModalOpen, setStatusModalOpen] = useState(false);
@@ -58,19 +62,37 @@ export default function UsersTable({ users }: UsersTableProps) {
   const confirmToggleStatus = async () => {
     if (!userToToggle) return;
 
-    // Optimistic UI update could be done here, but router.refresh() handles sync
+    setLoadingId(userToToggle.id);
     await toggleUserStatus(userToToggle.id, !userToToggle.currentStatus);
 
     setStatusModalOpen(false);
     setUserToToggle(null);
+    setLoadingId(null);
     router.refresh();
+  };
+
+  const handleRoleChange = async (userId: string, newRole: UserRole) => {
+    setRoleLoadingId(userId);
+    try {
+      const result = await updateUserRole(userId, newRole);
+      if (result.success) {
+        toast.success("Rol actualizado con éxito");
+        router.refresh();
+      } else {
+        toast.error(result.error || "Error al actualizar el rol");
+      }
+    } catch (error) {
+      toast.error("Error de conexión");
+    } finally {
+      setRoleLoadingId(null);
+    }
   };
 
   // Filtrar usuarios según búsqueda
   const filteredUsers = users.filter((user) => {
     const query = searchQuery.toLowerCase();
     return (
-      user.name?.toLowerCase().includes(query) ||
+      (user.name?.toLowerCase() || "").includes(query) ||
       user.email.toLowerCase().includes(query) ||
       user.role.toLowerCase().includes(query)
     );
@@ -81,7 +103,7 @@ export default function UsersTable({ users }: UsersTableProps) {
     {
       key: "name",
       label: "Usuario",
-      render: (user) => (
+      render: (user: User) => (
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-600 to-purple-600 text-sm font-bold text-primary-foreground">
             {user.name?.charAt(0).toUpperCase() ||
@@ -99,23 +121,36 @@ export default function UsersTable({ users }: UsersTableProps) {
     {
       key: "role",
       label: "Rol",
-      render: (user) => (
-        <span
-          className={`inline-flex rounded-full px-3 py-1 text-xs text-foreground font-medium ${
-            user.role === "superadmin"
-              ? "bg-purple-500/20 text-purple-200"
-              : "bg-blue-500/20 text-blue-200"
-          }`}
-        >
-          {user.role === "superadmin" ? "Super Admin" : "Usuario"}
-        </span>
-      ),
+      render: (user: User) => {
+        if (user.role === "superadmin") {
+          return (
+            <span className="inline-flex rounded-full px-3 py-1 text-xs text-purple-200 font-medium bg-purple-500/20">
+              Super Admin
+            </span>
+          );
+        }
+
+        return (
+          <div className="w-[140px]">
+            <ModernSelect
+              options={[
+                { value: "user", label: "Usuario" },
+                { value: "trader", label: "Trader" },
+              ]}
+              value={user.role}
+              onChange={(val) => handleRoleChange(user.id, val as UserRole)}
+              disabled={roleLoadingId === user.id}
+              className="h-8"
+            />
+          </div>
+        );
+      },
     },
     {
       key: "isActive",
       label: "Estado",
       align: "center",
-      render: (user) => (
+      render: (user: User) => (
         <div
           className={`flex items-center gap-1.5 justify-center text-xs font-medium ${user.isActive ? "text-green-400" : "text-red-400"}`}
         >
@@ -128,7 +163,7 @@ export default function UsersTable({ users }: UsersTableProps) {
       key: "emailVerified",
       label: "Email Verificado",
       align: "center",
-      render: (user) => (
+      render: (user: User) => (
         <span
           className={`inline-flex rounded-full px-3 py-1 text-xs font-medium  ${
             user.emailVerified
@@ -144,7 +179,7 @@ export default function UsersTable({ users }: UsersTableProps) {
       key: "createdAt",
       label: "Fecha Registro",
       align: "right",
-      render: (user) => (
+      render: (user: User) => (
         <span className="text-slate-300">
           {new Date(user.createdAt).toLocaleDateString("es-ES", {
             day: "numeric",
@@ -158,7 +193,7 @@ export default function UsersTable({ users }: UsersTableProps) {
       key: "actions",
       label: "Acciones",
       align: "right",
-      render: (user) => (
+      render: (user: User) => (
         <div className="flex items-center justify-end gap-2">
           <button
             onClick={() => handleManageBots(user.id, user.name || user.email)}

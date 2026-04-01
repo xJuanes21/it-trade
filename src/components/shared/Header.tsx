@@ -31,7 +31,12 @@ export default function Header({ user: initialUser }: HeaderProps) {
   const user = initialUser || session?.user;
   const userName = user?.name || "Usuario";
   const userInitial = userName.charAt(0).toUpperCase();
-  const userRole = user?.role === "superadmin" ? "Super Admin" : "Usuario";
+  const getRoleLabel = (r?: string | null) => {
+    if (r === "superadmin") return "Super Admin";
+    if (r === "trader") return "Trader";
+    return "Usuario";
+  };
+  const userRole = getRoleLabel(user?.role);
 
   return (
     <header className=" backdrop-blur-md border-b border-border px-6 py-3 sticky top-0 z-40 bg-background/80">

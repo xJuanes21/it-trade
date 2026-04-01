@@ -15,6 +15,12 @@ export interface OperationalDashboardResponse {
     last_sync: string;
     account_status: string;
   };
+  meta?: {
+    account_id: string;
+    currency: string;
+    broker: string;
+    server: string;
+  };
   metrics: {
     current_streak: number;
     best_streak: number;
@@ -36,6 +42,10 @@ export interface OperationalDashboardResponse {
       symbol: string;
       trades: number;
     }>;
+    equity_curve?: Array<{
+      date: string;
+      equity: number;
+    }>;
   };
   finance_summary: {
     gains_percent: number;
@@ -47,12 +57,33 @@ export interface OperationalDashboardResponse {
       annualized: number;
     };
   };
+  technical_stats?: {
+    equity_start: number;
+    equity_end: number;
+    hwm: number;
+    deposit_withdrawal: number;
+    pnl_usd: number;
+    pnl_eur: number;
+    performance_percent: number;
+  };
 }
 
 export interface FinancialDashboardResponse {
   meta: {
     account_id: string;
     last_sync: string;
+    currency: string;
+    broker: string;
+    server: string;
+  };
+  technical_stats: {
+    equity_start: number;
+    equity_end: number;
+    hwm: number;
+    deposit_withdrawal: number;
+    pnl_usd: number;
+    pnl_eur: number;
+    performance_percent: number;
   };
   summary: {
     win_streak: {

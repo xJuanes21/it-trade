@@ -134,7 +134,7 @@ export const authConfig: NextAuthConfig = {
         session.user.id = token.sub;
       }
       if (token.role) {
-        session.user.role = token.role as "user" | "superadmin";
+        session.user.role = token.role as "user" | "superadmin" | "trader";
       }
       // Pasar estados de aprobación y actividad
       session.user.isApproved = token.isApproved as boolean;

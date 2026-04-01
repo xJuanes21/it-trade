@@ -51,34 +51,49 @@ async function main() {
 
   console.log("✅ Super Admin verificado/actualizado:", superAdmin.email);
 
-  // Verificar si ya existe el usuario normal
-  const existingUser = await prisma.user.findUnique({
-    where: { email: "usuario@ittrade.com" },
+  // Upsert TRADER
+  const traderPasswordHash = await bcrypt.hash("Trader@2026!", 10);
+  const traderUser = await prisma.user.upsert({
+    where: { email: "trader@ittrade.com" },
+    update: { isApproved: true, isActive: true, role: "trader" },
+    create: {
+      email: "trader@ittrade.com",
+      name: "Usuario Trader",
+      role: "trader",
+      isApproved: true,
+      isActive: true,
+      emailVerified: new Date(),
+      credential: { create: { passwordHash: traderPasswordHash } },
+    },
   });
 
-  if (!existingUser) {
-    // Crear usuario normal de prueba
-    const userPasswordHash = await bcrypt.hash("User@2026!", 10);
-    
-    const normalUser = await prisma.user.create({
-      data: {
-        email: "usuario@ittrade.com",
-        name: "Usuario de Prueba",
-        role: "user",
-        isApproved: true, // Usuario de prueba aprobado por defecto
-        emailVerified: new Date(),
-        credential: {
-          create: {
-            passwordHash: userPasswordHash,
-          },
-        },
-      },
-    });
-
-    console.log("✅ Usuario normal creado:", normalUser.email);
-  } else {
-    console.log("ℹ️  Usuario normal ya existe:", existingUser.email);
+  const traderCred = await prisma.credential.findUnique({ where: { userId: traderUser.id } });
+  if (!traderCred) {
+     await prisma.credential.create({ data: { userId: traderUser.id, passwordHash: traderPasswordHash } });
   }
+  console.log("✅ Usuario Trader verificado/actualizado:", traderUser.email);
+
+  // Upsert USER
+  const userPasswordHash = await bcrypt.hash("User@2026!", 10);
+  const normalUser = await prisma.user.upsert({
+    where: { email: "user@ittrade.com" },
+    update: { isApproved: true, isActive: true, role: "user" },
+    create: {
+      email: "user@ittrade.com",
+      name: "Usuario Estándar",
+      role: "user",
+      isApproved: true,
+      isActive: true,
+      emailVerified: new Date(),
+      credential: { create: { passwordHash: userPasswordHash } },
+    },
+  });
+
+  const userCred = await prisma.credential.findUnique({ where: { userId: normalUser.id } });
+  if (!userCred) {
+     await prisma.credential.create({ data: { userId: normalUser.id, passwordHash: userPasswordHash } });
+  }
+  console.log("✅ Usuario Normal verificado/actualizado:", normalUser.email);
 
   console.log("🎉 Seed completado exitosamente!");
 }
