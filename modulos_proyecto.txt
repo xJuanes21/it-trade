@@ -1,0 +1,24 @@
+RESUMEN DE MÓDULOS DEL PROYECTO IT-TRADE
+
+Al iniciar sesión en el proyecto, los módulos disponibles en total (independiente del rol) son los siguientes:
+
+1.  DASHBOARD (HOME): Página principal con el resumen general de la cuenta.
+2.  OVERVIEW: Panel detallado de actividad y estadísticas financieras (Trade Stats).
+3.  TRADERS: Módulo para la gestión y seguimiento de traders o bots.
+4.  WALLETS: Gestión de billeteras digitales y saldos (Principalmente para usuarios).
+5.  OPERACIONES: Listado y seguimiento de las operaciones realizadas en la plataforma.
+6.  CONVERSOR: Herramienta de calculadora para conversión de divisas.
+7.  SOLICITUDES: Módulo de gestión para solicitudes pendientes (Exclusivo Superadmin).
+8.  USUARIOS: Administración completa de usuarios de la plataforma (Exclusivo Superadmin).
+9.  CONFIGURACIÓN: Ajustes de perfil, seguridad y preferencias del sistema.
+
+Rutas del proyecto:
+- /dashboard
+- /dashboard/overview
+- /dashboard/traders
+- /dashboard/wallets
+- /dashboard/operaciones
+- /dashboard/convert
+- /dashboard/requests
+- /dashboard/usuarios
+- /dashboard/configuracion

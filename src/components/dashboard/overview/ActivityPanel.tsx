@@ -1,94 +1,119 @@
 "use client";
 
-import { ChevronDown, RefreshCcw } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import { ChevronDown, RefreshCcw, Bell, Loader2 } from "lucide-react";
+import { tradeCopierService } from "@/services/trade-copier.service";
 
-import { useMarketData } from "@/components/dashboard/overview/providers/MarketDataProvider";
+interface Notification {
+  timestamp: string;
+  type: number;
+  name: string;
+  text: string;
+}
 
 export function ActivityPanel() {
-  const { activityFeed, isLoading, refetch } = useMarketData();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const res = await tradeCopierService.getNotifications();
+      if (res.status === "success") {
+        setNotifications(res.data.notifications || []);
+      }
+    } catch (err) {
+      console.error("Failed to fetch notifications:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
 
   return (
-    <div className="glass-widget widget-hover p-6 text-foreground h-[500px] flex flex-col">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div>
-          <h3 className="text-lg font-semibold">Actividad</h3>
-          <p className="text-xs text-muted-foreground">
-            Operaciones derivadas del snapshot actual
-          </p>
+    <div className="glass-widget widget-hover p-6 text-foreground h-[650px] flex flex-col">
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
+            <Bell className="text-primary w-6 h-6" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold">Actividad Reciente</h3>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button className="flex items-center gap-2 rounded-lg border border-border bg-secondary px-3 py-1.5 text-sm text-secondary-foreground hover:border-primary/50">
-            Hoy
-            <ChevronDown size={14} />
-          </button>
-          <button
-            className="rounded-lg border border-border bg-secondary p-2 text-secondary-foreground transition hover:border-primary disabled:opacity-50"
-            onClick={() => refetch()}
-            disabled={isLoading}
-            aria-label="Refrescar actividad"
-          >
-            <RefreshCcw
-              size={16}
-              className={isLoading ? "animate-spin text-primary" : ""}
-            />
-          </button>
-        </div>
+        <button
+          className="rounded-xl border border-border bg-secondary p-2 text-secondary-foreground transition hover:border-primary disabled:opacity-50"
+          onClick={fetchNotifications}
+          disabled={loading}
+        >
+          <RefreshCcw
+            size={18}
+            className={loading ? "animate-spin text-primary" : ""}
+          />
+        </button>
       </div>
-      <div className="flex-1 overflow-y-auto pr-1 space-y-3 custom-scrollbar">
-        {isLoading && !activityFeed.length
-          ? [...Array(6)].map((_, index) => (
-              <div
-                key={`activity-skeleton-${index}`}
-                className="flex items-center justify-between rounded-xl border border-border bg-card p-4"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-muted" />
-                  <div className="space-y-2">
-                    <div className="h-3 w-20 rounded bg-muted" />
-                    <div className="h-2 w-12 rounded bg-muted" />
-                  </div>
-                </div>
-                <div className="h-3 w-12 rounded bg-muted" />
-              </div>
-            ))
-          : null}
 
-        {!isLoading && !activityFeed.length ? (
-          <div className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">
-            No hay actividad disponible para los símbolos actuales.
+      <div className="flex-1 overflow-y-auto pr-1 space-y-4 custom-scrollbar">
+        {loading && notifications.length === 0 ? (
+          <div className="space-y-4 animate-in fade-in duration-500">
+            {[...Array(5)].map((_, i) => (
+              <div
+                key={i}
+                className="flex gap-4 rounded-2xl border border-white/5 bg-white/5 p-4 animate-pulse"
+              >
+                <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-white/10" />
+                <div className="flex flex-col gap-2 w-full">
+                  <div className="flex items-center justify-between">
+                    <div className="h-3 w-24 bg-white/10 rounded" />
+                    <div className="h-2 w-16 bg-white/5 rounded" />
+                  </div>
+                  <div className="h-3 w-full bg-white/5 rounded" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : null}
 
-        {activityFeed.map((item) => (
-          <div
-            key={item.id}
-            className="flex items-center justify-between rounded-xl border border-border bg-card p-4 text-sm text-card-foreground transition hover:border-primary/50"
-          >
-            <div className="flex items-center gap-3">
-              <div
-                className="flex h-10 w-10 items-center justify-center rounded-full font-bold text-primary-foreground"
-                style={{ backgroundColor: item.color }}
-              >
-                {item.symbol.charAt(0)}
-              </div>
-              <div>
-                <p className="font-medium">{item.symbol}</p>
-                <p
-                  className={
-                    item.action === "Buy"
-                      ? "text-xs text-emerald-500 dark:text-emerald-400"
-                      : "text-xs text-destructive"
-                  }
-                >
-                  {item.action}
-                </p>
-              </div>
-            </div>
-            <p
-              className={`font-semibold ${item.action === "Buy" ? "text-emerald-500 dark:text-emerald-300" : "text-destructive"}`}
-            >
-              ${item.price.toFixed(item.precision)}
+        {!loading && notifications.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-center p-8 border border-dashed border-border rounded-2xl bg-secondary/20">
+            <Bell className="w-12 h-12 text-muted-foreground/30 mb-4" />
+            <p className="text-sm text-muted-foreground">
+              No hay actividad reciente registrada.
             </p>
+          </div>
+        ) : null}
+
+        {notifications.map((item, idx) => (
+          <div
+            key={`${item.timestamp}-${idx}`}
+            className="group relative flex gap-4 rounded-2xl border border-border/50 bg-card/40 p-4 transition-all hover:border-primary/40 hover:bg-card/60"
+          >
+            <div
+              className={`mt-1 flex h-2 w-2 shrink-0 rounded-full ${
+                item.name.toLowerCase().includes("delete")
+                  ? "bg-red-500"
+                  : item.name.toLowerCase().includes("add")
+                    ? "bg-emerald-500"
+                    : "bg-blue-500"
+              }`}
+            />
+
+            <div className="flex flex-col gap-1 w-full">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70 group-hover:text-primary transition-colors">
+                  {item.name}
+                </span>
+                <span className="text-[10px] text-muted-foreground font-mono">
+                  {item.timestamp.split(".")[0]}
+                </span>
+              </div>
+              <p className="text-sm leading-relaxed text-foreground/90 font-medium">
+                {item.text.replace(/Trade Copier|servidor MT5|API externa|API de MT5/gi, "Servidor de IT TRADE")}
+              </p>
+            </div>
           </div>
         ))}
       </div>

@@ -198,7 +198,7 @@ export function TradingChart() {
     "Selecciona un símbolo para cargar su histórico.";
 
   return (
-    <div className="glass-widget widget-hover overflow-hidden h-[500px] flex flex-col">
+    <div className="glass-widget widget-hover overflow-hidden h-[650px] flex flex-col">
       <div className="flex flex-col gap-4 border-b border-[#1a2242] p-6">
         <div className="flex flex-col gap-4">
           <div className="flex flex-wrap items-center gap-4">
@@ -212,7 +212,7 @@ export function TradingChart() {
               <button
                 type="button"
                 onClick={() => setDropdownOpen((open) => !open)}
-                className="flex w-full items-center justify-between rounded-2xl border border-border glass-inset px-4 py-2 text-left text-lg font-semibold text-foreground transition hover:border-primary/50 focus-visible:border-primary focus-visible:outline-none"
+                className="flex w-full items-center justify-between rounded-2xl border border-border bg-muted/50 px-4 py-2 text-left text-lg font-semibold text-foreground transition hover:border-primary/50 focus-visible:border-primary focus-visible:outline-none"
               >
                 <span className="truncate">
                   {selectedInstrument
@@ -225,8 +225,8 @@ export function TradingChart() {
                 />
               </button>
               {isDropdownOpen ? (
-                <div className="absolute z-30 mt-2 w-full rounded-2xl border border-border bg-popover/95 p-3 shadow-2xl backdrop-blur">
-                  <div className="mb-3 flex items-center gap-2 rounded-2xl border border-border glass-inset px-3 py-2 text-sm text-foreground">
+                <div className="absolute z-30 mt-2 w-full rounded-2xl border border-border bg-card p-3 shadow-2xl backdrop-blur-xl">
+                  <div className="mb-3 flex items-center gap-2 rounded-2xl border border-border bg-muted px-3 py-2 text-sm text-foreground">
                     <Search size={14} className="text-muted-foreground" />
                     <input
                       value={symbolQuery}
@@ -251,7 +251,7 @@ export function TradingChart() {
                             className={`flex w-full flex-col rounded-xl border px-3 py-2 text-left text-sm transition ${
                               active
                                 ? "border-primary/50 bg-primary/10 text-primary-foreground"
-                                : "border-transparent glass-inset text-foreground hover:border-primary/30"
+                                : "border-transparent bg-muted/40 text-foreground hover:border-primary/30"
                             }`}
                           >
                             <span className="font-semibold">
@@ -278,10 +278,10 @@ export function TradingChart() {
               <button
                 key={key}
                 onClick={() => setTimeframe(key)}
-                className={`rounded-full px-3 py-1 text-xs transition ${
+                className={`rounded-full px-3 py-1 text-xs transition font-black uppercase tracking-tighter ${
                   timeframe === key
                     ? "border border-primary/50 bg-primary/20 text-primary"
-                    : "border border-transparent glass-inset text-muted-foreground hover:border-border"
+                    : "border border-transparent bg-muted text-muted-foreground hover:border-border"
                 }`}
               >
                 {timeframeConfig[key].label}
@@ -290,7 +290,7 @@ export function TradingChart() {
             <button
               onClick={() => refetch()}
               disabled={isLoading}
-              className="flex items-center gap-2 rounded-full border border-border glass-inset px-3 py-1 text-xs text-foreground transition hover:border-primary disabled:opacity-50"
+              className="flex items-center gap-2 rounded-full border border-border bg-muted px-3 py-1 text-xs text-foreground transition hover:border-primary disabled:opacity-50"
             >
               <RefreshCcw
                 size={14}

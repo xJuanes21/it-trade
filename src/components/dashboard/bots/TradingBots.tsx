@@ -393,7 +393,7 @@ export default function TradingBots({ userRole, userId }: TradingBotsProps) {
               <Link href="/dashboard/configuracion">
                 <button className="bg-secondary hover:bg-secondary/80 text-foreground px-4 py-2 rounded-xl flex items-center gap-2 border border-border transition-all">
                   <Server size={18} />
-                  <span className="hidden sm:inline">Conectar MT5</span>
+                  <span className="hidden sm:inline">Vincular Servidor</span>
                 </button>
               </Link>
               <button

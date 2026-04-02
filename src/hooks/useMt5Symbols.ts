@@ -46,7 +46,7 @@ export function useMt5Symbols(options?: UseMt5SymbolsOptions): UseMt5SymbolsRetu
       setLastUpdated(new Date());
     } catch (err) {
       if (!mountedRef.current) return;
-      setError(err instanceof Error ? err.message : "Error desconocido al consultar MT5.");
+      setError(err instanceof Error ? err.message : "Error desconocido al consultar el Servidor de IT TRADE.");
     } finally {
       if (mountedRef.current) {
         setIsLoading(false);

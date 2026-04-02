@@ -11,7 +11,7 @@ export const SemiCircleProgress = ({
   label: string;
   color: string;
 }) => {
-  const percentage = (value / max) * 100;
+  const percentage = Math.max(0, (value / max) * 100);
 
   return (
     <div className="flex flex-col items-center justify-center h-full">

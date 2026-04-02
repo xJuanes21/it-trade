@@ -14,6 +14,7 @@ datasource db {
 enum UserRole {
   user
   superadmin
+  trader
 }
 
 model User {
@@ -34,8 +35,12 @@ model User {
   auditLogs       UserAuditLog[]    @relation("PerformedBy")
   receivedLogs    UserAuditLog[]    @relation("TargetUser")
   mt5Account      Mt5Account?
+  tradeCopierAccounts TradeCopierAccount[]
   eaConfigs       EaConfig[]
   botAssignments  BotAssignment[]
+  tradingModels   TradingModel[]
+  modelConfigs    ModelConfig[]
+  syncConfigs     SyncConfig[]
 }
 
 model Account {
@@ -106,6 +111,38 @@ model Mt5Account {
   server    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  tradeCopierAccount TradeCopierAccount?
+}
+
+model TradeCopierAccount {
+  id                String      @id @default(cuid())
+  userId            String
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mt5AccountId      String?     @unique
+  mt5Account        Mt5Account? @relation(fields: [mt5AccountId], references: [id], onDelete: SetNull)
+  
+  account_id        String      @unique // ID en Trade Copier
+  name              String
+  type              Int         // 0=Master, 1=Slave
+  broker            String
+  login             String
+  password          String      // Encriptado
+  server            String
+  environment       String?
+  status            Int         @default(1)
+  
+  groupid           String?
+  subscription_key  String?
+  ccy               String?
+  balance           Float?
+  equity            Float?
+  state             String?
+  
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  @@index([userId])
 }
 
 model EaConfig {
@@ -158,4 +195,93 @@ model UserAuditLog {
 
   @@index([performedById])
   @@index([targetUserId])
+}
+
+// ─── NUEVOS MODELOS (Trading Models & Configs) ───────────────────────────────
+
+model ModelConfig {
+  id                String         @id @default(cuid())
+  userId            String
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  name              String         // E.g., "Configuracion Agresiva"
+  description       String?
+  
+  // Settings técnicos (equivalente a CopySettings)
+  risk_factor_value Float
+  risk_factor_type  Int
+  copier_status     Int            @default(1)
+  
+  max_order_size    Float?
+  min_order_size    Float?
+  
+  pending_order     Int            @default(1)
+  stop_loss         Int            @default(0)
+  take_profit       Int            @default(0)
+  stop_loss_fixed_format   Int     @default(2)
+  take_profit_fixed_format Int     @default(2)
+  
+  // JSON field for all other advanced settings to avoid schema bloat
+  advancedSettings  Json?
+
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  tradingModels     TradingModel[]
+
+  @@index([userId])
+}
+
+model TradingModel {
+  id                String         @id @default(cuid())
+  userId            String
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  masterAccountId   String         // El ID de la cuenta en tradeCopierAccount (type 0)
+  configId          String
+  modelConfig       ModelConfig    @relation(fields: [configId], references: [id], onDelete: Restrict)
+  
+  name              String         // UI display name (e.g., "Gold Scalper Pro")
+  description       String?
+  isPublic          Boolean        @default(false)
+  group_id          String?        // ID de la API externa (Template/Group)
+  ownerId           String?        // ID del creador original
+  isClone           Boolean        @default(false)
+  
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@index([userId])
+  @@index([configId])
+}
+
+model SyncConfig {
+  id                String         @id @default(cuid())
+  userId            String
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  masterAccountId   String         // El ID de la cuenta en tradeCopierAccount (type 0)
+  slaveAccountId    String         // El ID de la cuenta esclava
+  
+  // Settings técnicos
+  risk_factor_value Float
+  risk_factor_type  Int
+  copier_status     Int            @default(1)
+  
+  max_order_size    Float?
+  min_order_size    Float?
+  
+  pending_order     Int            @default(1)
+  stop_loss         Int            @default(0)
+  take_profit       Int            @default(0)
+  stop_loss_fixed_format   Int     @default(2)
+  take_profit_fixed_format Int     @default(2)
+  
+  advancedSettings  Json?
+
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@unique([masterAccountId, slaveAccountId])
+  @@index([userId])
 }

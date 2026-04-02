@@ -1,5 +1,6 @@
 "use server";
 
+import { UserRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
@@ -64,5 +65,26 @@ export async function toggleUserStatus(userId: string, isActive: boolean) {
   } catch (error) {
       console.error("Error toggling user status:", error);
       return { error: "Error al cambiar estado" };
+  }
+}
+
+export async function updateUserRole(userId: string, newRole: UserRole) {
+  try {
+    const session = await auth();
+    if (session?.user?.role !== "superadmin") {
+      return { error: "No autorizado" };
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { role: newRole },
+    });
+
+    await logAudit("CHANGE_ROLE", userId, `Role changed to ${newRole}`);
+    revalidatePath("/dashboard/usuarios");
+    return { success: true };
+  } catch (error) {
+    console.error("Error updating user role:", error);
+    return { error: "Error al actualizar el rol" };
   }
 }

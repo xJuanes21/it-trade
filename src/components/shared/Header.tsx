@@ -31,12 +31,17 @@ export default function Header({ user: initialUser }: HeaderProps) {
   const user = initialUser || session?.user;
   const userName = user?.name || "Usuario";
   const userInitial = userName.charAt(0).toUpperCase();
-  const userRole = user?.role === "superadmin" ? "Super Admin" : "Usuario";
+  const getRoleLabel = (r?: string | null) => {
+    if (r === "superadmin") return "Super Admin";
+    if (r === "trader") return "Trader";
+    return "Usuario";
+  };
+  const userRole = getRoleLabel(user?.role);
 
   return (
     <header className=" backdrop-blur-md border-b border-border px-6 py-3 sticky top-0 z-40 bg-background/80">
       <div className="flex items-center justify-end gap-4">
-        {/* Search Bar - Hidden on mobile, visible on medium screens and up */}
+        {/* Search Bar - Hidden on mobile, visible on medium screens and up
         <div className="relative hidden md:block flex-1 max-w-md">
           <div className="absolute left-3 top-1/2 -translate-y-1/2">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
@@ -49,23 +54,9 @@ export default function Header({ user: initialUser }: HeaderProps) {
             className="w-full bg-card text-sm text-foreground pl-14 pr-4 py-2.5 rounded-xl border border-border focus:outline-none focus:border-primary/50 focus:bg-accent/5 placeholder:text-muted-foreground transition-all"
           />
         </div>
-
+        */}
         <div className="flex items-center gap-3">
           <ThemeToggle />
-
-          {/* Notification Bell */}
-          <button
-            className="relative p-2.5 hover:bg-secondary rounded-xl transition-all group"
-            onClick={() => setIsNotificationActive(!isNotificationActive)}
-          >
-            <Bell
-              size={20}
-              className="text-muted-foreground group-hover:text-primary transition-colors"
-            />
-            {isNotificationActive && (
-              <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-destructive rounded-full border-2 border-background shadow-sm shadow-destructive/50"></span>
-            )}
-          </button>
 
           {/* Separator */}
           <div className="h-8 w-[1px] bg-border hidden sm:block"></div>
@@ -91,7 +82,9 @@ export default function Header({ user: initialUser }: HeaderProps) {
               className="w-56 bg-popover border border-border rounded-xl p-1.5 shadow-xl backdrop-blur-xl"
             >
               <div className="px-2 py-1.5 mb-1 border-b border-border sm:hidden">
-                <p className="text-sm font-medium text-foreground">{userName}</p>
+                <p className="text-sm font-medium text-foreground">
+                  {userName}
+                </p>
                 <p className="text-xs text-muted-foreground">{userRole}</p>
               </div>
               <DropdownMenuItem

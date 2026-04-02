@@ -13,11 +13,16 @@ import {
   Activity,
   Calculator,
   Settings,
+  Settings2,
   Users,
+  Copy,
+  Layout,
+  ChevronDown,
+  ChevronUp,
   LucideIcon,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { getMenuItems, SETTINGS_ITEM, type UserRole } from "@/lib/auth-utils";
+import { getMenuItems, SETTINGS_ITEM, type UserRole, type NavItem } from "@/lib/auth-utils";
 
 // Map icon names to components
 const iconMap: Record<string, LucideIcon> = {
@@ -27,18 +32,17 @@ const iconMap: Record<string, LucideIcon> = {
   Activity,
   Calculator,
   Settings,
+  Settings2,
   Users,
   Mail,
+  Copy,
+  Layout,
+  ChevronDown,
+  ChevronUp,
 };
 
-interface MenuItem {
-  label: string;
-  href: string;
-  icon: string;
-}
-
 interface NavLinksProps {
-  menuItems: MenuItem[];
+  menuItems: NavItem[];
   pathname: string;
   isActive: (href: string) => boolean;
   onItemClick: () => void;
@@ -49,49 +53,107 @@ const NavLinks = ({
   pathname,
   isActive,
   onItemClick,
-}: NavLinksProps) => (
-  <nav className="flex flex-col gap-3 text-[12px]">
-    {menuItems.map((item) => {
-      const Icon = iconMap[item.icon as keyof typeof iconMap];
-      // Para HOME, verificar coincidencia exacta. Para otros, verificar prefijo
-      const isItemActive =
-        item.href === "/dashboard"
-          ? pathname === "/dashboard"
-          : isActive(item.href);
+}: NavLinksProps) => {
+  const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>({
+    "MODELOS": true, // Open by default for UX
+  });
 
-      return (
-        <Link
-          key={item.href}
-          className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-colors ${
-            isItemActive
-              ? "bg-primary text-primary-foreground"
-              : "text-foreground/80 hover:text-foreground hover:bg-muted"
-          }`}
-          href={item.href}
-          onClick={onItemClick}
-        >
-          {Icon && <Icon size={18} className="opacity-80" />}
-          {item.label}
-        </Link>
-      );
-    })}
+  const toggleGroup = (label: string) => {
+    setOpenGroups(prev => ({ ...prev, [label]: !prev[label] }));
+  };
 
-    <div className="h-px my-3 bg-[var(--border)]" />
+  return (
+    <nav className="flex flex-col gap-2 text-[12px]">
+      {menuItems.map((item) => {
+        const Icon = iconMap[item.icon as keyof typeof iconMap];
+        const hasChildren = item.children && item.children.length > 0;
+        const isExpanded = openGroups[item.label];
+        
+        // Active state for parent: if any child is active or parent itself is active
+        const isParentActive = hasChildren 
+          ? item.children?.some(child => isActive(child.href))
+          : (item.href === "/dashboard" ? pathname === "/dashboard" : isActive(item.href));
 
-    <Link
-      className={`mt-1 inline-flex items-center gap-3 px-4 py-2 rounded-xl text-[12px] font-medium transition-colors ${
-        isActive(SETTINGS_ITEM.href)
-          ? "bg-primary text-primary-foreground"
-          : "text-foreground/80 hover:text-foreground hover:bg-muted"
-      }`}
-      href={SETTINGS_ITEM.href}
-      onClick={onItemClick}
-    >
-      <Settings size={16} />
-      {SETTINGS_ITEM.label}
-    </Link>
-  </nav>
-);
+        if (hasChildren) {
+          return (
+            <div key={item.label} className="flex flex-col gap-1">
+              <button
+                onClick={() => toggleGroup(item.label)}
+                className={`flex items-center justify-between px-4 py-2.5 rounded-xl transition-all duration-300 font-bold ${
+                  isParentActive 
+                    ? "text-primary bg-primary/5" 
+                    : "text-foreground/70 hover:text-foreground hover:bg-white/5"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  {Icon && <Icon size={18} className={isParentActive ? "text-primary" : "opacity-70"} />}
+                  <span className="tracking-wide uppercase font-black text-[11px]">{item.label}</span>
+                </div>
+                {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </button>
+              
+              {isExpanded && (
+                <div className="flex flex-col gap-1 ml-4 pl-4 border-l border-white/5 animate-in slide-in-from-top-2 duration-300">
+                  {item.children?.map((child) => {
+                    const ChildIcon = iconMap[child.icon as keyof typeof iconMap];
+                    const isChildActive = isActive(child.href);
+                    
+                    return (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        onClick={onItemClick}
+                        className={`flex items-center gap-3 px-4 py-2 rounded-xl transition-all duration-200 ${
+                          isChildActive
+                            ? "text-primary font-bold bg-primary/10"
+                            : "text-foreground/60 hover:text-foreground hover:bg-white/5"
+                        }`}
+                      >
+                        {ChildIcon && <ChildIcon size={14} className="opacity-70" />}
+                        <span className="font-bold">{child.label}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        }
+
+        return (
+          <Link
+            key={item.href}
+            className={`flex items-center gap-3 px-4 py-2.5 rounded-xl transition-all duration-300 font-bold ${
+              isParentActive
+                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+                : "text-foreground/80 hover:text-foreground hover:bg-white/5"
+            }`}
+            href={item.href}
+            onClick={onItemClick}
+          >
+            {Icon && <Icon size={18} className={isParentActive ? "" : "opacity-70"} />}
+            <span className="tracking-wide">{item.label}</span>
+          </Link>
+        );
+      })}
+
+      <div className="h-px my-4 bg-white/5" />
+
+      <Link
+        className={`inline-flex items-center gap-3 px-4 py-2.5 rounded-xl text-[12px] font-bold transition-all duration-300 ${
+          isActive(SETTINGS_ITEM.href)
+            ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+            : "text-foreground/80 hover:text-foreground hover:bg-white/5"
+        }`}
+        href={SETTINGS_ITEM.href}
+        onClick={onItemClick}
+      >
+        <Settings size={18} className={isActive(SETTINGS_ITEM.href) ? "" : "opacity-70"} />
+        <span className="tracking-wide uppercase font-black text-[11px]">{SETTINGS_ITEM.label}</span>
+      </Link>
+    </nav>
+  );
+};
 
 interface SidebarProps {
   user?: {

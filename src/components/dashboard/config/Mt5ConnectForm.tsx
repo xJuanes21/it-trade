@@ -52,7 +52,7 @@ export default function Mt5ConnectForm() {
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-foreground flex items-center gap-2">
           <Server className="w-6 h-6 text-primary" />
-          Conectar cuenta MT5
+          Vincular Servidor de IT TRADE
         </h2>
         <p className="text-muted-foreground mt-2">
           Ingrese sus credenciales de MetaTrader 5 para permitir que los bots

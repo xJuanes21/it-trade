@@ -8,7 +8,7 @@ const steps = [
     icon: Download,
     title: "Conecta tu Cuenta",
     description:
-      "Vincula tu cuenta de MT5 de forma segura. Tus fondos siempre permanecen en tu broker, nosotros solo ejecutamos las operaciones.",
+      "Vincula tu cuenta del Servidor de IT TRADE de forma segura. Tus fondos siempre permanecen en tu broker, nosotros solo ejecutamos las operaciones.",
   },
   {
     order: 2,
