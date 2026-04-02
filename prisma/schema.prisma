@@ -40,6 +40,7 @@ model User {
   botAssignments  BotAssignment[]
   tradingModels   TradingModel[]
   modelConfigs    ModelConfig[]
+  syncConfigs     SyncConfig[]
 }
 
 model Account {
@@ -254,3 +255,33 @@ model TradingModel {
   @@index([configId])
 }
 
+model SyncConfig {
+  id                String         @id @default(cuid())
+  userId            String
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  masterAccountId   String         // El ID de la cuenta en tradeCopierAccount (type 0)
+  slaveAccountId    String         // El ID de la cuenta esclava
+  
+  // Settings técnicos
+  risk_factor_value Float
+  risk_factor_type  Int
+  copier_status     Int            @default(1)
+  
+  max_order_size    Float?
+  min_order_size    Float?
+  
+  pending_order     Int            @default(1)
+  stop_loss         Int            @default(0)
+  take_profit       Int            @default(0)
+  stop_loss_fixed_format   Int     @default(2)
+  take_profit_fixed_format Int     @default(2)
+  
+  advancedSettings  Json?
+
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@unique([masterAccountId, slaveAccountId])
+  @@index([userId])
+}

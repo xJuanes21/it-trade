@@ -8,6 +8,7 @@ import { MarketDataProvider } from "@/components/dashboard/overview/providers/Ma
 import { DashboardHeader } from "@/components/dashboard/overview/DashboardHeader";
 import { RankingTable } from "@/components/dashboard/overview/RankingTable";
 import { TradingChart } from "@/components/dashboard/overview/TradingChart";
+import { AccountStatusPanel } from "@/components/dashboard/overview/AccountStatusPanel";
 
 export default function DashboardPage() {
   const { data: session } = useSession();
@@ -28,7 +29,6 @@ export default function DashboardPage() {
         <DashboardHeader
           userName={session?.user?.name || "Trader"}
           lastSync={new Date().toLocaleTimeString()}
-          accountType="MARKET HUB"
           onSync={handleSync}
           isSyncing={isSyncing}
         />
@@ -41,16 +41,20 @@ export default function DashboardPage() {
                 <RankingTable />
               </div>
               <div className="lg:col-span-4">
-                <ActivityPanel />
+                {session?.user?.role === "superadmin" ? (
+                  <ActivityPanel />
+                ) : (
+                  <AccountStatusPanel />
+                )}
               </div>
             </div>
 
             {/* Market Prices & Chart - Row 2 */}
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 mb-12">
-              <div className="xl:col-span-4">
+              <div className="xl:col-span-6">
                 <MarketPricesTable />
               </div>
-              <div className="xl:col-span-8">
+              <div className="xl:col-span-6">
                 <TradingChart />
               </div>
             </div>
@@ -59,11 +63,13 @@ export default function DashboardPage() {
             <div className="mt-8">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                   <div className="w-1 h-8 bg-primary rounded-full"></div>
-                   <h2 className="text-xl font-bold uppercase tracking-tight">Monitor de Operaciones</h2>
+                  <div className="w-1 h-8 bg-primary rounded-full"></div>
+                  <h2 className="text-xl font-bold uppercase tracking-tight">
+                    Monitor de Operaciones
+                  </h2>
                 </div>
                 <div className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground animate-pulse border border-border px-3 py-1 rounded-full">
-                   Live Feed • All Accounts
+                  Live Feed • All Accounts
                 </div>
               </div>
               <MarketTable />

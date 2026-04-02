@@ -60,7 +60,7 @@ export const MetricCard = ({
         <h3 className="text-xs font-semibold text-muted-foreground mb-2">{title}</h3>
       )}
       <div className="text-2xl md:text-3xl font-bold text-foreground mb-1">
-        {value}
+        {typeof value === "number" ? value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : value}
       </div>
       <div className="text-[10px] md:text-xs text-muted-foreground mb-2">{label}</div>
       {max !== undefined && typeof value === "number" && (

@@ -77,8 +77,15 @@ function buildUrl(pathname: string) {
 
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
+    if (response.status === 404) {
+      throw new Error(
+        "¡Ups! Parece que esta divisa no tiene un historico en este momento.",
+      );
+    }
     const text = await response.text();
-    throw new Error(`MT5 API error (${response.status}): ${text || response.statusText}`);
+    throw new Error(
+      `Error de conexión (${response.status}): No se pudieron obtener los datos.`,
+    );
   }
   return (await response.json()) as T;
 }

@@ -28,7 +28,7 @@ export const PeriodReturns = ({
             Daily
           </div>
           <div className="text-lg md:text-xl font-bold text-emerald-500 dark:text-emerald-400">
-            +{periodReturns.daily}%
+            {periodReturns.daily >= 0 ? "+" : ""}{periodReturns.daily.toFixed(2)}%
           </div>
         </div>
         <div className="bg-secondary/50 rounded-lg p-3 border border-border">
@@ -36,7 +36,7 @@ export const PeriodReturns = ({
             Weekly
           </div>
           <div className="text-lg md:text-xl font-bold text-emerald-500 dark:text-emerald-400">
-            +{periodReturns.weekly}%
+            {periodReturns.weekly >= 0 ? "+" : ""}{periodReturns.weekly.toFixed(2)}%
           </div>
         </div>
         <div className="bg-secondary/50 rounded-lg p-3 border border-border">
@@ -44,7 +44,7 @@ export const PeriodReturns = ({
             Monthly
           </div>
           <div className="text-lg md:text-xl font-bold text-emerald-500 dark:text-emerald-400">
-            +{periodReturns.monthly}%
+            {periodReturns.monthly >= 0 ? "+" : ""}{periodReturns.monthly.toFixed(2)}%
           </div>
         </div>
         <div className="bg-secondary/50 rounded-lg p-3 border border-border">
@@ -52,7 +52,7 @@ export const PeriodReturns = ({
             Annualized
           </div>
           <div className="text-lg md:text-xl font-bold text-emerald-500 dark:text-emerald-400">
-            +{periodReturns.annualized}%
+            {periodReturns.annualized >= 0 ? "+" : ""}{periodReturns.annualized.toFixed(2)}%
           </div>
         </div>
       </div>

@@ -22,7 +22,7 @@ export const PnLSummary = ({
             Gain %
           </div>
           <div className="text-xl md:text-2xl font-bold text-emerald-500 dark:text-emerald-400">
-            +{gains.percent}%
+            {gains.percent >= 0 ? "+" : ""}{gains.percent.toFixed(2)}%
           </div>
         </div>
         <div className="text-right">
@@ -30,12 +30,12 @@ export const PnLSummary = ({
             NET P&L
           </div>
           <div className="text-xl md:text-2xl font-bold text-primary">
-            +${netPnL.toLocaleString()}
+            {netPnL >= 0 ? "+" : ""}${netPnL.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
         </div>
       </div>
       <div className="text-xs text-muted-foreground font-medium">
-        +${gains.absolute.toLocaleString()} Abs
+        {gains.absolute >= 0 ? "+" : ""}${gains.absolute.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Abs
       </div>
     </div>
   );

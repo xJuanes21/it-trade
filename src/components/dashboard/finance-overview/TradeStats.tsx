@@ -32,13 +32,13 @@ export const TradeStats = ({
         <div className="flex justify-between items-center">
           <span className="text-muted-foreground font-medium">Win rate (%)</span>
           <span className="text-emerald-500 dark:text-emerald-400 font-bold">
-            {tradeStats.win_rate}%
+            {tradeStats.win_rate.toFixed(1)}%
           </span>
         </div>
         <div className="flex justify-between items-center">
           <span className="text-muted-foreground font-medium">Profit Factor</span>
           <span className="font-bold text-foreground">
-            {tradeStats.profit_factor}
+            {tradeStats.profit_factor.toFixed(2)}
           </span>
         </div>
         <div className="flex justify-between items-center">

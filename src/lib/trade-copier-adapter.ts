@@ -95,7 +95,7 @@ export const tradeCopierAdapter = {
           avg_win: report.avg_win || 0,
           avg_loss: report.avg_loss || 0,
           daily_winrate: report.daily_winrate || 0,
-          total_winrate: typeof report.win_rate === 'number' ? report.win_rate : parseFloat(report.performance || report.win_rate || "0"),
+          total_winrate: typeof report.win_rate === 'number' ? report.win_rate : parseFloat(report.win_rate || "0"),
         },
         risk: {
           max_drawdown: report.drawdown || 0,

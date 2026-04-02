@@ -47,7 +47,7 @@ export function MarketPricesTable() {
   }, [error, isLoading, lastUpdated]);
 
   return (
-    <div className="glass-widget widget-hover p-6 text-foreground">
+    <div className="glass-widget widget-hover overflow-hidden h-[650px] flex flex-col p-6 text-foreground">
       <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-sm text-primary">Mercado IT TRADE</p>
@@ -121,8 +121,8 @@ export function MarketPricesTable() {
         </div>
       ) : null}
 
-      <div className="overflow-hidden rounded-2xl border border-border">
-        <div className="max-h-[480px] overflow-auto">
+      <div className="overflow-hidden rounded-2xl border border-border flex-1">
+        <div className="h-full overflow-auto">
           <table className="min-w-full divide-y divide-border text-sm">
             <thead className="bg-secondary text-xs uppercase tracking-wide text-muted-foreground">
               <tr>

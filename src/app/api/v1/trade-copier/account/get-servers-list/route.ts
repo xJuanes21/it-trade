@@ -12,24 +12,31 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
-    // Proxy to external API
+    // Proxy to external API with payload wrapping and timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+
     const externalResponse = await fetch(`${EXTERNAL_BASE_URL}/api/v1/trade-copier/account/get-servers-list`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "Accept": "application/json"
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ payload: body }),
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     const contentType = externalResponse.headers.get("content-type");
     let result;
     
     if (contentType && contentType.includes("application/json")) {
       result = await externalResponse.json();
+      console.log(`[Proxy] Get Servers List SUCCESS for broker ${body.broker}. Count: ${result?.data?.length || result?.payload?.length || 0}`);
     } else {
       const text = await externalResponse.text();
-      console.error("External API Servers List Non-JSON Response:", text);
+      console.error(`[Proxy] External API Servers List ERROR (${externalResponse.status}):`, text);
       return NextResponse.json({ 
         error: "External API Error", 
         message: "El Servidor de IT TRADE devolvió un formato inesperado al solicitar la lista de servidores.",

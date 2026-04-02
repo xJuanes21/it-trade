@@ -10,11 +10,17 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000);
+
     const externalResponse = await fetch(`${EXTERNAL_BASE_URL}/api/v1/trade-copier/template/edit`, {
       method: "POST",
       headers: { "Content-Type": "application/json", "Accept": "application/json" },
-      body: JSON.stringify(body),
+      body: JSON.stringify({ payload: body }),
+      signal: controller.signal
     });
+
+    clearTimeout(timeoutId);
 
     const result = await externalResponse.json();
     return NextResponse.json(result, { status: externalResponse.status });

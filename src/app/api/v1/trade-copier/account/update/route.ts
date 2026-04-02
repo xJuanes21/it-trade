@@ -31,14 +31,21 @@ export async function POST(req: Request) {
       console.log(`[Simulación] Bypass API Externa para actualizar cuenta ${account_id}`);
       result = { status: "success", message: "Account updated simulated" };
     } else {
+      // 2. Proxy to external API with increased timeout (60s)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
+
       const externalResponse = await fetch(`${EXTERNAL_BASE_URL}/api/v1/trade-copier/account/update`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Accept": "application/json"
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ payload: body }),
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
 
       const contentType = externalResponse.headers.get("content-type");
       

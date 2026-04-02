@@ -3,13 +3,7 @@
 import React, { useState, useEffect } from "react";
 import AccountForm from "@/components/dashboard/copy-trader/AccountForm";
 import { cn } from "@/lib/utils";
-import {
-  Plus,
-  RefreshCw,
-  Activity,
-  AlertTriangle,
-  Lock,
-} from "lucide-react";
+import { Plus, RefreshCw, Activity, AlertTriangle, Lock } from "lucide-react";
 import { tradeCopierService } from "@/services/trade-copier.service";
 import { Account } from "@/lib/copy-trader-types";
 import { useSession } from "next-auth/react";
@@ -130,7 +124,9 @@ export default function CopyTraderAccountsPage() {
         type: 0, // 0 = Master
       });
       if (res.status === "success") {
-        toast.success(`La cuenta ${promoteModal.account.name} ahora es MASTER.`);
+        toast.success(
+          `La cuenta ${promoteModal.account.name} ahora es MASTER.`,
+        );
         fetchAccounts();
       } else {
         toast.error(res.message || "Error al ascender la cuenta.");
@@ -146,7 +142,9 @@ export default function CopyTraderAccountsPage() {
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-2">
-          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Cuentas</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight text-foreground">
+            Cuentas
+          </h1>
           <p className="text-muted-foreground text-sm max-w-xl">
             Vincula y gestiona tus cuentas de broker para la operativa de
             copiado.
@@ -196,19 +194,6 @@ export default function CopyTraderAccountsPage() {
             </div>
           </div>
 
-          {isLimitReached && !showForm && (
-            <div className="flex items-center gap-3 p-4 rounded-xl bg-amber-500/5 border border-amber-500/15 animate-in fade-in slide-in-from-top-2 duration-300">
-              <AlertTriangle size={18} className="text-amber-400 shrink-0" />
-              <p className="text-sm text-amber-300/90">
-                Has alcanzado el límite de{" "}
-                <strong>{accountLimit?.limit}</strong> cuenta
-                {accountLimit && accountLimit.limit > 1 ? "s" : ""} permitida
-                {accountLimit && accountLimit.limit > 1 ? "s" : ""} en tu
-                suscripción actual.
-              </p>
-            </div>
-          )}
-
           {showForm && (
             <div className="animate-in slide-in-from-top-4 fade-in duration-300">
               <AccountForm
@@ -222,41 +207,47 @@ export default function CopyTraderAccountsPage() {
             </div>
           )}
 
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-4 opacity-50">
-              <RefreshCw size={40} className="animate-spin text-primary" />
-              <p className="text-sm font-medium">Sincronizando cuentas...</p>
-            </div>
-          ) : accounts.length === 0 ? (
-            <Card className="border-dashed border-white/10 bg-transparent py-20">
-              <CardContent className="flex flex-col items-center justify-center gap-4 text-center">
-                <div className="p-4 bg-primary/5 rounded-full">
-                  <Activity size={40} className="text-primary/40" />
+          {!showForm && (
+            <>
+              {loading ? (
+                <div className="flex flex-col items-center justify-center py-20 gap-4 opacity-50">
+                  <RefreshCw size={40} className="animate-spin text-primary" />
+                  <p className="text-sm font-medium">Sincronizando cuentas...</p>
                 </div>
-                <div className="space-y-1">
-                  <p className="font-bold text-lg text-foreground">No hay cuentas vinculadas</p>
-                  <p className="text-sm text-muted-foreground">
-                    Comienza vinculando tu primera cuenta de broker.
-                  </p>
-                </div>
-                <Button
-                  variant="outline"
-                  onClick={() => setShowForm(true)}
-                  className="mt-4 rounded-xl border-white/10"
-                  disabled={isLimitReached}
-                >
-                  Vincular ahora
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <AccountsGrid
-              accounts={accounts}
-              isSuperAdmin={isSuperAdmin}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onPromote={handlePromoteToMaster}
-            />
+              ) : accounts.length === 0 ? (
+                <Card className="border-dashed border-white/10 bg-transparent py-20">
+                  <CardContent className="flex flex-col items-center justify-center gap-4 text-center">
+                    <div className="p-4 bg-primary/5 rounded-full">
+                      <Activity size={40} className="text-primary/40" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="font-bold text-lg text-foreground">
+                        No hay cuentas vinculadas
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Comienza vinculando tu primera cuenta de broker.
+                      </p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowForm(true)}
+                      className="mt-4 rounded-xl border-white/10"
+                      disabled={isLimitReached}
+                    >
+                      Vincular ahora
+                    </Button>
+                  </CardContent>
+                </Card>
+              ) : (
+                <AccountsGrid
+                  accounts={accounts}
+                  isSuperAdmin={isSuperAdmin}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onPromote={handlePromoteToMaster}
+                />
+              )}
+            </>
           )}
         </div>
       </div>

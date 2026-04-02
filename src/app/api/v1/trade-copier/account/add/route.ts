@@ -14,21 +14,6 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
-    // 1. Check Account Limit
-    const userId = session.user.id;
-    const limit = parseInt(process.env.COPY_TRADER_LIMIT || "1", 10);
-
-    const currentCount = await prisma.tradeCopierAccount.count({
-      where: { userId }
-    });
-
-    if (currentCount >= limit) {
-      return NextResponse.json({
-        status: "error",
-        message: `Has alcanzado el límite de ${limit} cuenta(s)  permitidas para tu suscripción.`
-      }, { status: 403 });
-    }
-
     // 1.5 SIMULACIÓN DE PRUEBAS LOCALES
     const SIMULATED_LOGINS = ["77889900", "11223344", "999999", "12345"];
     let accountId = "";
@@ -39,15 +24,21 @@ export async function POST(req: Request) {
       accountId = `sim_acc_${body.login}_${Date.now()}`;
       result = { status: "success", data: { account: { account_id: accountId } } };
     } else {
-      // 2. Proxy to external API
+      // 2. Proxy to external API with increased timeout (60s)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000);
+
       const externalResponse = await fetch(`${EXTERNAL_BASE_URL}/api/v1/trade-copier/account/add`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           "Accept": "application/json"
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ payload: body }),
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
 
       const contentType = externalResponse.headers.get("content-type");
       
@@ -67,10 +58,15 @@ export async function POST(req: Request) {
         return NextResponse.json(result, { status: externalResponse.status });
       }
 
-      accountId = result?.data?.account?.account_id || result?.data?.account_id;
+      // Robust ID extraction from multiple known formats
+      accountId = result?.data?.account?.account_id || 
+                  result?.data?.account_id || 
+                  result?.account_id || 
+                  result?.data?.id || 
+                  result?.id;
 
       if (!accountId) {
-        console.error("External API Success but missing Account ID:", JSON.stringify(result, null, 2));
+        console.error("External API Success but missing Account ID. Full Response:", JSON.stringify(result, null, 2));
         return NextResponse.json({
           status: "error",
           message: "El Servidor de IT TRADE no devolvió el ID de la cuenta creada.",
@@ -139,9 +135,16 @@ export async function POST(req: Request) {
     });
 
   } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      return NextResponse.json(
+        { error: "Timeout Error", message: "El Servidor de IT TRADE tardó demasiado en responder (60s). Esto suele pasar si el broker externo es lento." },
+        { status: 504 }
+      );
+    }
+
     console.error("Add Account Proxy Error:", error);
     return NextResponse.json(
-      { error: "Internal Server Error", details: error instanceof Error ? error.message : String(error) },
+      { error: "Internal Server Error", message: "Error al intentar conectar con el Servidor IT TRADE.", details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }

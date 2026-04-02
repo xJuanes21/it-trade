@@ -101,13 +101,82 @@ export function RankingTable() {
     fetchRanking();
   }, []);
 
+  // Skeleton for loading state
+  const SkeletonRow = ({ index }: { index: number }) => (
+    <tr
+      key={index}
+      className="animate-pulse border-b border-white/5 last:border-0"
+    >
+      <td className="px-4 py-4 text-center">
+        <div className="h-6 w-6 bg-white/5 rounded-lg mx-auto" />
+      </td>
+      <td className="px-4 py-4">
+        <div className="flex flex-col gap-2">
+          <div className="h-4 w-32 bg-white/5 rounded" />
+          <div className="h-2 w-20 bg-white/5 rounded" />
+        </div>
+      </td>
+      <td className="px-4 py-4">
+        <div className="h-4 w-16 bg-white/5 rounded ml-auto" />
+      </td>
+      <td className="px-4 py-4">
+        <div className="h-4 w-12 bg-white/10 rounded ml-auto" />
+      </td>
+      <td className="px-4 py-4">
+        <div className="h-4 w-20 bg-white/5 rounded ml-auto" />
+      </td>
+    </tr>
+  );
+
   if (loading) {
     return (
-      <div className="glass-widget p-8 flex flex-col items-center justify-center min-h-[300px]">
-        <Loader2 className="w-8 h-8 text-primary animate-spin mb-4" />
-        <p className="text-muted-foreground animate-pulse">
-          Calculando Ranking...
-        </p>
+      <div className="glass-widget p-6 text-foreground h-[650px] flex flex-col border border-white/5">
+        <header className="mb-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-yellow-500/10 rounded-xl flex items-center justify-center ring-1 ring-yellow-500/20">
+              <Trophy className="text-yellow-500/40 w-5 h-5" />
+            </div>
+            <div className="space-y-1">
+              <div className="h-5 w-40 bg-white/10 rounded animate-pulse" />
+              <div className="h-2 w-60 bg-white/5 rounded animate-pulse" />
+            </div>
+          </div>
+        </header>
+
+        <div className="overflow-hidden flex-1 flex flex-col">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-muted-foreground/30 border-b border-white/5">
+                <th className="px-4 py-3 text-left font-black uppercase text-[10px] tracking-widest">
+                  Pos
+                </th>
+                <th className="px-4 py-3 text-left font-black uppercase text-[10px] tracking-widest">
+                  Cuenta
+                </th>
+                <th className="px-4 py-3 text-right font-black uppercase text-[10px] tracking-widest">
+                  Profit
+                </th>
+                <th className="px-4 py-3 text-right font-black uppercase text-[10px] tracking-widest">
+                  ROI
+                </th>
+                <th className="px-4 py-3 text-right font-black uppercase text-[10px] tracking-widest">
+                  Capital
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {[...Array(6)].map((_, i) => (
+                <SkeletonRow key={i} index={i} />
+              ))}
+            </tbody>
+          </table>
+          <div className="mt-auto py-10 flex flex-col items-center gap-3">
+            <Loader2 className="w-6 h-6 text-primary/20 animate-spin" />
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/30 animate-pulse">
+              Calculando Rankings Globales
+            </p>
+          </div>
+        </div>
       </div>
     );
   }
@@ -128,7 +197,7 @@ export function RankingTable() {
   }
 
   return (
-    <div className="glass-widget widget-hover p-6 text-foreground overflow-hidden">
+    <div className="glass-widget widget-hover p-6 text-foreground h-[650px] flex flex-col">
       <header className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-yellow-500/10 rounded-xl flex items-center justify-center">
@@ -143,7 +212,7 @@ export function RankingTable() {
         </div>
       </header>
 
-      <div className="overflow-x-auto">
+      <div className="overflow-auto flex-1 custom-scrollbar">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-muted-foreground border-b border-border/50">

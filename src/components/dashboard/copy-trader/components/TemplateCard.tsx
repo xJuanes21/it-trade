@@ -40,7 +40,7 @@ export function TemplateCard({
 
   return (
     <>
-      <Card className="bg-secondary/20 border-white/5 rounded-[2.5rem] overflow-hidden hover:border-primary/30 transition-all group backdrop-blur-sm h-full flex flex-col">
+      <Card className="glass-widget widget-hover rounded-[2.5rem] overflow-hidden group h-full flex flex-col">
         <CardContent className="p-8 flex flex-col h-full">
           <div className="flex justify-between items-start mb-6">
             <div className="p-3 bg-primary/10 rounded-2xl text-primary ring-1 ring-primary/20">
@@ -115,7 +115,7 @@ export function TemplateCard({
       {isEditing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-md animate-in fade-in duration-300 p-4 sm:p-8">
            <div 
-             className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-card border border-white/10 rounded-[3rem] shadow-2xl animate-in zoom-in-95 duration-500"
+             className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-card border border-border rounded-[3rem] shadow-2xl animate-in zoom-in-95 duration-500"
            >
               <div className="sticky top-0 z-20 flex items-center justify-between p-8 bg-card/80 backdrop-blur-md border-b border-white/5">
                  <div>

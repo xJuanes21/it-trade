@@ -22,7 +22,7 @@ export const PROTECTED_ROUTES: Record<string, UserRole[]> = {
   // Trading Models Routes
   "/dashboard/copy-trader/accounts": ["user", "superadmin", "trader"],
   "/dashboard/copy-trader/templates": ["user", "superadmin", "trader"],
-  "/dashboard/copy-trader/configs": ["superadmin", "trader"],
+  "/dashboard/copy-trader/configs": ["superadmin"],
 };
 
 /**
@@ -78,52 +78,42 @@ export interface NavItem {
  * Obtiene los items del menú según el rol del usuario
  */
 export function getMenuItems(role: UserRole): NavItem[] {
-  const baseItems = [
+  const isSuperOrTrader = role === "superadmin" || role === "trader";
+
+  const menu: NavItem[] = [
     { href: "/dashboard", label: "HOME", icon: "Home" },
     { href: "/dashboard/overview", label: "OVERVIEW", icon: "Activity" },
-    { href: "/dashboard/traders", label: "TRADERS", icon: "ChartNoAxesCombined" },
+    //{ href: "/dashboard/traders", label: "TRADERS", icon: "ChartNoAxesCombined" },
+    // Trade Copier Modules (Now standalone)
+    {
+      href: "/dashboard/copy-trader/accounts",
+      label: role === "user" ? " CUENTAS" : "CUENTAS",
+      icon: "Wallet"
+    },
+    {
+      href: "/dashboard/copy-trader/templates",
+      label: role === "user" ? " PLANTILLAS" : "PLANTILLAS",
+      icon: "Copy"
+    },
   ];
 
-  const copyTraderGroup: NavItem = {
-    href: "#",
-    label: "MODELOS",
-    icon: "Copy",
-    children: [
-      { href: "/dashboard/copy-trader/accounts", label: role === "user" ? "MIS CUENTAS" : "CUENTAS", icon: "Activity" },
-      { href: "/dashboard/copy-trader/templates", label: role === "user" ? "PLANTILLAS" : "PLANTILLAS", icon: "Layout" },
-    ]
-  };
-
-  if (role === "superadmin" || role === "trader") {
-    // Add CONFIGS only for admins/traders
-    copyTraderGroup.children?.push({
+  if (role === "superadmin") {
+    // Advanced Configs only for Superadmins
+    menu.push({
       href: "/dashboard/copy-trader/configs",
       label: "CONFIGS",
       icon: "Settings2"
     });
-
-    const adminItems = [
-      ...baseItems,
-      copyTraderGroup
-    ];
-
-    if (role === "superadmin") {
-      adminItems.push(
-        { href: "/dashboard/requests", label: "SOLICITUDES", icon: "Mail" },
-        { href: "/dashboard/usuarios", label: "USUARIOS", icon: "Users" }
-      );
-    }
-
-    return adminItems;
   }
 
-  // Usuario normal / Cliente
-  return [
-    ...baseItems,
-    copyTraderGroup,
-    // { href: "/dashboard/wallets", label: "WALLETS", icon: "Wallet" },
-    // { href: "/dashboard/operaciones", label: "OPERACIONES", icon: "Activity" },
-  ];
+  if (role === "superadmin") {
+    menu.push(
+      { href: "/dashboard/requests", label: "SOLICITUDES", icon: "Mail" },
+      { href: "/dashboard/usuarios", label: "USUARIOS", icon: "Users" }
+    );
+  }
+
+  return menu;
 }
 
 /**

@@ -30,7 +30,7 @@ export function AccountCard({
 }: AccountCardProps) {
   return (
     <Card
-      className="backdrop-blur-md bg-card/40 border-white/5 hover:bg-card/60 transition-all duration-300 group overflow-hidden"
+      className="glass-widget widget-hover group overflow-hidden"
     >
       <CardContent className="p-0">
         <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -65,7 +65,7 @@ export function AccountCard({
                   {account.type === 0 ? "MASTER" : "SLAVE"}
                 </span>
                 {account.isOwner === false && account.ownerEmail && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-500/20 text-slate-300 ml-2">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground ml-2">
                     De: {account.ownerEmail}
                   </span>
                 )}

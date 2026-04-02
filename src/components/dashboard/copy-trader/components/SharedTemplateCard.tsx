@@ -30,7 +30,7 @@ export function SharedTemplateCard({
   return (
     <div className="relative group h-full">
       <div className="absolute -inset-1 bg-gradient-to-r from-blue-500/20 via-primary/20 to-purple-500/20 rounded-[2.5rem] blur-xl opacity-0 group-hover:opacity-100 transition duration-700"></div>
-      <Card className="relative bg-black/40 border-white/5 rounded-[2.5rem] backdrop-blur-2xl overflow-hidden shadow-2xl transition-all duration-500 hover:translate-y-[-8px] h-full flex flex-col">
+      <Card className="glass-widget rounded-[2.5rem] overflow-hidden group-hover:translate-y-[-8px] transition-all duration-500 h-full flex flex-col">
         <CardContent className="p-10 flex flex-col h-full">
           <div className="flex justify-between items-start mb-8 text-foreground">
             <div className="flex items-center gap-4">
@@ -49,15 +49,6 @@ export function SharedTemplateCard({
 
             <div className="flex gap-2">
               {/* CLONE BUTTON (Traders only) */}
-              {isTrader && (
-                <Button
-                  variant="ghost"
-                  onClick={() => onClone(t)}
-                  className="rounded-2xl h-11 w-11 p-0 bg-white/5 text-muted-foreground hover:bg-primary/20 hover:text-primary transition-all shadow-xl active:scale-95 shrink-0"
-                >
-                  <Copy size={16} />
-                </Button>
-              )}
 
               {/* FOLLOW BUTTON (Investors/Everyone with Slave) */}
               <TooltipProvider>
@@ -70,9 +61,9 @@ export function SharedTemplateCard({
                         onClick={() => onFollow(t)}
                         className={cn(
                           "rounded-2xl h-11 px-6 font-black text-xs uppercase tracking-widest transition-all active:scale-95 disabled:grayscale",
-                          t.isFollowedByMe 
-                            ? "border-primary/50 text-primary bg-primary/5 cursor-default opacity-100" 
-                            : "bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20 disabled:opacity-30"
+                          t.isFollowedByMe
+                            ? "border-primary/50 text-primary bg-primary/5 cursor-default opacity-100"
+                            : "bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20 disabled:opacity-30",
                         )}
                       >
                         {t.isFollowedByMe ? (

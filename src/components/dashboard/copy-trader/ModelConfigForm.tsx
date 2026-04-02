@@ -1,15 +1,15 @@
-"use client";
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { RiskFactorType, CopierStatus, FormatType } from "@/lib/copy-trader-types";
+import { Account } from "@/lib/copy-trader-types";
 import { cn } from "@/lib/utils";
-import { ShieldAlert, Target, Zap, Loader2, CheckCircle2, AlertCircle, ChevronDown, ListPlus } from "lucide-react";
+import { ShieldAlert, Target, Zap, Loader2, CheckCircle2, AlertCircle, ChevronDown, Users, Server } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ModernSelect } from "@/components/ui/ModernSelect";
+import { tradeCopierService } from "@/services/trade-copier.service";
+import { toast } from "sonner";
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -60,7 +60,7 @@ function Section({
   const [isOpen, setIsOpen] = useState(defaultOpen);
   
   return (
-    <div className="border border-white/5 rounded-2xl overflow-hidden bg-black/10">
+    <div className="border border-border rounded-2xl bg-muted/30">
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
@@ -86,15 +86,22 @@ function Section({
 
 // ─── Component ───────────────────────────────────────────────────────────────
 
-export default function ModelConfigForm() {
+interface ModelConfigFormProps {
+  initialData?: any;
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}
+
+export default function ModelConfigForm({ initialData, onSuccess, onCancel }: ModelConfigFormProps) {
   const router = useRouter();
 
-  const [configInfo, setConfigInfo] = useState({
-    name: "",
-    description: "",
-  });
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [loadingAccounts, setLoadingAccounts] = useState(true);
+  
+  const [selectedMaster, setSelectedMaster] = useState<string>(initialData?.masterAccountId || "");
+  const [selectedSlave, setSelectedSlave] = useState<string>(initialData?.slaveAccountId || "");
 
-  const [settings, setSettings] = useState<Record<string, any>>({
+  const [settings, setSettings] = useState<Record<string, any>>(initialData || {
     risk_factor_type: 3,
     risk_factor_value: 1.0,
     copier_status: 1,
@@ -107,18 +114,39 @@ export default function ModelConfigForm() {
   });
 
   const [loading, setLoading] = useState(false);
+  const [refreshCount, setRefreshCount] = useState(0);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
-  const handleInfoChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setValidationErrors((prev) => {
-      const next = { ...prev };
-      delete next[name];
-      return next;
-    });
-    setConfigInfo((prev) => ({ ...prev, [name]: value }));
-  };
+  // Fetch accounts on mount
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      try {
+        setLoadingAccounts(true);
+        const res = await tradeCopierService.getAccounts();
+        if (res.status === "success") {
+          setAccounts(res.data.accounts || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch accounts for config form", err);
+      } finally {
+        setLoadingAccounts(false);
+      }
+    };
+    fetchAccounts();
+  }, []);
+
+  // Synchronize state with initialData to ensure Edit mode always pre-fills correctly
+  useEffect(() => {
+    if (initialData) {
+      setSelectedMaster(initialData.masterAccountId || "");
+      setSelectedSlave(initialData.slaveAccountId || "");
+      setSettings(prev => ({
+        ...prev,
+        ...initialData
+      }));
+    }
+  }, [initialData]);
 
   const handleSelectChange = (name: string, value: string | number) => {
     setValidationErrors((prev) => {
@@ -146,9 +174,8 @@ export default function ModelConfigForm() {
   const validate = (): boolean => {
     const errors: Record<string, string> = {};
 
-    if (!configInfo.name.trim()) {
-      errors.name = "El nombre de la configuración es obligatorio.";
-    }
+    if (!selectedMaster) errors.id_master = "Debes seleccionar un Master.";
+    if (!selectedSlave) errors.id_slave = "Debes seleccionar un Slave.";
     if (settings.risk_factor_value !== undefined && settings.risk_factor_value <= 0) {
       errors.risk_factor_value = "El valor debe ser mayor a 0.";
     }
@@ -161,7 +188,7 @@ export default function ModelConfigForm() {
     setMessage(null);
 
     if (!validate()) {
-      setMessage({ type: "error", text: "Corrige los campos marcados en rojo." });
+      setMessage({ type: "error", text: "Faltan datos obligatorios para la sincronización." });
       return;
     }
 
@@ -169,12 +196,12 @@ export default function ModelConfigForm() {
 
     try {
       const payload = {
-        name: configInfo.name,
-        description: configInfo.description,
-        settings: { ...settings }
+        masterAccountId: selectedMaster,
+        slaveAccountId: selectedSlave,
+        ...settings
       };
 
-      const res = await fetch("/api/v1/models/config/create", {
+      const res = await fetch("/api/v1/trade-copier/personal-sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -182,38 +209,44 @@ export default function ModelConfigForm() {
 
       const data = await res.json();
 
-      if (res.ok) {
-        setMessage({ type: "success", text: "Configuración guardada correctamente." });
-        setTimeout(() => {
-          router.push("/dashboard/copy-trader/templates");
-        }, 1500);
+      if (data.status === "success") {
+        toast.success(initialData?.id ? "Configuración 1-a-1 actualizada" : "Configuración 1-a-1 creada exitosamente");
+        if (onSuccess) onSuccess();
       } else {
-        setMessage({ type: "error", text: data.error || "Error al crear la configuración." });
+        toast.error(data.error || data.message || "Error al sincronizar con el servidor.");
       }
-    } catch (error) {
-      console.error("Config Submit Error:", error);
-      setMessage({ type: "error", text: "Error de conexión." });
+    } catch (error: any) {
+      console.error("Config Sync Error:", error);
+      setMessage({ type: "error", text: error.message || "Error de conexión con el Servidor IT TRADE." });
     } finally {
       setLoading(false);
     }
   };
 
-  const inputClasses = "bg-white/[0.03] border-white/10 rounded-xl h-11 focus:ring-primary focus:border-primary transition-all px-4 text-sm";
+  const masterOptions = accounts
+    .filter(a => a.type === 0 && a.isOwner)
+    .map(a => ({ value: a.account_id, label: `${a.name} (${a.login})` }));
+
+  const slaveOptions = accounts
+    .filter(a => a.type === 1)
+    .map(a => ({ value: a.account_id, label: `${a.name} (${a.login}) [${a.ownerEmail || 'User'}]` }));
+
+  const inputClasses = "bg-muted/50 border border-input rounded-xl h-11 focus:ring-primary focus:border-primary transition-all px-4 text-sm text-foreground";
   const labelClasses = "text-[10px] font-black uppercase tracking-widest text-muted-foreground mr-2 mb-2 block";
-  const errorClasses = "text-[10px] text-red-100 font-bold mt-1";
+  const errorClasses = "text-[10px] text-destructive font-bold mt-1";
 
   return (
-    <Card className="max-w-4xl mx-auto backdrop-blur-xl bg-card/60 border-white/5 shadow-2xl overflow-hidden rounded-[2.5rem] mb-20 animate-in fade-in duration-700">
-      <CardHeader className="p-10 border-b border-white/5 bg-gradient-to-br from-primary/5 to-transparent">
+    <Card className="max-w-4xl mx-auto glass-widget shadow-2xl overflow-hidden rounded-[2.5rem] mb-20 animate-in fade-in duration-700">
+      <CardHeader className="p-10 border-b border-white/5 bg-gradient-to-br from-indigo-500/5 to-transparent">
         <div className="flex items-center gap-3 mb-3">
-           <div className="h-0.5 w-10 bg-primary" />
-           <p className="text-[10px] font-black uppercase tracking-[0.4em] text-primary">Rules Engine</p>
+           <div className="h-0.5 w-10 bg-indigo-500" />
+           <p className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400">Advanced 1-a-1 Sync</p>
         </div>
         <CardTitle className="text-4xl font-black text-foreground tracking-tight">
-          Configuración Técnica
+          Configuración Directa
         </CardTitle>
         <CardDescription className="font-medium mt-2 text-muted-foreground max-w-lg leading-relaxed">
-          Diseña el comportamiento algorítmico global que usarán tus modelos para gestionar el riesgo y la ejecución.
+          Puente técnico de alta precisión. Establece reglas de copiado personalizadas directamente entre un Master y un Slave específico.
         </CardDescription>
       </CardHeader>
 
@@ -231,34 +264,44 @@ export default function ModelConfigForm() {
         <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
           
           <Section 
-            title="Metadata de Configuración" 
-            icon={<ListPlus size={18} />} 
+            title="Selección de Cuentas (Sync 1-a-1)" 
+            icon={<Users size={18} />} 
             defaultOpen={true}
             required
-            accentColor="text-blue-400"
+            accentColor="text-indigo-400"
           >
-            <div className="grid grid-cols-1 gap-6 mt-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-2">
               <div className="space-y-2">
-                <Label className={labelClasses}>Nombre Interno <span className="text-red-400">*</span></Label>
-                <Input 
-                  name="name" 
-                  placeholder="Ej: Scalping Master v2 (Aggressive)" 
-                  className={cn(inputClasses, "w-full", validationErrors.name && "border-red-500/50")} 
-                  value={configInfo.name} onChange={handleInfoChange} 
+                <Label className={labelClasses}>Cuenta MASTER (Tuya) <span className="text-red-400">*</span></Label>
+                <ModernSelect
+                  options={masterOptions}
+                  value={selectedMaster}
+                  onChange={(v) => setSelectedMaster(String(v))}
+                  placeholder={loadingAccounts ? "Cargando..." : "Selecciona tu Master"}
                 />
-                {validationErrors.name && <p className={errorClasses}>{validationErrors.name}</p>}
+                {validationErrors.id_master && <p className={errorClasses}>{validationErrors.id_master}</p>}
               </div>
 
               <div className="space-y-2">
-                <Label className={labelClasses}>Comentarios / Notas Técnicas</Label>
-                <Input 
-                  name="description" 
-                  placeholder="Ej: Usar solo en cuentas con balance > $2,500" 
-                  className={cn(inputClasses, "w-full")} 
-                  value={configInfo.description} onChange={handleInfoChange} 
+                <Label className={labelClasses}>Cuenta SLAVE (Cualquier Usuario) <span className="text-red-400">*</span></Label>
+                <ModernSelect
+                  options={slaveOptions}
+                  value={selectedSlave}
+                  onChange={(v) => setSelectedSlave(String(v))}
+                  placeholder={loadingAccounts ? "Cargando..." : "Selecciona el Slave"}
                 />
+                {validationErrors.id_slave && <p className={errorClasses}>{validationErrors.id_slave}</p>}
               </div>
             </div>
+            {selectedMaster && selectedSlave && (
+              <div className="mt-6 p-4 rounded-xl bg-primary/5 border border-primary/10 flex items-center gap-3">
+                 <Server size={18} className="text-primary shrink-0" />
+                 <p className="text-xs font-medium text-muted-foreground leading-snug">
+                   Sincronizando relación técnica entre la cuenta <span className="text-white font-bold">{selectedMaster}</span> y 
+                   la cuenta esclava <span className="text-white font-bold">{selectedSlave}</span> en el Servidor de IT TRADE.
+                 </p>
+              </div>
+            )}
           </Section>
 
           <Section 
@@ -418,29 +461,32 @@ export default function ModelConfigForm() {
           </Section>
 
           <div className="pt-10 flex flex-col sm:flex-row justify-end gap-3 border-t border-white/5">
+            {onCancel && (
+               <Button
+                 type="button"
+                 variant="ghost"
+                 className="rounded-2xl px-10 h-14 text-muted-foreground hover:bg-white/5 transition-all text-sm font-bold"
+                 onClick={onCancel}
+               >
+                  Cancelar
+               </Button>
+            )}
             <Button
               type="button"
-              variant="ghost"
-              className="rounded-2xl px-10 h-14 text-muted-foreground hover:bg-white/5 transition-all text-sm font-bold"
-              onClick={() => router.back()}
-            >
-               Regresar
-            </Button>
-            <Button
-              type="button"
-              className="rounded-2xl px-16 h-14 bg-primary hover:bg-primary/90 transition-all font-black uppercase text-xs tracking-widest shadow-2xl shadow-primary/20 flex items-center gap-3"
+              className="rounded-2xl px-20 h-14 bg-primary hover:bg-primary/90 transition-all font-black uppercase text-xs tracking-widest shadow-2xl shadow-primary/20 flex items-center gap-3 active:scale-95"
               disabled={loading}
               onClick={handleSubmit}
             >
               {loading ? <Loader2 size={18} className="animate-spin" /> : (
                 <>
                   <CheckCircle2 size={18} />
-                  Persistir Configuración
+                  {initialData ? "Guardar" : "Crear Settings"}
                 </>
               )}
             </Button>
           </div>
         </form>
+
       </CardContent>
     </Card>
   );

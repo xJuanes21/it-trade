@@ -35,9 +35,16 @@ export async function GET(req: Request) {
 
     const mappedModels = models.map((m: any) => {
       const { modelConfig, ...rest } = m;
+      let extras: any = {};
+      if (modelConfig?.advancedSettings && typeof modelConfig.advancedSettings === 'object') {
+        extras = modelConfig.advancedSettings;
+      }
       return {
         ...rest,
-        settings: modelConfig
+        // Aligned with TemplateForm expectations: metadata at root
+        investment_min: extras.investment_min,
+        monthly_fee: extras.monthly_fee,
+        settings: { ...modelConfig, ...extras }
       };
     });
 

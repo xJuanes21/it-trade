@@ -393,7 +393,9 @@ export default function TemplatesView() {
         {/* Lists */}
         <div className="flex flex-col gap-16">
           <TemplatesList
-            title={userRole === "user" ? "Mis Suscripciones" : "Mis Plantillas"}
+            title={
+              userRole === "user" ? "Mis Plantillas Activas" : "Mis Plantillas"
+            }
             accentColor="primary"
             badge={`${myTemplates.length} ACTIVAS`}
             templates={paginatedMy}

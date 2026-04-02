@@ -34,7 +34,7 @@ export function ActivityPanel() {
   }, []);
 
   return (
-    <div className="glass-widget widget-hover p-6 text-foreground h-[600px] flex flex-col">
+    <div className="glass-widget widget-hover p-6 text-foreground h-[650px] flex flex-col">
       <div className="mb-6 flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
@@ -58,9 +58,22 @@ export function ActivityPanel() {
 
       <div className="flex-1 overflow-y-auto pr-1 space-y-4 custom-scrollbar">
         {loading && notifications.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-            <Loader2 className="w-8 h-8 animate-spin mb-2" />
-            <p className="text-sm">Cargando actividad...</p>
+          <div className="space-y-4 animate-in fade-in duration-500">
+            {[...Array(5)].map((_, i) => (
+              <div
+                key={i}
+                className="flex gap-4 rounded-2xl border border-white/5 bg-white/5 p-4 animate-pulse"
+              >
+                <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-white/10" />
+                <div className="flex flex-col gap-2 w-full">
+                  <div className="flex items-center justify-between">
+                    <div className="h-3 w-24 bg-white/10 rounded" />
+                    <div className="h-2 w-16 bg-white/5 rounded" />
+                  </div>
+                  <div className="h-3 w-full bg-white/5 rounded" />
+                </div>
+              </div>
+            ))}
           </div>
         ) : null}
 

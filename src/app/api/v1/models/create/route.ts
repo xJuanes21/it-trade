@@ -12,6 +12,26 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { name, description, masterAccountId, settings, investment_min, monthly_fee, isPublic } = body;
 
+    const {
+      risk_factor_value,
+      risk_factor_type,
+      copier_status,
+      max_order_size,
+      min_order_size,
+      pending_order,
+      stop_loss,
+      take_profit,
+      stop_loss_fixed_format,
+      take_profit_fixed_format,
+      ...restSettings
+    } = settings || {};
+
+    const advancedSettings = {
+      ...restSettings,
+      investment_min: investment_min ? Number(investment_min) : 0,
+      monthly_fee: monthly_fee ? Number(monthly_fee) : 0,
+    };
+
     if (!name || !masterAccountId) return NextResponse.json({ error: "Faltan campos obligatorios." }, { status: 400 });
 
     // 1. STEP ONE: Create Template in External API
@@ -67,26 +87,22 @@ export async function POST(req: Request) {
 
     // 2. STEP TWO: Set technical Settings for that Group Id in External API
     // -------------------------------------------------------------------------
-    // NOTE: This step is NON-BLOCKING. If it fails, we still save to local DB
-    // so the template is not orphaned. The user can update settings later.
     let settingsError: string | null = null;
     try {
       const settingsPayload = {
         id_group: externalGroupId,
-        risk_factor_value: settings?.risk_factor_value || 1.0,
-        risk_factor_type: settings?.risk_factor_type || 3,
-        copier_status: settings?.copier_status ?? 1,
-        max_order_size: settings?.max_order_size,
-        min_order_size: settings?.min_order_size,
-        pending_order: settings?.pending_order ?? 1,
-        stop_loss: settings?.stop_loss ?? 0,
-        take_profit: settings?.take_profit ?? 0,
-        stop_loss_fixed_format: settings?.stop_loss_fixed_format ?? 2,
-        take_profit_fixed_format: settings?.take_profit_fixed_format ?? 2,
+        risk_factor_value: Number(risk_factor_value ?? 1.0),
+        risk_factor_type: Number(risk_factor_type ?? 3),
+        copier_status: Number(copier_status ?? 1),
+        max_order_size: max_order_size ? Number(max_order_size) : undefined,
+        min_order_size: min_order_size ? Number(min_order_size) : undefined,
+        pending_order: Number(pending_order ?? 1),
+        stop_loss: Number(stop_loss ?? 0),
+        take_profit: Number(take_profit ?? 0),
+        stop_loss_fixed_format: Number(stop_loss_fixed_format ?? 2),
+        take_profit_fixed_format: Number(take_profit_fixed_format ?? 2),
       };
 
-      // CRITICAL: The external FastAPI expects payload as a DICTIONARY
-      // keyed by the group_id: { "GROUP_ID": { ...settings } }
       const dictPayload: Record<string, any> = {};
       dictPayload[externalGroupId] = settingsPayload;
 
@@ -98,47 +114,31 @@ export async function POST(req: Request) {
       });
 
       if (!settingsResponse.ok) {
-        const text = await settingsResponse.text();
-        settingsError = `Settings sync falló (${settingsResponse.status}). Se guardará localmente.`;
-        console.warn("External Settings Set Warning:", text.substring(0, 200));
-      } else {
-        const settingsData = await settingsResponse.json();
-        if (settingsData.status !== "success") {
-          settingsError = "Settings sync: respuesta no exitosa. Se guardará localmente.";
-          console.warn("Settings non-success response:", settingsData);
-        }
+        settingsError = `Settings sync falló (${settingsResponse.status})`;
       }
     } catch (err: any) {
-      settingsError = "Settings sync timeout/error. Se guardará localmente.";
-      console.warn("External Settings Set Error (non-blocking):", err.message);
+      settingsError = "Settings sync failed (non-blocking)";
     }
 
 
     // 3. STEP THREE: Finalize in Local Database (Atomic)
-    // -------------------------------------------------------------------------
     const newModel = await prisma.$transaction(async (tx) => {
       const newConfig = await tx.modelConfig.create({
         data: {
           userId: session.user.id,
           name: `Config - ${name}`,
           description: "Configuración técnica nativa del modelo",
-          risk_factor_value: settings.risk_factor_value || 1.0,
-          risk_factor_type: settings.risk_factor_type || 3,
-          copier_status: settings.copier_status ?? 1,
-          max_order_size: settings.max_order_size,
-          min_order_size: settings.min_order_size,
-          pending_order: settings.pending_order ?? 1,
-          stop_loss: settings.stop_loss ?? 0,
-          take_profit: settings.take_profit ?? 0,
-          stop_loss_fixed_format: settings.stop_loss_fixed_format ?? 2,
-          take_profit_fixed_format: settings.take_profit_fixed_format ?? 2,
-          advancedSettings: {
-            investment_min: investment_min ? Number(investment_min) : 0,
-            monthly_fee: monthly_fee ? Number(monthly_fee) : 0,
-            max_slippage: settings.max_slippage,
-            max_delay: settings.max_delay,
-            order_side: settings.order_side,
-          } as any
+          risk_factor_value: risk_factor_value !== undefined ? Number(risk_factor_value) : 1.0,
+          risk_factor_type: risk_factor_type !== undefined ? Number(risk_factor_type) : 3,
+          copier_status: copier_status !== undefined ? Number(copier_status) : 1,
+          max_order_size: max_order_size !== undefined && max_order_size !== "" ? Number(max_order_size) : null,
+          min_order_size: min_order_size !== undefined && min_order_size !== "" ? Number(min_order_size) : null,
+          pending_order: pending_order !== undefined ? Number(pending_order) : 1,
+          stop_loss: stop_loss !== undefined ? Number(stop_loss) : 0,
+          take_profit: take_profit !== undefined ? Number(take_profit) : 0,
+          stop_loss_fixed_format: stop_loss_fixed_format !== undefined ? Number(stop_loss_fixed_format) : 2,
+          take_profit_fixed_format: take_profit_fixed_format !== undefined ? Number(take_profit_fixed_format) : 2,
+          advancedSettings: advancedSettings as any
         }
       });
 
@@ -150,7 +150,7 @@ export async function POST(req: Request) {
           masterAccountId,
           configId: newConfig.id,
           isPublic: isPublic ?? true,
-          group_id: externalGroupId, // LINK TO EXTERNAL COPIER
+          group_id: externalGroupId, 
           ownerId: session.user.id,
           isClone: false,
         },

@@ -30,7 +30,7 @@ export async function POST(req: Request) {
           "Content-Type": "application/json",
           "Accept": "application/json"
         },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ payload: body }),
       });
 
       if (externalResponse.ok) {

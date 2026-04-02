@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -84,6 +84,22 @@ export default function TemplateForm({ initialData, masters, onSubmit, onCancel 
     take_profit_fixed_format: 2,
     order_side: 0,
   });
+
+  useEffect(() => {
+    if (initialData) {
+      setInfo({
+        name: initialData.name || "",
+        description: initialData.description || "",
+        masterAccountId: initialData.masterAccountId || "",
+        investment_min: initialData.investment_min || 500,
+        monthly_fee: initialData.monthly_fee || 0,
+        isPublic: initialData.isPublic ?? true,
+      });
+      if (initialData.settings) {
+        setSettings(prev => ({ ...prev, ...initialData.settings }));
+      }
+    }
+  }, [initialData]);
 
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);

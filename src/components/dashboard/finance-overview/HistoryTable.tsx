@@ -19,11 +19,16 @@ interface ClosedPosition {
 interface HistoryTableProps {
   positions: ClosedPosition[];
   loading?: boolean;
+  className?: string;
 }
 
-export function HistoryTable({ positions, loading }: HistoryTableProps) {
+export function HistoryTable({
+  positions,
+  loading,
+  className,
+}: HistoryTableProps) {
   return (
-    <div className="glass-widget p-6 text-foreground">
+    <div className={`glass-widget p-6 text-foreground flex flex-col min-h-[450px] ${className}`}>
       <header className="mb-6 flex items-center gap-3">
         <div className="w-10 h-10 bg-blue-500/10 rounded-xl flex items-center justify-center">
           <History className="text-blue-500 w-6 h-6" />
@@ -34,8 +39,8 @@ export function HistoryTable({ positions, loading }: HistoryTableProps) {
         </div>
       </header>
 
-      <div className="overflow-x-auto rounded-2xl border border-border/50">
-        <table className="min-w-full divide-y divide-border/30 text-sm">
+      <div className="overflow-x-auto rounded-2xl border border-border/50 flex-1 flex flex-col">
+        <table className="min-w-full divide-y divide-border/30 text-sm flex-1">
           <thead className="bg-secondary/30 text-[10px] uppercase font-bold tracking-widest text-muted-foreground/70">
             <tr>
               <th className="px-4 py-3 text-left">Ticket / Símbolo</th>
@@ -47,7 +52,7 @@ export function HistoryTable({ positions, loading }: HistoryTableProps) {
               <th className="px-4 py-3 text-right">Cierre</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border/20">
+          <tbody className="divide-y divide-border/20 flex-1">
             {loading ? (
               [...Array(5)].map((_, i) => (
                 <tr key={i} className="animate-pulse">
@@ -94,8 +99,8 @@ export function HistoryTable({ positions, loading }: HistoryTableProps) {
                 </tr>
               ))
             ) : (
-              <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-muted-foreground italic bg-secondary/5">
+              <tr className="h-full">
+                <td colSpan={7} className="px-4 py-40 text-center text-muted-foreground italic bg-secondary/5 h-full">
                   No hay historial de operaciones disponible.
                 </td>
               </tr>
