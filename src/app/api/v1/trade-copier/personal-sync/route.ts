@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { getTradeCopierHeaders } from "@/lib/trade-copier-headers";
 
 const EXTERNAL_BASE_URL = process.env.NEXT_PUBLIC_MT5_API_BASE_URL || "https://mt5.ittradew.com";
 
@@ -119,9 +120,13 @@ export async function POST(req: Request) {
     // 3. Make external request
     if (!String(slaveAccountId).includes("sim_acc_")) {
       try {
+        const externalHeaders = await getTradeCopierHeaders(session.user.id);
         const extRes = await fetch(`${EXTERNAL_BASE_URL}/api/v1/trade-copier/settings/set`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            ...externalHeaders,
+            "Content-Type": "application/json" 
+          },
           body: JSON.stringify({ payload: externalPayload }),
           signal: AbortSignal.timeout(10000) // 10s timeout
         });
@@ -221,6 +226,7 @@ export async function DELETE(req: Request) {
     const externalSlaveId = isNaN(Number(config.slaveAccountId)) ? null : Number(config.slaveAccountId);
     if (externalSlaveId && !String(config.slaveAccountId).includes("sim_acc_")) {
          try {
+            const externalHeaders = await getTradeCopierHeaders(session.user.id);
             const externalPayload: any = {};
             externalPayload[String(externalSlaveId)] = {
                 id_slave: externalSlaveId,
@@ -228,7 +234,10 @@ export async function DELETE(req: Request) {
             };
             await fetch(`${EXTERNAL_BASE_URL}/api/v1/trade-copier/settings/set`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: { 
+                    ...externalHeaders,
+                    "Content-Type": "application/json" 
+                },
                 body: JSON.stringify({ payload: externalPayload }),
                 signal: AbortSignal.timeout(5000)
             });

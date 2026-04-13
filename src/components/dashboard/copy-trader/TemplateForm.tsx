@@ -258,6 +258,29 @@ export default function TemplateForm({ initialData, masters, onSubmit, onCancel 
               onChange={(val) => handleSettingsChange("pending_order", val)}
             />
           </div>
+          <div>
+            <Label className={labelClasses}>Lado de la Operación</Label>
+            <ModernSelect
+              options={[
+                { value: 0, label: "Ambos (Buy & Sell)" },
+                { value: 1, label: "Solo Compras (Buy)" },
+                { value: 2, label: "Solo Ventas (Sell)" }
+              ]}
+              value={settings.order_side ?? 0}
+              onChange={(val) => handleSettingsChange("order_side", val)}
+            />
+          </div>
+          <div>
+             <Label className={labelClasses}>Delay Máximo (Seg)</Label>
+             <Input 
+               name="max_delay" 
+               type="number" 
+               placeholder="Ej: 30"
+               className={inputClasses} 
+               value={settings.max_delay || ""} 
+               onChange={(e) => handleSettingsChange("max_delay", e.target.value)} 
+             />
+          </div>
         </div>
       </Section>
 

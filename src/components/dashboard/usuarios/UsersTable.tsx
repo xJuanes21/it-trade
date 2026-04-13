@@ -2,14 +2,21 @@
 
 import { DataTable, Column } from "@/components/ui/data-table";
 import { useState } from "react";
-import { Settings, Power, CheckCircle, XCircle, Loader2 } from "lucide-react";
-import BotAssignmentModal from "./BotAssignmentModal";
+import {
+  Settings,
+  Power,
+  CheckCircle,
+  XCircle,
+  Loader2,
+  Key,
+} from "lucide-react";
 import { ModernSelect } from "@/components/ui/ModernSelect";
 import { toggleUserStatus, updateUserRole } from "@/lib/admin-actions";
 import { UserRole } from "@prisma/client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { ConfirmationModal } from "@/components/ui/confirmation-modal";
+import Link from "next/link";
 
 interface User {
   id: string;
@@ -42,12 +49,6 @@ export default function UsersTable({ users }: UsersTableProps) {
 
   const router = useRouter();
 
-  const handleManageBots = (userId: string, userName: string) => {
-    setSelectedUserId(userId);
-    setSelectedUserName(userName);
-    setIsModalOpen(true);
-  };
-
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedUserId(null);
@@ -79,7 +80,19 @@ export default function UsersTable({ users }: UsersTableProps) {
         toast.success("Rol actualizado con éxito");
         router.refresh();
       } else {
-        toast.error(result.error || "Error al actualizar el rol");
+        // Special case for role enforcement error
+        if (result.error?.includes("configurar las credenciales")) {
+          toast.error(result.error, {
+            duration: 6000,
+            action: {
+              label: "Configurar API",
+              onClick: () =>
+                router.push(`/dashboard/configuracion?userId=${userId}`),
+            },
+          });
+        } else {
+          toast.error(result.error || "Error al actualizar el rol");
+        }
       }
     } catch (error) {
       toast.error("Error de conexión");
@@ -194,14 +207,14 @@ export default function UsersTable({ users }: UsersTableProps) {
       label: "Acciones",
       align: "right",
       render: (user: User) => (
-        <div className="flex items-center justify-end gap-2">
-          <button
-            onClick={() => handleManageBots(user.id, user.name || user.email)}
-            title="Gestionar Bots"
-            className="p-2 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 rounded-lg transition-colors"
+        <div className="flex items-center justify-end gap-2 text-foreground">
+          <Link
+            href={`/dashboard/configuracion?userId=${user.id}`}
+            title="Configurar Autenticación API"
+            className="p-2 bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-500 rounded-lg transition-colors"
           >
-            <Settings size={16} />
-          </button>
+            <Key size={16} />
+          </Link>
 
           {user.role !== "superadmin" && (
             <button
@@ -238,15 +251,6 @@ export default function UsersTable({ users }: UsersTableProps) {
         onSearch={setSearchQuery}
         emptyMessage="No se encontraron usuarios"
       />
-
-      {selectedUserId && (
-        <BotAssignmentModal
-          isOpen={isModalOpen}
-          onClose={handleCloseModal}
-          userId={selectedUserId}
-          userName={selectedUserName}
-        />
-      )}
 
       <ConfirmationModal
         isOpen={statusModalOpen}

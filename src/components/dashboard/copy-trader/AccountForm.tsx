@@ -24,11 +24,13 @@ import {
 import { tradeCopierService } from "@/services/trade-copier.service";
 import { useSession } from "next-auth/react";
 import { ModernSelect } from "@/components/ui/ModernSelect";
+import { AsyncServerSelect } from "./components/AsyncServerSelect";
 
 interface AccountFormProps {
   initialData?: Partial<Account>;
   onSuccess?: (data: Account) => void;
   onCancel?: () => void;
+  forceSlave?: boolean;
 }
 
 const BROKERS: { value: BrokerType; label: string; servers?: string }[] = [
@@ -58,10 +60,9 @@ export default function AccountForm({
   initialData,
   onSuccess,
   onCancel,
+  forceSlave = false,
 }: AccountFormProps) {
   const [loading, setLoading] = useState(false);
-  const [serverList, setServerList] = useState<string[]>([]);
-  const [loadingServers, setLoadingServers] = useState(false);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
@@ -69,9 +70,10 @@ export default function AccountForm({
 
   const { data: session } = useSession();
   const isSuperAdmin = session?.user?.role === "superadmin";
+  const canSelectRole = (isSuperAdmin || session?.user?.role === "trader") && !forceSlave;
 
   const [formData, setFormData] = useState<Partial<Account>>({
-    type: isSuperAdmin ? 0 : 1, // Default type
+    type: canSelectRole ? 0 : 1, // Default type based on roles
     status: 1,
     broker: "mt4",
     subscription: "auto",
@@ -84,34 +86,10 @@ export default function AccountForm({
       setFormData((prev) => ({
         ...prev,
         ...initialData,
+        type: !canSelectRole ? 1 : (initialData.type ?? prev.type),
       }));
     }
-  }, [initialData]);
-
-  useEffect(() => {
-    if (formData.broker && !formData.account_id) {
-      const fetchServers = async () => {
-        setLoadingServers(true);
-        try {
-          const res = await tradeCopierService.getServersList(
-            formData.broker as string,
-          );
-          // Standardize response extraction
-          const list = Array.isArray(res) ? res : res.data || res.payload || [];
-          if (Array.isArray(list)) {
-            setServerList(list.slice(0, 100)); // Limit to first 100
-          }
-        } catch (e) {
-          console.error("Error al cargar lista de servidores:", e);
-        } finally {
-          setLoadingServers(false);
-        }
-      };
-      fetchServers();
-    } else {
-      setServerList([]);
-    }
-  }, [formData.broker, formData.account_id]);
+  }, [initialData, canSelectRole]);
 
   const handleSelectChange = (name: string, value: string | number) => {
     setFormData((prev) => ({
@@ -145,12 +123,18 @@ export default function AccountForm({
         ...formData,
         group: formData.group || "",
         subscription: formData.subscription || "",
+        type: !canSelectRole ? 1 : formData.type, // Explicitly enforce SLAVE if not allowed
       };
 
       let response;
       if (formData.account_id) {
+        // Editing always goes through external API (account already exists there)
         response = await tradeCopierService.updateAccount(finalData);
+      } else if (!isSuperAdmin && session?.user?.role !== "trader") {
+        // Regular users: save locally ONLY, no external API
+        response = await tradeCopierService.registerAccountLocal(finalData);
       } else {
+        // Traders/SuperAdmins: proxy through external API + sync local
         response = await tradeCopierService.addAccount(finalData);
       }
 
@@ -228,28 +212,28 @@ export default function AccountForm({
           onSubmit={handleSubmit}
           className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-8"
         >
-          <div className="col-span-full border-b border-white/5 pb-2">
-            <h3 className="text-[11px] font-black text-foreground/50 uppercase tracking-[0.2em]">
-              1. Configuración de Rol
-            </h3>
-          </div>
+          {canSelectRole && (
+            <>
+              <div className="col-span-full border-b border-white/5 pb-2">
+                <h3 className="text-[11px] font-black text-foreground/50 uppercase tracking-[0.2em]">
+                  1. Configuración de Rol
+                </h3>
+              </div>
 
-          <div className="space-y-3">
-            <Label className={labelClasses}>Rol en el Sistema</Label>
-            <ModernSelect
-              options={
-                isSuperAdmin
-                  ? [
+              <div className="space-y-3">
+                <Label className={labelClasses}>Rol en el Sistema</Label>
+                <ModernSelect
+                  options={[
                       { value: 0, label: "MASTER (Proveedor de Señales)" },
                       { value: 1, label: "SLAVE (Suscriptor de Modelos)" },
-                    ]
-                  : [{ value: 1, label: "SLAVE (Suscriptor de Modelos)" }]
-              }
-              value={formData.type || 1}
-              onChange={(v) => handleSelectChange("type", v)}
-              disabled={!isSuperAdmin && !formData.account_id}
-            />
-          </div>
+                  ]}
+                  value={formData.type || 1}
+                  onChange={(v) => handleSelectChange("type", v)}
+                  disabled={!isSuperAdmin && !formData.account_id && session?.user?.role !== "trader"}
+                />
+              </div>
+            </>
+          )}
 
           <div className="space-y-3">
             <Label className={labelClasses}>Alias o Nombre de la Cuenta</Label>
@@ -265,7 +249,7 @@ export default function AccountForm({
 
           <div className="col-span-full border-b border-white/5 pb-2 mt-4">
             <h3 className="text-[11px] font-black text-foreground/50 uppercase tracking-[0.2em]">
-              2. Acceso al Broker
+              {canSelectRole ? "2. Acceso al Broker" : "1. Acceso al Broker"}
             </h3>
           </div>
 
@@ -307,32 +291,25 @@ export default function AccountForm({
 
           <div className="space-y-3">
             <Label className={labelClasses}>Servidor DNS</Label>
-            {serverList.length > 0 ? (
-              <ModernSelect
-                options={serverList.map((s) => ({ value: s, label: s }))}
+            {formData.broker === "mt4" || formData.broker === "mt5" ? (
+              <AsyncServerSelect
+                broker={formData.broker as string}
                 value={formData.server || ""}
                 onChange={(v) => handleSelectChange("server", v)}
-                placeholder={
-                  loadingServers ? "Cargando..." : "Seleccionar servidor"
-                }
+                placeholder="Buscar servidor..."
               />
             ) : (
-              <Input
-                name="server"
-                placeholder={
-                  loadingServers
-                    ? "Cargando sugerencias..."
-                    : selectedBroker?.servers || "Especifique servidor"
-                }
-                className={inputClasses}
-                value={formData.server || ""}
-                onChange={handleInputChange}
-                required
-              />
+                <Input
+                  name="server"
+                  placeholder={selectedBroker?.servers || "Especifique servidor"}
+                  className={inputClasses}
+                  value={formData.server || ""}
+                  onChange={handleInputChange}
+                  required
+                />
             )}
             <p className="text-[9px] text-muted-foreground mt-1 px-1">
-              Tip: Si no aparece en la lista, puedes escribirlo manualmente si
-              la lista está vacía.
+              Tip: Escribe para buscar y selecciona el servidor de tu broker en la lista.
             </p>
           </div>
 
@@ -393,3 +370,4 @@ export default function AccountForm({
     </Card>
   );
 }
+

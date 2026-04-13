@@ -7,19 +7,25 @@ import { AccountCard } from "./AccountCard";
 interface AccountsGridProps {
   accounts: Account[];
   isSuperAdmin: boolean;
+  canClassify?: boolean;
   onEdit: (account: Account) => void;
   onDelete: (accountId: string) => void;
   onPromote: (account: Account) => void;
+  onToggleStatus: (account: Account) => void;
+  togglingAccountId: string | null;
 }
 
 export function AccountsGrid({
   accounts,
   isSuperAdmin,
+  canClassify = true,
   onEdit,
   onDelete,
   onPromote,
+  onToggleStatus,
+  togglingAccountId,
 }: AccountsGridProps) {
-  if (!isSuperAdmin) {
+  if (!canClassify) {
     return (
       <div className="grid grid-cols-1 gap-4">
         {accounts.map((account) => (
@@ -29,18 +35,19 @@ export function AccountsGrid({
             isSuperAdmin={false}
             onEdit={onEdit}
             onDelete={onDelete}
+            onToggleStatus={onToggleStatus}
+            isToggling={togglingAccountId === account.account_id}
           />
         ))}
       </div>
     );
   }
-
-  const myAccounts = accounts.filter((a) => a.isOwner !== false);
-  const userAccounts = accounts.filter((a) => a.isOwner === false);
+  const masterAccounts = accounts.filter((a) => Number(a.type) === 0);
+  const slaveAccounts = accounts.filter((a) => Number(a.type) === 1);
 
   return (
     <div className="space-y-8">
-      {/* My Accounts */}
+      {/* Master Accounts */}
       <details className="group [&_summary::-webkit-details-marker]:hidden" open>
         <summary className="flex cursor-pointer items-center gap-2 pb-4 pt-2 font-bold text-lg text-primary border-b border-white/10 outline-none">
           <span className="group-open:rotate-90 transition-transform duration-300">
@@ -57,23 +64,27 @@ export function AccountsGrid({
               <path d="m9 18 6-6-6-6" />
             </svg>
           </span>
-          Mis cuentas ({myAccounts.length})
+          Maestros ({masterAccounts.length})
         </summary>
         <div className="grid grid-cols-1 gap-4 mt-4 animate-in fade-in slide-in-from-top-4 duration-500">
-          {myAccounts.map((account) => (
+          {masterAccounts.length > 0 ? masterAccounts.map((account) => (
             <AccountCard
               key={account.account_id}
               account={account}
-              isSuperAdmin={true}
+              isSuperAdmin={isSuperAdmin}
               onEdit={onEdit}
               onDelete={onDelete}
               onPromote={onPromote}
+              onToggleStatus={onToggleStatus}
+              isToggling={togglingAccountId === account.account_id}
             />
-          ))}
+          )) : (
+            <div className="text-sm text-muted-foreground italic py-4">No hay cuentas Maestras vinculadas.</div>
+          )}
         </div>
       </details>
 
-      {/* User Accounts */}
+      {/* Slave Accounts */}
       <details className="group [&_summary::-webkit-details-marker]:hidden" open>
         <summary className="flex cursor-pointer items-center gap-2 pb-4 pt-2 font-bold text-lg text-emerald-500 border-b border-white/10 outline-none mt-6">
           <span className="group-open:rotate-90 transition-transform duration-300">
@@ -90,19 +101,23 @@ export function AccountsGrid({
               <path d="m9 18 6-6-6-6" />
             </svg>
           </span>
-          Cuentas vinculadas por usuarios ({userAccounts.length})
+          Esclavos ({slaveAccounts.length})
         </summary>
         <div className="grid grid-cols-1 gap-4 mt-4 animate-in fade-in slide-in-from-top-4 duration-500">
-          {userAccounts.map((account) => (
+          {slaveAccounts.length > 0 ? slaveAccounts.map((account) => (
             <AccountCard
               key={account.account_id}
               account={account}
-              isSuperAdmin={true}
+              isSuperAdmin={isSuperAdmin}
               onEdit={onEdit}
               onDelete={onDelete}
               onPromote={onPromote}
+              onToggleStatus={onToggleStatus}
+              isToggling={togglingAccountId === account.account_id}
             />
-          ))}
+          )) : (
+            <div className="text-sm text-muted-foreground italic py-4">No hay cuentas Esclavas vinculadas.</div>
+          )}
         </div>
       </details>
     </div>

@@ -1,43 +1,35 @@
-import Mt5ConnectForm from "@/components/dashboard/config/Mt5ConnectForm";
+import PlatformAuthManager from "@/components/dashboard/config/PlatformAuthManager";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
-import { ConnectedAccountsList } from "@/components/dashboard/config/ConnectedAccountsList";
+import { isSuperAdmin } from "@/lib/auth-utils";
+import { redirect } from "next/navigation";
 
 export const metadata = {
-  title: "Configuración",
+  title: "Autenticación de Plataforma",
 };
 
 export default async function ConfiguracionPage() {
   const session = await auth();
 
   if (!session?.user?.id) {
-    return <div>No autorizado</div>;
+    redirect("/login");
   }
 
-  const accounts = await prisma.mt5Account.findMany({
-    where: {
-      userId: session.user.id,
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  });
+  const role = session.user.role;
+  if (!isSuperAdmin(role)) {
+    redirect("/dashboard");
+  }
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
-      <div className="max-w-3xl mx-auto space-y-8">
+      <div className="max-w-6xl mx-auto space-y-8">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Configuración</h1>
-          <p className="text-muted-foreground">
-            Administre sus conexiones y preferencias de cuenta.
+          <h1 className="text-3xl font-bold text-foreground">Autenticación de Plataforma</h1>
+          <p className="text-muted-foreground mt-2">
+            Gestione de forma centralizada las credenciales de API para la automatización de cuentas maestras y traders.
           </p>
         </div>
 
-        {accounts.length > 0 ? (
-          <ConnectedAccountsList accounts={accounts} />
-        ) : (
-          <Mt5ConnectForm />
-        )}
+        <PlatformAuthManager />
       </div>
     </div>
   );

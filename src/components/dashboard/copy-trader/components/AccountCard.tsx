@@ -8,6 +8,8 @@ import {
   Activity,
   Server,
   ArrowUpCircle,
+  Power,
+  Loader2,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,6 +21,8 @@ interface AccountCardProps {
   onEdit: (account: Account) => void;
   onDelete: (accountId: string) => void;
   onPromote?: (account: Account) => void;
+  onToggleStatus?: (account: Account) => void;
+  isToggling?: boolean;
 }
 
 export function AccountCard({
@@ -27,26 +31,42 @@ export function AccountCard({
   onEdit,
   onDelete,
   onPromote,
+  onToggleStatus,
+  isToggling = false,
 }: AccountCardProps) {
+  const handleToggle = () => {
+    if (onToggleStatus) onToggleStatus(account);
+  };
+
+  const isActive = Number(account.status) === 1;
+
   return (
     <Card
-      className="glass-widget widget-hover group overflow-hidden"
+      className={cn(
+        "glass-widget widget-hover group overflow-hidden transition-all duration-300",
+        !isActive && "opacity-75 grayscale-[0.5]"
+      )}
     >
       <CardContent className="p-0">
         <div className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-5">
             <div
               className={cn(
-                "w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner",
+                "w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner relative overflow-hidden",
                 account.type === 0
                   ? "bg-primary/10 text-primary"
                   : "bg-emerald-500/10 text-emerald-500",
               )}
             >
+              <div className={cn(
+                "absolute inset-0 bg-gradient-to-br transition-opacity duration-500",
+                isActive ? "opacity-20 from-emerald-500/40 to-transparent" : "opacity-0"
+              )} />
+              
               {account.type === 0 ? (
-                <Server size={24} />
+                <Server size={24} className="relative z-10" />
               ) : (
-                <Activity size={24} />
+                <Activity size={24} className="relative z-10" />
               )}
             </div>
             <div>
@@ -64,16 +84,35 @@ export function AccountCard({
                 >
                   {account.type === 0 ? "MASTER" : "SLAVE"}
                 </span>
-                {account.isOwner === false && account.ownerEmail && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground ml-2">
-                    De: {account.ownerEmail}
-                  </span>
-                )}
+                <span
+                  className={cn(
+                    "text-[10px] font-bold px-2 py-0.5 rounded-full border",
+                    isActive
+                      ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                      : "bg-red-500/10 border-red-500/20 text-red-100",
+                  )}
+                >
+                  {isActive ? "ACTIVA" : "DESACTIVADA"}
+                </span>
+                {account.isOwner === false ? (
+                  account.ownerEmail ? (
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground ml-2">
+                      De: {account.ownerEmail}
+                    </span>
+                  ) : (
+                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-500 font-bold uppercase ml-2 border border-red-500/20 whitespace-nowrap">
+                      SIN RELACIÓN CON IT TRADE
+                    </span>
+                  )
+                ) : null}
               </div>
               <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground font-medium">
                 <span className="flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  {account.state || "CONECTADA"}
+                  <span className={cn(
+                    "w-1.5 h-1.5 rounded-full shrink-0",
+                    isActive ? "bg-emerald-500 animate-pulse" : "bg-red-500"
+                  )} />
+                  {isActive ? (account.state || "CONECTADA") : "DESCONECTADA"}
                 </span>
                 <span className="opacity-20">|</span>
                 <span>{account.broker.toUpperCase()}</span>
@@ -99,13 +138,36 @@ export function AccountCard({
               <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">
                 Equity
               </p>
-              <p className="text-lg font-black text-primary">
+              <p className={cn(
+                "text-lg font-black",
+                isActive ? "text-primary" : "text-muted-foreground/40"
+              )}>
                 {account.equity || "0.00"}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleToggle}
+              disabled={isToggling}
+              className={cn(
+                "h-10 w-10 rounded-xl transition-all border-none",
+                isActive
+                  ? "bg-red-500/10 hover:bg-red-500/20 text-red-400"
+                  : "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400"
+              )}
+              title={isActive ? "Desactivar Cuenta" : "Activar Cuenta"}
+            >
+              {isToggling ? (
+                <Loader2 size={16} className="animate-spin" />
+              ) : (
+                <Power size={18} />
+              )}
+            </Button>
+
             {isSuperAdmin && account.type === 1 && onPromote && (
               <Button
                 variant="outline"

@@ -25,67 +25,185 @@ import { toast } from "sonner";
 import Link from "next/link";
 import { TechnicalAudit } from "./TechnicalAudit";
 import { HistoryTable } from "./HistoryTable";
+import { useSession } from "next-auth/react";
+import { ModernSelect } from "@/components/ui/ModernSelect";
 
 const TradingDashboard = () => {
+  const { data: session } = useSession();
+  const isSuperAdmin = session?.user?.role === "superadmin";
+
   const [data, setData] = useState<FinancialDashboardResponse | null>(null);
   const [hasAccounts, setHasAccounts] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
 
+  const [accountsList, setAccountsList] = useState<any[]>([]);
+  const [selectedTrader, setSelectedTrader] = useState<string>("me");
+  const [selectedAccount, setSelectedAccount] = useState<string>("");
+  const [loadingAccounts, setLoadingAccounts] = useState(true);
+
+  const [traderOptions, setTraderOptions] = useState([{ value: "me", label: "Cargando Traders..." }]);
+  
+  // 1. Initial Load: Fetch Accounts and determining primary active account
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchAccs = async () => {
       try {
-        // 1. Fetch Trade Copier Accounts
-        const tcAccountsRes = await tradeCopierService.getAccounts();
-        const tcAccounts = tcAccountsRes.data?.accounts || [];
+        let tcAccounts: any[] = [];
+
+        if (session?.user?.role === "user") {
+          // Users: check local DB only — they don't have external credentials
+          const localRes = await tradeCopierService.getAccountsLocal();
+          tcAccounts = localRes.data?.accounts || [];
+        } else {
+          // Traders/SuperAdmins: fetch from external API
+          const payload: any = {};
+          if (selectedTrader !== "all" && selectedTrader !== "me") {
+             payload.targetUserId = selectedTrader;
+          }
+          const tcAccountsRes = await tradeCopierService.getAccounts(payload);
+          tcAccounts = tcAccountsRes.data?.accounts || [];
+        }
 
         if (tcAccounts.length > 0) {
+          setAccountsList(tcAccounts);
           setHasAccounts(true);
-          const activeAccountId = tcAccounts[0].account_id;
 
-          // Set fallback data immediately so dashboard appears
-          setData(tradeCopierAdapter.createEmptyFinancial(tcAccounts[0]));
-
-          // Parallel fetch for reporting and history
-          const [reportRes, historyRes] = await Promise.all([
-            tradeCopierService.getReporting({ account_id: activeAccountId }),
-            tradeCopierService.getPositionsClosed({
-              account_id: activeAccountId,
-            }),
-          ]);
-
-          if (
-            reportRes.status === "success" &&
-            reportRes.data?.reporting?.length > 0
-          ) {
-            const mappedData = tradeCopierAdapter.toFinancial(
-              reportRes.data.reporting[0],
-            );
-            setData(mappedData);
-          }
-
-          if (
-            historyRes.status === "success" &&
-            historyRes.data?.closedPositions
-          ) {
-            setHistory(historyRes.data.closedPositions);
+          if (!selectedAccount) {
+            // INIT LOGIC: Find Master, Sort by Last Update Descending
+            const masters = tcAccounts.filter((a: any) => Number(a.type) === 0);
+            if (masters.length > 0) {
+              const sortedMasters = [...masters].sort(
+                (a, b) =>
+                  new Date(b.lastUpdate || 0).getTime() -
+                  new Date(a.lastUpdate || 0).getTime(),
+              );
+              setSelectedAccount(sortedMasters[0].account_id);
+            } else {
+              setSelectedAccount(tcAccounts[0].account_id);
+            }
           }
         } else {
-          setHasAccounts(false);
+           // If a specific trader has no accounts, empty the state but don't mark as globally "has no accounts" unless it's "me" and empty
+          setAccountsList([]);
+          if (selectedTrader === "me" || selectedTrader === "all") {
+             setHasAccounts(false);
+          }
+          setSelectedAccount("");
+          setLoading(false); // Stop loading skeleton — show empty state
         }
-      } catch (error) {
-        console.error(
-          "Error al obtener datos del Servidor de IT TRADE:",
-          error,
-        );
+      } catch (err) {
+        console.error("Error al obtener cuentas:", err);
+        setHasAccounts(false);
+      } finally {
+        setLoadingAccounts(false);
+      }
+    };
+    fetchAccs();
+  }, [selectedTrader, session?.user?.role]);
+
+  // Handle Dynamic Traders
+  useEffect(() => {
+    if (!isSuperAdmin) return;
+    const loadTraders = async () => {
+      try {
+        const res = await fetch("/api/v1/traders");
+        if (res.ok) {
+           const data = await res.json();
+           const opts = [
+             { value: "me", label: "Mis Cuentas" },
+             ...data.traders.map((t: any) => ({
+               value: t.id,
+               label: `Trader: ${t.name || t.email}`
+             }))
+           ];
+           setTraderOptions(opts);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    };
+    loadTraders();
+  }, [isSuperAdmin]);
+
+  // 2. Fetch specific account data when selected account changes
+  useEffect(() => {
+    if (!selectedAccount || loadingAccounts) return;
+
+    const fetchActData = async () => {
+      setLoading(true);
+      try {
+        if (selectedAccount !== "all_accounts") {
+           const currentAcc = accountsList.find(
+             (a) => a.account_id === selectedAccount,
+           );
+           if (currentAcc) {
+             setData(tradeCopierAdapter.createEmptyFinancial(currentAcc));
+           }
+        } else if (data === null) {
+           // Initialize with a generic empty data for "all_accounts" if no data is present yet
+           const genericAcc = { name: "Todas las Cuentas", type: 0, balance: 0, equity: 0, ccy: "USD" };
+           setData(tradeCopierAdapter.createEmptyFinancial(genericAcc));
+        }
+
+        const basePayload: any = {};
+        if (selectedTrader !== "all" && selectedTrader !== "me") {
+           basePayload.targetUserId = selectedTrader;
+        }
+
+        if (selectedAccount === "all_accounts") {
+           basePayload.global = true;
+        } else {
+           basePayload.account_id = selectedAccount;
+        }
+
+        const [reportRes, historyRes] = await Promise.all([
+          tradeCopierService.getReporting(basePayload),
+          tradeCopierService.getPositionsClosed(basePayload),
+        ]);
+
+        if (
+          reportRes.status === "success" &&
+          reportRes.data?.reporting?.length > 0
+        ) {
+          setData(tradeCopierAdapter.toFinancial(reportRes.data.reporting[0]));
+        }
+        if (
+          historyRes.status === "success" &&
+          historyRes.data?.closedPositions
+        ) {
+          setHistory(historyRes.data.closedPositions);
+        }
+      } catch (err) {
+        console.error("Fetch Data Error:", err);
       } finally {
         setLoading(false);
       }
     };
+    fetchActData();
+  }, [selectedAccount, loadingAccounts, selectedTrader, accountsList]);
 
-    fetchData();
-  }, []);
+  const filteredAccountsForDropdown = accountsList;
+
+  const accountOptions = useMemo(() => {
+    const opts = filteredAccountsForDropdown.map((a) => ({
+      value: a.account_id,
+      label: `${a.name} (${Number(a.type) === 0 ? "MASTER" : "SLAVE"})`,
+    }));
+    
+    // Add 'all' option if multiple accounts exist for this context
+    if (opts.length > 0) {
+      opts.unshift({ value: "all_accounts", label: "Todas las cuentas" });
+    }
+    
+    return opts;
+  }, [filteredAccountsForDropdown]);
+
+  const handleTraderChange = (traderVal: string) => {
+    setSelectedTrader(traderVal);
+    setSelectedAccount(""); // specific accounts depend on trader, wipe it directly
+    // This triggers the useEffect that sets accounts and selects the first one optionally
+  };
 
   // ... rest of the useMemo and handlers ...
   const handleSync = async () => {
@@ -149,11 +267,39 @@ const TradingDashboard = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center text-foreground">
-        <div className="flex flex-col items-center gap-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-          <div className="animate-pulse text-primary font-medium tracking-tight">
-            Sincronizando Resumen Financiero...
+      <div className="text-foreground max-w-[1600px] mx-auto px-4 md:px-8 py-6">
+        {/* Header Skeleton */}
+        <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+          <div>
+            <div className="h-10 w-64 bg-slate-200 dark:bg-primary/10 rounded-lg animate-pulse mb-3"></div>
+            <div className="h-4 w-48 bg-slate-100 dark:bg-primary/5 rounded-md animate-pulse"></div>
+          </div>
+          <div className="h-12 w-[180px] bg-slate-100 dark:bg-primary/5 border border-border rounded-xl animate-pulse"></div>
+        </div>
+
+        {/* Top 5 Cards Skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8 mt-2">
+          {[...Array(5)].map((_, i) => (
+            <div
+              key={i}
+              className="h-[180px] w-full bg-slate-100/80 dark:bg-card/40 backdrop-blur-md border border-border rounded-[2rem] animate-pulse"
+            ></div>
+          ))}
+        </div>
+
+        {/* Main Body Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left Column (Stats & Returns) */}
+          <div className="lg:col-span-4 space-y-6">
+            <div className="h-[220px] w-full bg-slate-100/80 dark:bg-card/40 backdrop-blur-md border border-border rounded-[2rem] animate-pulse"></div>
+            <div className="h-[260px] w-full bg-slate-100/80 dark:bg-card/40 backdrop-blur-md border border-border rounded-[2rem] animate-pulse"></div>
+            <div className="h-[300px] w-full bg-slate-100/80 dark:bg-card/40 backdrop-blur-md border border-border rounded-[2rem] animate-pulse"></div>
+          </div>
+
+          {/* Right Column (Audit & Tables) */}
+          <div className="lg:col-span-8 space-y-8">
+            <div className="h-[340px] w-full bg-slate-100/80 dark:bg-card/40 backdrop-blur-md border border-border rounded-[2rem] animate-pulse"></div>
+            <div className="h-[500px] w-full bg-slate-100/80 dark:bg-card/40 backdrop-blur-md border border-border rounded-[2rem] animate-pulse"></div>
           </div>
         </div>
       </div>
@@ -191,15 +337,34 @@ const TradingDashboard = () => {
                 </button>
               </div>
             </div>
-            <div className="flex items-center gap-3 flex-wrap">
-              <div className="flex items-center gap-2 glass-widget !rounded-xl px-4 py-2 border border-border">
-                <div className="w-2 h-2 rounded-full bg-yellow-500"></div>
-                <span className="text-sm font-semibold uppercase">
-                  {data.meta.broker} {data.meta.server}
-                </span>
-                <span className="text-xs text-muted-foreground font-mono">
-                  {data.meta.account_id}
-                </span>
+            <div className="flex items-center gap-3 flex-wrap relative z-[50] ">
+              <div className="flex items-center gap-1 glass-widget rounded-[1.25rem] py-1.5 px-2 pb-2.5 border border-border bg-background/40 backdrop-blur-md shadow-sm">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 ml-2 mr-1 animate-pulse shrink-0"></div>
+
+                {isSuperAdmin && accountsList.length > 0 && (
+                  <div className="flex items-center">
+                    <div className="">
+                      <ModernSelect
+                        value={selectedTrader}
+                        onChange={(val) => handleTraderChange(val as string)}
+                        options={traderOptions}
+                        className="bg-transparent border-none hover:bg-white/5 h-10 w-full !min-h-0 text-sm font-medium outline-none rounded-xl focus:ring-0 px-2"
+                      />
+                    </div>
+                    <div className="w-px h-6 bg-border/50 mx-1.5"></div>
+                  </div>
+                )}
+
+                {accountsList.length > 0 && (
+                  <div className="w-[260px]">
+                    <ModernSelect
+                      value={selectedAccount}
+                      onChange={(val) => setSelectedAccount(val as string)}
+                      options={accountOptions}
+                      className="bg-transparent border-none hover:bg-white/5 h-10 w-full !min-h-0 text-sm font-bold outline-none rounded-xl focus:ring-0 px-2"
+                    />
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -285,29 +450,117 @@ const TradingDashboard = () => {
           </div>
         </div>
       ) : (
-        <div className="min-h-[70vh] flex flex-col items-center justify-center p-4">
-          <div className="glass-widget p-12 flex flex-col items-center justify-center text-center space-y-8 max-w-lg border-primary/20 bg-primary/5">
-            <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center shadow-inner">
-              <Wallet className="w-12 h-12 text-primary" />
+        <div className="min-h-[70vh] flex flex-col items-center justify-center p-4 relative overflow-hidden animate-fade-in-up">
+          {/* Decorative Background Glow */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[100px] pointer-events-none animate-breathe" />
+
+          <div className="glass-widget widget-hover relative p-10 md:p-14 flex flex-col items-center justify-center text-center space-y-8 max-w-xl overflow-hidden group">
+            {/* Animated border glow effect */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-primary/10 via-transparent to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+
+            <div className="relative animate-float">
+              <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-breathe" />
+              <div className="relative w-28 h-28 neumorphic-outset rounded-full flex items-center justify-center">
+                <Share2 className="w-12 h-12 text-primary" />
+                <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-2 border border-border shadow-lg mt-auto">
+                  <RefreshCw className="w-5 h-5 text-emerald-500 animate-spin-slow" />
+                </div>
+              </div>
             </div>
-            <div className="space-y-4">
-              <h3 className="text-3xl font-bold tracking-tight">
-                Análisis Financiero
-              </h3>
-              <p className="text-muted-foreground text-lg leading-relaxed">
-                Para acceder a las estadísticas detalladas y gráficas de
-                rendimiento, debes vincular tu cuenta con el{" "}
-                <strong>Servidor de IT TRADE</strong>.
-              </p>
-            </div>
-            <div className="w-full pt-4">
-              <Link
-                href="/dashboard/copy-trader/accounts"
-                className="w-full flex items-center justify-center gap-3 bg-primary hover:bg-primary/90 text-primary-foreground py-4 px-8 rounded-2xl font-bold text-lg shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
-              >
-                <PlusCircle size={24} /> Vincular con Servidor de IT TRADE
-              </Link>
-            </div>
+
+            {/* Role-specific messaging */}
+            {session?.user?.role === "user" ? (
+              <div className="space-y-5 relative z-10 flex flex-col items-center stat-fade-in">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold uppercase tracking-wider mb-2">
+                  <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                  Bienvenido a IT Trade
+                </div>
+                <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+                  Empieza a Copiar
+                </h3>
+                <p className="text-muted-foreground text-lg leading-relaxed max-w-[90%] mx-auto">
+                  Registra tu cuenta de broker en el módulo de{" "}
+                  <strong className="text-foreground">Cuentas</strong> y
+                  explora nuestro{" "}
+                  <strong className="text-foreground">
+                    Directorio de Traders
+                  </strong>{" "}
+                  para empezar a copiar estrategias profesionales en tiempo
+                  real.
+                </p>
+
+                <div className="w-full pt-4 flex flex-col sm:flex-row gap-3">
+                  <Link
+                    href="/dashboard/copy-trader/accounts"
+                    className="neumorphic-button group/btn flex-1 flex items-center justify-center gap-3 text-foreground py-4 px-6 rounded-2xl font-bold text-base transition-all duration-300"
+                  >
+                    <Wallet className="w-5 h-5" />
+                    Registrar Cuenta
+                  </Link>
+                  <Link
+                    href="/dashboard/copy-trader/traders"
+                    className="group/btn flex-1 flex items-center justify-center gap-3 bg-primary hover:bg-primary/90 text-primary-foreground py-4 px-6 rounded-2xl font-bold text-base shadow-xl shadow-primary/20 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    <PlusCircle className="w-5 h-5 transition-transform group-hover/btn:rotate-90" />
+                    Explorar Traders
+                  </Link>
+                </div>
+              </div>
+            ) : session?.user?.role === "trader" ? (
+              <div className="space-y-5 relative z-10 flex flex-col items-center stat-fade-in">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold uppercase tracking-wider mb-2">
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                  Pendiente de Activación
+                </div>
+                <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+                  Portafolio en Espera
+                </h3>
+                <p className="text-muted-foreground text-lg leading-relaxed max-w-[90%] mx-auto">
+                  Tus cuentas aún no han sido configuradas en el ecosistema.
+                  Se{" "}
+                  <strong className="text-foreground">
+                    notificará a la administración
+                  </strong>{" "}
+                  para activar tu portafolio y habilitar la visualización de
+                  rendimiento.
+                </p>
+                <div className="w-full pt-4">
+                  <div className="glass-widget-darker flex items-center justify-center gap-3 text-amber-400 py-4 px-6 font-bold text-base">
+                    <RefreshCw className="w-5 h-5 animate-spin-slow" />
+                    Esperando Configuración Administrativa
+                  </div>
+                </div>
+              </div>
+            ) : (
+              /* superadmin — original CTA */
+              <div className="space-y-5 relative z-10 flex flex-col items-center stat-fade-in">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold uppercase tracking-wider mb-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  Operaciones Sincronizadas
+                </div>
+                <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+                  Automatiza tu Cuenta
+                </h3>
+                <p className="text-muted-foreground text-lg leading-relaxed max-w-[90%] mx-auto">
+                  Únete a la red institucional de{" "}
+                  <strong className="text-foreground">
+                    Operaciones Compartidas
+                  </strong>
+                  . Sincroniza y vincula tu cuenta con nuestros servidores para
+                  empezar a recibir operaciones y visualizar todo tu rendimiento
+                  en tiempo real.
+                </p>
+                <div className="w-full pt-4">
+                  <Link
+                    href="/dashboard/configuracion"
+                    className="group/btn w-full flex items-center justify-center gap-3 bg-primary hover:bg-primary/90 text-primary-foreground py-4 px-6 rounded-2xl font-bold text-lg shadow-xl shadow-primary/20 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                  >
+                    <PlusCircle className="w-6 h-6 transition-transform group-hover/btn:rotate-90" />
+                    Vincular Cuenta al Servidor
+                  </Link>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

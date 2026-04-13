@@ -1,7 +1,3 @@
-// Prisma schema for MySQL (production)
-// PostgreSQL available for dev
-// Set your DATABASE_URL in .env
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,36 +7,33 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-enum UserRole {
-  user
-  superadmin
-  trader
-}
-
 model User {
-  id              String            @id @default(cuid())
-  name            String?
-  email           String            @unique
-  emailVerified   DateTime?
-  image           String?
-  credential      Credential?
-  role            UserRole          @default(user)
-  isApproved      Boolean           @default(false)
-  isActive        Boolean           @default(true) // For disabling/banning users
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
-  profile         UserInformation?
-  accounts        Account[]
-  sessions        Session[]
-  auditLogs       UserAuditLog[]    @relation("PerformedBy")
-  receivedLogs    UserAuditLog[]    @relation("TargetUser")
-  mt5Account      Mt5Account?
+  id                  String               @id @default(cuid())
+  name                String?
+  email               String               @unique
+  emailVerified       DateTime?
+  image               String?
+  role                UserRole             @default(user)
+  isApproved          Boolean              @default(false)
+  isActive            Boolean              @default(true)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  accounts            Account[]
+  botAssignments      BotAssignment[]
+  credential          Credential?
+  credentialsApi      CredentialsApi?
+  eaConfigs           EaConfig[]
+  modelConfigs        ModelConfig[]
+  mt5Account          Mt5Account?
+  sessions            Session[]
+  syncConfigs         SyncConfig[]
   tradeCopierAccounts TradeCopierAccount[]
-  eaConfigs       EaConfig[]
-  botAssignments  BotAssignment[]
-  tradingModels   TradingModel[]
-  modelConfigs    ModelConfig[]
-  syncConfigs     SyncConfig[]
+  tradingModels       TradingModel[]
+  auditLogs           UserAuditLog[]       @relation("PerformedBy")
+  receivedLogs        UserAuditLog[]       @relation("TargetUser")
+  profile             UserInformation?
+  sentRequests        CopyRequest[]        @relation("SentRequests")
+  receivedRequests    CopyRequest[]        @relation("ReceivedRequests")
 }
 
 model Account {
@@ -49,15 +42,14 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -73,9 +65,9 @@ model Session {
 model Credential {
   id           String   @id @default(cuid())
   userId       String   @unique
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   passwordHash String
   updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model VerificationToken {
@@ -87,60 +79,56 @@ model VerificationToken {
 }
 
 model UserInformation {
-  id         String   @id @default(cuid())
-  userId     String   @unique
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  firstName  String?
-  lastName   String?
-  company    String?
-  city       String?
-  country    String?
-  phone      String?
-  email      String?
-  avatarUrl  String?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  firstName String?
+  lastName  String?
+  company   String?
+  city      String?
+  country   String?
+  phone     String?
+  email     String?
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Mt5Account {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  login     String   
-  password  String   // Encrypted
-  server    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  
+  id                 String              @id @default(cuid())
+  userId             String              @unique
+  login              String
+  password           String
+  server             String
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   tradeCopierAccount TradeCopierAccount?
 }
 
 model TradeCopierAccount {
-  id                String      @id @default(cuid())
-  userId            String
-  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  mt5AccountId      String?     @unique
-  mt5Account        Mt5Account? @relation(fields: [mt5AccountId], references: [id], onDelete: SetNull)
-  
-  account_id        String      @unique // ID en Trade Copier
-  name              String
-  type              Int         // 0=Master, 1=Slave
-  broker            String
-  login             String
-  password          String      // Encriptado
-  server            String
-  environment       String?
-  status            Int         @default(1)
-  
-  groupid           String?
-  subscription_key  String?
-  ccy               String?
-  balance           Float?
-  equity            Float?
-  state             String?
-  
-  createdAt         DateTime    @default(now())
-  updatedAt         DateTime    @updatedAt
+  id               String      @id @default(cuid())
+  userId           String
+  mt5AccountId     String?     @unique
+  account_id       String      @unique
+  name             String
+  type             Int
+  broker           String
+  login            String
+  password         String
+  server           String
+  environment      String?
+  status           Int         @default(1)
+  groupid          String?
+  subscription_key String?
+  ccy              String?
+  balance          Float?
+  equity           Float?
+  state            String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  mt5Account       Mt5Account? @relation(fields: [mt5AccountId], references: [id])
+  user             User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
@@ -148,7 +136,6 @@ model TradeCopierAccount {
 model EaConfig {
   id                String          @id @default(cuid())
   userId            String
-  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   eaName            String
   magicNumber       Int             @unique
   symbol            String
@@ -165,6 +152,7 @@ model EaConfig {
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
   botAssignments    BotAssignment[]
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
@@ -174,10 +162,9 @@ model BotAssignment {
   userId      String
   magicNumber Int
   assignedAt  DateTime @default(now())
-  
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  eaConfig EaConfig @relation(fields: [magicNumber], references: [magicNumber], onDelete: Cascade)
-  
+  eaConfig    EaConfig @relation(fields: [magicNumber], references: [magicNumber], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@unique([userId, magicNumber])
   @@index([userId])
   @@index([magicNumber])
@@ -185,103 +172,121 @@ model BotAssignment {
 
 model UserAuditLog {
   id            String   @id @default(cuid())
-  action        String   // APPROVE, REJECT, DISABLE, ENABLE
+  action        String
   details       String?
   performedById String
-  performedBy   User     @relation("PerformedBy", fields: [performedById], references: [id], onDelete: Cascade)
   targetUserId  String?
-  targetUser    User?    @relation("TargetUser", fields: [targetUserId], references: [id], onDelete: SetNull)
   createdAt     DateTime @default(now())
+  performedBy   User     @relation("PerformedBy", fields: [performedById], references: [id], onDelete: Cascade)
+  targetUser    User?    @relation("TargetUser", fields: [targetUserId], references: [id])
 
   @@index([performedById])
   @@index([targetUserId])
 }
 
-// ─── NUEVOS MODELOS (Trading Models & Configs) ───────────────────────────────
-
 model ModelConfig {
-  id                String         @id @default(cuid())
-  userId            String
-  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  name              String         // E.g., "Configuracion Agresiva"
-  description       String?
-  
-  // Settings técnicos (equivalente a CopySettings)
-  risk_factor_value Float
-  risk_factor_type  Int
-  copier_status     Int            @default(1)
-  
-  max_order_size    Float?
-  min_order_size    Float?
-  
-  pending_order     Int            @default(1)
-  stop_loss         Int            @default(0)
-  take_profit       Int            @default(0)
-  stop_loss_fixed_format   Int     @default(2)
-  take_profit_fixed_format Int     @default(2)
-  
-  // JSON field for all other advanced settings to avoid schema bloat
-  advancedSettings  Json?
-
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
-
-  tradingModels     TradingModel[]
+  id                       String         @id @default(cuid())
+  userId                   String
+  name                     String
+  description              String?
+  risk_factor_value        Float
+  risk_factor_type         Int
+  copier_status            Int            @default(1)
+  max_order_size           Float?
+  min_order_size           Float?
+  pending_order            Int            @default(1)
+  stop_loss                Int            @default(0)
+  take_profit              Int            @default(0)
+  stop_loss_fixed_format   Int            @default(2)
+  take_profit_fixed_format Int            @default(2)
+  advancedSettings         Json?
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
+  user                     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tradingModels            TradingModel[]
 
   @@index([userId])
 }
 
 model TradingModel {
-  id                String         @id @default(cuid())
-  userId            String
-  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  masterAccountId   String         // El ID de la cuenta en tradeCopierAccount (type 0)
-  configId          String
-  modelConfig       ModelConfig    @relation(fields: [configId], references: [id], onDelete: Restrict)
-  
-  name              String         // UI display name (e.g., "Gold Scalper Pro")
-  description       String?
-  isPublic          Boolean        @default(false)
-  group_id          String?        // ID de la API externa (Template/Group)
-  ownerId           String?        // ID del creador original
-  isClone           Boolean        @default(false)
-  
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  id              String      @id @default(cuid())
+  userId          String
+  masterAccountId String
+  configId        String
+  name            String
+  description     String?
+  isPublic        Boolean     @default(false)
+  group_id        String?
+  ownerId         String?
+  isClone         Boolean     @default(false)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  modelConfig     ModelConfig @relation(fields: [configId], references: [id])
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([configId])
 }
 
 model SyncConfig {
-  id                String         @id @default(cuid())
-  userId            String
-  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  masterAccountId   String         // El ID de la cuenta en tradeCopierAccount (type 0)
-  slaveAccountId    String         // El ID de la cuenta esclava
-  
-  // Settings técnicos
-  risk_factor_value Float
-  risk_factor_type  Int
-  copier_status     Int            @default(1)
-  
-  max_order_size    Float?
-  min_order_size    Float?
-  
-  pending_order     Int            @default(1)
-  stop_loss         Int            @default(0)
-  take_profit       Int            @default(0)
-  stop_loss_fixed_format   Int     @default(2)
-  take_profit_fixed_format Int     @default(2)
-  
-  advancedSettings  Json?
-
-  createdAt         DateTime       @default(now())
-  updatedAt         DateTime       @updatedAt
+  id                       String   @id @default(cuid())
+  userId                   String
+  masterAccountId          String
+  slaveAccountId           String
+  risk_factor_value        Float
+  risk_factor_type         Int
+  copier_status            Int      @default(1)
+  max_order_size           Float?
+  min_order_size           Float?
+  pending_order            Int      @default(1)
+  stop_loss                Int      @default(0)
+  take_profit              Int      @default(0)
+  stop_loss_fixed_format   Int      @default(2)
+  take_profit_fixed_format Int      @default(2)
+  advancedSettings         Json?
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+  user                     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([masterAccountId, slaveAccountId])
   @@index([userId])
+}
+
+model CredentialsApi {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  data      String
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model CopyRequest {
+  id              String            @id @default(cuid())
+  followerId      String
+  traderId        String
+  masterAccountId String
+  slaveAccountId  String
+  status          CopyRequestStatus @default(PENDING)
+  message         String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  follower User @relation("SentRequests", fields: [followerId], references: [id], onDelete: Cascade)
+  trader   User @relation("ReceivedRequests", fields: [traderId], references: [id], onDelete: Cascade)
+
+  @@index([followerId])
+  @@index([traderId])
+}
+
+enum CopyRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum UserRole {
+  user
+  superadmin
+  trader
 }

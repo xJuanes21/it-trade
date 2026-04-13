@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, RefreshCcw, Search } from "lucide-react";
+import { ChevronDown, Loader2, RefreshCcw, Search } from "lucide-react";
 import Chart from "chart.js/auto";
 import { useEffect, useMemo, useRef, useState } from "react";
 
@@ -358,8 +358,28 @@ export function TradingChart() {
             Selecciona un símbolo en el selector superior para ver su histórico.
           </div>
         ) : isLoading && !candles.length ? (
-          <div className="flex h-full items-center justify-center text-sm text-slate-400">
-            Cargando gráfico…
+          <div className="flex flex-col h-full items-center justify-center p-8 space-y-8 animate-pulse">
+            <div className="w-full flex justify-between items-end gap-2 flex-1 px-4">
+              {[...Array(24)].map((_, i) => (
+                <div
+                  key={i}
+                  className="w-full bg-primary/10 rounded-t-lg"
+                  style={{ height: `${20 + Math.random() * 60}%` }}
+                />
+              ))}
+            </div>
+            <div className="w-full h-8 bg-white/5 rounded-xl border border-white/5 flex items-center justify-between px-6">
+              <div className="h-2 w-20 bg-white/10 rounded-full" />
+              <div className="h-2 w-20 bg-white/10 rounded-full" />
+              <div className="h-2 w-20 bg-white/10 rounded-full" />
+              <div className="h-2 w-20 bg-white/10 rounded-full" />
+            </div>
+            <div className="flex flex-col items-center gap-3">
+              <Loader2 className="w-8 h-8 text-primary/30 animate-spin" />
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground/40">
+                Analizando Histórico de Precios
+              </p>
+            </div>
           </div>
         ) : candles.length ? (
           <canvas ref={canvasRef} className="h-full w-full" />

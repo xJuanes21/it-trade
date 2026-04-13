@@ -12,15 +12,21 @@ import { Button } from "@/components/ui/button";
 import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 import { toast } from "sonner";
 import { AccountsGrid } from "@/components/dashboard/copy-trader/components/AccountsGrid";
+import { ModernSelect } from "@/components/ui/ModernSelect";
+import { useSearchParams } from "next/navigation";
 
 export default function CopyTraderAccountsPage() {
   const { data: session } = useSession();
+  const searchParams = useSearchParams();
   const isSuperAdmin = session?.user?.role === "superadmin";
+  const isTrader = session?.user?.role === "trader";
+  const canClassify = isSuperAdmin || isTrader;
 
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
+  const [selectedTrader, setSelectedTrader] = useState<string>("me");
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
     accountId: string | null;
@@ -28,6 +34,16 @@ export default function CopyTraderAccountsPage() {
     isOpen: false,
     accountId: null,
   });
+
+  const [statusModal, setStatusModal] = useState<{
+    isOpen: boolean;
+    account: Account | null;
+  }>({
+    isOpen: false,
+    account: null,
+  });
+
+  const [togglingAccountId, setTogglingAccountId] = useState<string | null>(null);
 
   const [promoteModal, setPromoteModal] = useState<{
     isOpen: boolean;
@@ -47,15 +63,31 @@ export default function CopyTraderAccountsPage() {
     ? accountLimit.current >= accountLimit.limit
     : false;
 
-  const fetchAccounts = async () => {
+  const fetchAccounts = async (targetUserId?: string) => {
     setLoading(true);
     try {
-      const response = await tradeCopierService.getAccounts();
+      let response;
+
+      if (isSuperAdmin || isTrader) {
+        // Traders/SuperAdmins: fetch from external API (source of truth)
+        const payload: any = {};
+        if (targetUserId && targetUserId !== "me") {
+          payload.targetUserId = targetUserId;
+        }
+        response = await tradeCopierService.getAccounts(payload);
+      } else {
+        // Regular users: fetch from local DB only
+        response = await tradeCopierService.getAccountsLocal();
+      }
+
       if (response.status === "success" && response.data?.accounts) {
         setAccounts(response.data.accounts);
+      } else {
+        setAccounts([]);
       }
     } catch (error) {
       console.error("Fetch Accounts Error:", error);
+      setAccounts([]);
     } finally {
       setLoading(false);
     }
@@ -72,10 +104,47 @@ export default function CopyTraderAccountsPage() {
     }
   };
 
+  const fetchTraders = async () => {
+    if (!isSuperAdmin) return;
+    try {
+      const res = await fetch("/api/v1/traders");
+      if (res.ok) {
+        const data = await res.json();
+        const traderOptions = data.traders.map((t: any) => ({
+          value: t.id,
+          label: `Trader: ${t.name || t.email}`,
+        }));
+        setTraderOptions([{ value: "me", label: "Mis Cuentas" }, ...traderOptions]);
+      }
+    } catch (e) {
+      console.error("Failed to load traders", e);
+    }
+  };
+
   useEffect(() => {
-    fetchAccounts();
-    fetchAccountLimit();
-  }, []);
+    if (session?.user) {
+      fetchAccounts(selectedTrader);
+      fetchAccountLimit();
+      if (isSuperAdmin) {
+        fetchTraders();
+      }
+    }
+  }, [selectedTrader, session]);
+
+  // Handle auto-add mode from query params (Traders module redirection)
+  useEffect(() => {
+    const mode = searchParams?.get("mode");
+    const type = searchParams?.get("type");
+    const groupid = searchParams?.get("groupid");
+
+    if (mode === "add" && !showForm) {
+      setShowForm(true);
+      setEditingAccount({
+        type: type ? (Number(type) as any) : 1,
+        groupid: groupid || undefined,
+      } as any);
+    }
+  }, [searchParams]);
 
   const handleDelete = (accountId: string) => {
     setDeleteModal({ isOpen: true, accountId });
@@ -138,6 +207,47 @@ export default function CopyTraderAccountsPage() {
     }
   };
 
+  const handleToggleStatus = (account: Account) => {
+    setStatusModal({ isOpen: true, account });
+  };
+
+  const confirmToggleStatus = async () => {
+    if (!statusModal.account) return;
+    
+    const account = statusModal.account;
+    const newStatus = Number(account.status) === 1 ? 0 : 1;
+    
+    setTogglingAccountId(account.account_id ?? null);
+    setStatusModal({ isOpen: false, account: null });
+    
+    try {
+      const res = await tradeCopierService.updateAccount({
+        account_id: account.account_id,
+        status: newStatus,
+        targetUserId: selectedTrader !== "me" ? selectedTrader : undefined
+      });
+
+      if (res.status === "success") {
+        toast.success(
+          `Cuenta ${newStatus === 1 ? "activada" : "desactivada"} correctamente.`
+        );
+        fetchAccounts(selectedTrader);
+      } else {
+        toast.error(res.message || "Error al cambiar el estado.");
+      }
+    } catch (error) {
+      toast.error("Error de conexión al cambiar el estado.");
+    } finally {
+      setTogglingAccountId(null);
+    }
+  };
+
+  const [traderOptions, setTraderOptions] = useState([
+    { value: "me", label: "Mis Cuentas" }
+  ]);
+
+  const displayedAccounts = accounts; // No local filtering needed anymore, API returns isolated accounts based on header context
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-20">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
@@ -156,12 +266,24 @@ export default function CopyTraderAccountsPage() {
 
       <div className="pb-12 animate-in zoom-in-95 duration-500">
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold flex items-center gap-2 text-foreground">
-              <Activity size={20} className="text-primary" />
-              Cuentas Vinculadas
-            </h2>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <h2 className="text-xl font-bold flex items-center gap-2 text-foreground">
+                <Activity size={20} className="text-primary" />
+                Cuentas Vinculadas
+              </h2>
+            </div>
             <div className="flex items-center gap-3">
+              {isSuperAdmin && !showForm && (
+                <div className="w-[200px]">
+                  <ModernSelect
+                    value={selectedTrader}
+                    onChange={(val) => setSelectedTrader(val as string)}
+                    options={traderOptions}
+                    className="bg-background/40 border-white/10 h-9"
+                  />
+                </div>
+              )}
               {accountLimit && (
                 <span
                   className={cn(
@@ -203,6 +325,7 @@ export default function CopyTraderAccountsPage() {
                   setShowForm(false);
                   setEditingAccount(null);
                 }}
+                forceSlave={searchParams?.get("type") === "1"}
               />
             </div>
           )}
@@ -212,7 +335,9 @@ export default function CopyTraderAccountsPage() {
               {loading ? (
                 <div className="flex flex-col items-center justify-center py-20 gap-4 opacity-50">
                   <RefreshCw size={40} className="animate-spin text-primary" />
-                  <p className="text-sm font-medium">Sincronizando cuentas...</p>
+                  <p className="text-sm font-medium">
+                    Sincronizando cuentas...
+                  </p>
                 </div>
               ) : accounts.length === 0 ? (
                 <Card className="border-dashed border-white/10 bg-transparent py-20">
@@ -240,11 +365,14 @@ export default function CopyTraderAccountsPage() {
                 </Card>
               ) : (
                 <AccountsGrid
-                  accounts={accounts}
+                  accounts={displayedAccounts}
                   isSuperAdmin={isSuperAdmin}
+                  canClassify={canClassify}
                   onEdit={handleEdit}
                   onDelete={handleDelete}
                   onPromote={handlePromoteToMaster}
+                  onToggleStatus={handleToggleStatus}
+                  togglingAccountId={togglingAccountId}
                 />
               )}
             </>
@@ -271,6 +399,26 @@ export default function CopyTraderAccountsPage() {
         description={`¿Estás seguro de que deseas ascender la cuenta ${promoteModal.account?.name} a MASTER? Esta acción le permitirá operar como un proveedor de señales en el ecosistema de Modelos.`}
         confirmText="Ascender a Master"
         cancelText="Volver"
+      />
+
+      <ConfirmationModal
+        isOpen={statusModal.isOpen}
+        onClose={() => setStatusModal({ isOpen: false, account: null })}
+        onConfirm={confirmToggleStatus}
+        title={
+          Number(statusModal.account?.status) === 1
+            ? "Desactivar Cuenta"
+            : "Activar Cuenta"
+        }
+        description={
+          Number(statusModal.account?.status) === 1
+            ? `¿Estás seguro de que deseas desactivar la cuenta #${statusModal.account?.login}? Se detendrá la recepción de señales inmediatamente.`
+            : `¿Deseas activar la cuenta #${statusModal.account?.login} para comenzar a recibir señales?`
+        }
+        confirmText={
+          Number(statusModal.account?.status) === 1 ? "Desactivar" : "Activar"
+        }
+        variant={Number(statusModal.account?.status) === 1 ? "danger" : "primary"}
       />
     </div>
   );

@@ -129,15 +129,23 @@ export default function TemplatesView() {
   }, [models, userId, slaves]);
 
   const sharedTemplates = useMemo(() => {
+    // Healing logic: Match local models with API templates by name to fix wrong group_ids
     const localPublic = models
       .filter((t) => t.isPublic)
-      .map((t) => ({
-        ...t,
-        isFollowedByMe: slaves.some((s) => s.groupid === t.group_id),
-      }));
+      .map((t) => {
+        // Find matching external template by name if group_id looks like a local CUID (long)
+        const apiMatch = apiTemplates.find(ext => ext.name === t.name);
+        const bestGroupId = (t.group_id && t.group_id.length > 15 && apiMatch) ? apiMatch.group_id : t.group_id;
+        
+        return {
+          ...t,
+          group_id: bestGroupId, // Use the healed ID
+          isFollowedByMe: slaves.some((s) => s.groupid === bestGroupId),
+        };
+      });
 
     const externalOnly = apiTemplates
-      .filter((group) => !models.some((m) => m.group_id === group.group_id))
+      .filter((group) => !models.some((m) => m.group_id === group.group_id || m.name === group.name))
       .map((group) => ({
         id: `ext-${group.group_id}`,
         group_id: group.group_id,
@@ -160,7 +168,7 @@ export default function TemplatesView() {
         t.name.toLowerCase().includes(q) ||
         t.user?.name?.toLowerCase().includes(q),
     );
-  }, [models, apiTemplates, searchQuery]);
+  }, [models, apiTemplates, slaves, searchQuery]);
 
   // Pagination resets
   useEffect(() => {
@@ -303,67 +311,65 @@ export default function TemplatesView() {
   const confirmFollow = useCallback(
     async (slaveId: string) => {
       try {
-        const res = await tradeCopierService.setSettings([
-          {
-            id_slave: slaveId,
-            id_group: followTarget?.group_id,
-            copier_status: 1,
-            // Required fields for a valid setting entry
-            risk_factor_value: 1.0,
-            risk_factor_type: 3,
-            pending_order: 1,
-            stop_loss: 0,
-            take_profit: 0,
-          },
-        ]);
+        setLoading(true);
+        // 1. Join Group via Account Update
+        await tradeCopierService.updateAccount({
+          account_id: slaveId,
+          group: followTarget?.group_id,
+          status: 1
+        });
 
-        if (res.status === "success") {
-          toast.success(`Tu cuenta ahora sigue a ${followTarget?.name}`);
-          setFollowTarget(null);
-          fetchData();
-        } else {
-          toast.error("Error al vincular en la API");
-        }
-      } catch {
-        toast.error("Error de red");
+        // 2. Set technical settings (Now account is legally in the group)
+        await tradeCopierService.setSettings([{
+          id_slave: slaveId,
+          id_group: followTarget?.group_id,
+          copier_status: 1,
+          risk_factor_value: 1.0,
+          risk_factor_type: 3,
+          pending_order: 1,
+          stop_loss: 0,
+          take_profit: 0,
+          max_delay: 60,
+          max_slippage: 10,
+          order_side: 0,
+        }]);
+
+        toast.success(`Tu cuenta ahora sigue a ${followTarget?.name}`);
+        setFollowTarget(null);
+        await fetchData();
+      } catch (err: any) {
+        console.error("Follow Error:", err);
+        toast.error(err.message || "Error al vincular en la API");
+      } finally {
+        setLoading(false);
       }
     },
-    [followTarget, fetchData],
+    [followTarget, fetchData]
   );
 
-  const handleUnfollow = useCallback(async () => {
-    if (!unfollowTarget) return;
-    const template = unfollowTarget;
+  const handleUnfollow = async (template: any) => {
     const followers = slaves.filter((s) => s.groupid === template.group_id);
-
-    if (followers.length === 0) {
-      setUnfollowTarget(null);
-      return;
-    }
+    if (!followers.length) return;
 
     setIsUnfollowing(true);
     try {
-      const res = await tradeCopierService.setSettings(
-        followers.map((s) => ({
-          id_slave: s.account_id,
-          id_group: template.group_id,
-          copier_status: 0, // Stop copying
-        })),
-      );
-
-      if (res.status === "success") {
-        toast.success(`Has dejado de seguir a ${template.name}`);
-        setUnfollowTarget(null);
-        fetchData();
-      } else {
-        toast.error("Error al desvincular");
+      for (const s of followers) {
+        // Leave group by clearing 'group' field
+        await tradeCopierService.updateAccount({
+          account_id: s.account_id,
+          group: "",
+        });
       }
-    } catch {
-      toast.error("Error de conexión");
+      toast.success(`Has dejado de seguir a ${template.name}`);
+      setUnfollowTarget(null);
+      await fetchData();
+    } catch (err: any) {
+      console.error("Unfollow Error:", err);
+      toast.error("Error al desvincular");
     } finally {
       setIsUnfollowing(false);
     }
-  }, [unfollowTarget, slaves, fetchData]);
+  };
 
   // ---------------------------------------------------------------------------
   // Render
@@ -461,7 +467,7 @@ export default function TemplatesView() {
         <ConfirmModal
           isOpen={!!unfollowTarget}
           onClose={() => setUnfollowTarget(null)}
-          onConfirm={handleUnfollow}
+          onConfirm={() => handleUnfollow(unfollowTarget)}
           title="Dejar de seguir"
           description={`¿Estás seguro de que deseas dejar de seguir la estrategia "${unfollowTarget?.name}"? Todas tus cuentas esclavas dejarán de copiar sus operaciones inmediatamente.`}
           confirmText="Dejar de seguir"

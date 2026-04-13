@@ -58,19 +58,22 @@ export function ActivityPanel() {
 
       <div className="flex-1 overflow-y-auto pr-1 space-y-4 custom-scrollbar">
         {loading && notifications.length === 0 ? (
-          <div className="space-y-4 animate-in fade-in duration-500">
-            {[...Array(5)].map((_, i) => (
+          <div className="space-y-4 animate-in fade-in duration-700">
+            {[...Array(6)].map((_, i) => (
               <div
                 key={i}
-                className="flex gap-4 rounded-2xl border border-white/5 bg-white/5 p-4 animate-pulse"
+                className="flex gap-4 rounded-2xl border border-white/5 bg-slate-100/5 dark:bg-card/30 p-5 animate-pulse"
               >
-                <div className="mt-1 h-2 w-2 shrink-0 rounded-full bg-white/10" />
-                <div className="flex flex-col gap-2 w-full">
+                <div className="mt-1 h-3 w-3 shrink-0 rounded-full bg-primary/20" />
+                <div className="flex flex-col gap-3 w-full">
                   <div className="flex items-center justify-between">
-                    <div className="h-3 w-24 bg-white/10 rounded" />
-                    <div className="h-2 w-16 bg-white/5 rounded" />
+                    <div className="h-3 w-28 bg-white/10 rounded-lg" />
+                    <div className="h-2 w-16 bg-white/5 rounded-full" />
                   </div>
-                  <div className="h-3 w-full bg-white/5 rounded" />
+                  <div className="space-y-2">
+                    <div className="h-3 w-full bg-white/5 rounded-lg" />
+                    <div className="h-3 w-2/3 bg-white/5 rounded-lg opacity-60" />
+                  </div>
                 </div>
               </div>
             ))}
