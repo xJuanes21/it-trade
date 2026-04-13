@@ -8,6 +8,11 @@ const { auth } = NextAuth(authConfig)
 export default auth((req) => {
   const { pathname } = req.nextUrl
   
+  // Bypass total para rutas API para evitar redirecciones que devuelven RSC
+  if (pathname.startsWith("/api")) {
+    return NextResponse.next()
+  }
+  
   // Si no hay sesión, dejar que NextAuth maneje la redirección
   if (!req.auth?.user) {
     if (pathname.startsWith("/dashboard")) {

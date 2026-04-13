@@ -100,10 +100,31 @@ export function MarketTable() {
             </thead>
             <tbody className="divide-y divide-border/30 bg-transparent">
               {loading && positions.length === 0 ? (
-                [...Array(5)].map((_, i) => (
-                  <tr key={i} className="animate-pulse">
-                    <td colSpan={7} className="px-6 py-4">
-                      <div className="h-4 w-full rounded bg-muted/20" />
+                [...Array(6)].map((_, i) => (
+                  <tr key={i} className="animate-pulse border-b border-white/5 last:border-0">
+                    <td className="px-6 py-5">
+                      <div className="flex flex-col gap-2">
+                        <div className="h-4 w-24 bg-white/10 rounded-lg" />
+                        <div className="h-2 w-16 bg-white/5 rounded-full" />
+                      </div>
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="h-5 w-16 bg-white/10 rounded-lg" />
+                    </td>
+                    <td className="px-6 py-5">
+                      <div className="h-4 w-12 bg-white/10 rounded-lg ml-auto" />
+                    </td>
+                    <td className="px-6 py-5 text-right">
+                      <div className="h-4 w-20 bg-white/10 rounded-lg ml-auto opacity-70" />
+                    </td>
+                    <td className="px-6 py-5 text-right">
+                      <div className="h-4 w-20 bg-white/10 rounded-lg ml-auto" />
+                    </td>
+                    <td className="px-6 py-5 text-right">
+                      <div className="h-5 w-16 bg-white/20 rounded-lg ml-auto" />
+                    </td>
+                    <td className="px-6 py-5 text-right">
+                      <div className="h-3 w-10 bg-white/5 rounded-full ml-auto" />
                     </td>
                   </tr>
                 ))

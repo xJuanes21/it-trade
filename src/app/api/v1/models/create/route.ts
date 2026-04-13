@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { getTradeCopierHeaders } from "@/lib/trade-copier-headers";
 
 const EXTERNAL_BASE_URL = process.env.NEXT_PUBLIC_MT5_API_BASE_URL || "https://mt5.ittradew.com";
 
@@ -11,6 +12,20 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     const { name, description, masterAccountId, settings, investment_min, monthly_fee, isPublic } = body;
+
+    // Get Security Headers
+    let externalHeaders;
+    try {
+      externalHeaders = await getTradeCopierHeaders(session.user.id);
+    } catch (err: any) {
+      if (err.message === "CredentialsApiConfigurationMissing") {
+        return NextResponse.json({ 
+          error: "Configuración Faltante", 
+          message: "Debes configurar tus credenciales de API en el módulo de Configuraciones primero." 
+        }, { status: 400 });
+      }
+      throw err;
+    }
 
     const {
       risk_factor_value,
@@ -40,15 +55,21 @@ export async function POST(req: Request) {
     try {
       const templateResponse = await fetch(`${EXTERNAL_BASE_URL}/api/v1/trade-copier/template/add`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          ...externalHeaders,
+          "Content-Type": "application/json" 
+        },
         body: JSON.stringify({ payload: { name } }),
         signal: AbortSignal.timeout(15000) // 15s timeout
       });
 
       if (templateResponse.ok) {
         const templateData = await templateResponse.json();
-        if (templateData.status === "success" && templateData.data?.group_id) {
-          externalGroupId = templateData.data.group_id;
+        // Robust capture: Documentation says 'template', actual GET says 'group_id'
+        externalGroupId = templateData.data?.group_id || templateData.group_id || templateData.template;
+        
+        if (!externalGroupId && templateData.status === "success" && templateData.data?.template) {
+           externalGroupId = templateData.data.template;
         }
       } else {
         console.warn(`External Template Add failed with status ${templateResponse.status}, checking for existing name...`);
@@ -61,14 +82,18 @@ export async function POST(req: Request) {
     if (!externalGroupId) {
       try {
         const listRes = await fetch(`${EXTERNAL_BASE_URL}/api/v1/trade-copier/template/get`, {
-            headers: { "Accept": "application/json" }
+            headers: { 
+              ...externalHeaders,
+              "Accept": "application/json" 
+            }
         });
         if (listRes.ok) {
           const listData = await listRes.json();
-          if (listData.status === "success" && Array.isArray(listData.data?.groups)) {
-            const existing = listData.data.groups.find((g: any) => g.name === name);
+          const groups = listData.data?.groups || listData.groups || [];
+          if (Array.isArray(groups)) {
+            const existing = groups.find((g: any) => g.name === name);
             if (existing) {
-              externalGroupId = existing.group_id;
+              externalGroupId = existing.group_id || existing.template;
               console.log("Found existing group_id via fallback search:", externalGroupId);
             }
           }
@@ -94,13 +119,19 @@ export async function POST(req: Request) {
         risk_factor_value: Number(risk_factor_value ?? 1.0),
         risk_factor_type: Number(risk_factor_type ?? 3),
         copier_status: Number(copier_status ?? 1),
-        max_order_size: max_order_size ? Number(max_order_size) : undefined,
-        min_order_size: min_order_size ? Number(min_order_size) : undefined,
+        max_order_size: max_order_size && max_order_size !== "" ? Number(max_order_size) : undefined,
+        min_order_size: min_order_size && min_order_size !== "" ? Number(min_order_size) : undefined,
         pending_order: Number(pending_order ?? 1),
         stop_loss: Number(stop_loss ?? 0),
         take_profit: Number(take_profit ?? 0),
         stop_loss_fixed_format: Number(stop_loss_fixed_format ?? 2),
         take_profit_fixed_format: Number(take_profit_fixed_format ?? 2),
+        // Advanced Fields
+        ...(restSettings.max_slippage !== undefined && { max_slippage: Number(restSettings.max_slippage) }),
+        ...(restSettings.max_delay !== undefined && { max_delay: Number(restSettings.max_delay) }),
+        ...(restSettings.order_side !== undefined && { order_side: Number(restSettings.order_side) }),
+        ...(restSettings.stop_loss_fixed_value !== undefined && { stop_loss_fixed_value: Number(restSettings.stop_loss_fixed_value) }),
+        ...(restSettings.take_profit_fixed_value !== undefined && { take_profit_fixed_value: Number(restSettings.take_profit_fixed_value) })
       };
 
       const dictPayload: Record<string, any> = {};
@@ -108,7 +139,10 @@ export async function POST(req: Request) {
 
       const settingsResponse = await fetch(`${EXTERNAL_BASE_URL}/api/v1/trade-copier/settings/set`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          ...externalHeaders,
+          "Content-Type": "application/json" 
+        },
         body: JSON.stringify({ payload: dictPayload }),
         signal: AbortSignal.timeout(15000)
       });
@@ -117,7 +151,7 @@ export async function POST(req: Request) {
         settingsError = `Settings sync falló (${settingsResponse.status})`;
       }
     } catch (err: any) {
-      settingsError = "Settings sync failed (non-blocking)";
+      settingsError = `Settings sync failed: ${err.message}`;
     }
 
 

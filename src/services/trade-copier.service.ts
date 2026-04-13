@@ -5,7 +5,7 @@ import { Account } from "@/lib/copy-trader-types";
  * Follows the project's standard service pattern.
  */
 export const tradeCopierService = {
-  async getAccounts(filter: { account_id?: string | string[] } = {}) {
+  async getAccounts(filter: { account_id?: string | string[]; targetUserId?: string } = {}) {
     const response = await fetch("/api/v1/trade-copier/account/get", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -18,8 +18,31 @@ export const tradeCopierService = {
     }
     return response.json();
   },
+  
+  async getAccountsLocal() {
+    const response = await fetch("/api/v1/accounts", {
+      method: "GET",
+      headers: { "Accept": "application/json" },
+    });
+    if (!response.ok) throw new Error("Failed to fetch local accounts");
+    return response.json();
+  },
 
-  async addAccount(account: Partial<Account>) {
+  async registerAccountLocal(account: Partial<Account>) {
+    const response = await fetch("/api/v1/accounts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(account),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || error.error || "Failed to register local account");
+    }
+    return response.json();
+  },
+
+  async addAccount(account: Partial<Account> & { targetUserId?: string }) {
     const response = await fetch("/api/v1/trade-copier/account/add", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -33,7 +56,7 @@ export const tradeCopierService = {
     return response.json();
   },
 
-  async updateAccount(account: Partial<Account>) {
+  async updateAccount(account: Partial<Account> & { targetUserId?: string }) {
     const response = await fetch("/api/v1/trade-copier/account/update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -47,11 +70,11 @@ export const tradeCopierService = {
     return response.json();
   },
 
-  async deleteAccount(accountId: string) {
+  async deleteAccount(accountId: string, targetUserId?: string) {
     const response = await fetch("/api/v1/trade-copier/account/delete", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ account_id: accountId }),
+      body: JSON.stringify({ account_id: accountId, targetUserId }),
     });
 
     if (!response.ok) {
@@ -61,11 +84,11 @@ export const tradeCopierService = {
     return response.json();
   },
 
-  async getServersList(broker: string) {
+  async getServersList(broker: string, term: string = "", page: number = 1) {
     const response = await fetch("/api/v1/trade-copier/account/get-servers-list", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ broker }),
+      body: JSON.stringify({ broker, term, page: page.toString() }),
     });
 
     if (!response.ok) {
@@ -83,8 +106,12 @@ export const tradeCopierService = {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.message || error.error || "Failed to fetch reporting data");
+      try {
+        const error = await response.json();
+        return { status: "error", message: error.message || error.error || "Failed to fetch reporting data" };
+      } catch (e) {
+        return { status: "error", message: "Error de red o respuesta inválida del servidor" };
+      }
     }
     return response.json();
   },
@@ -205,6 +232,44 @@ export const tradeCopierService = {
       body: JSON.stringify({ payload: { group_id: groupId } }),
     });
     if (!response.ok) throw new Error("Failed to delete template");
+    return response.json();
+  },
+
+  /**
+   * Copy Requests Management
+   */
+  async getCopyRequests() {
+    const response = await fetch("/api/v1/copy-requests", {
+      method: "GET",
+      headers: { "Accept": "application/json" },
+    });
+    if (!response.ok) throw new Error("Failed to fetch copy requests");
+    return response.json();
+  },
+
+  async sendCopyRequest(payload: { slaveAccountId: string; masterAccountId: string; traderId: string }) {
+    const response = await fetch("/api/v1/copy-requests", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || error.error || "Failed to send copy request");
+    }
+    return response.json();
+  },
+
+  async updateCopyRequestStatus(requestId: string, status: string, message?: string) {
+    const response = await fetch(`/api/v1/copy-requests/${requestId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status, message }),
+    });
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || error.error || "Failed to update request status");
+    }
     return response.json();
   },
 };

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { getTradeCopierHeaders } from "@/lib/trade-copier-headers";
 
 const EXTERNAL_BASE_URL = process.env.NEXT_PUBLIC_MT5_API_BASE_URL || "https://mt5.ittradew.com";
 
@@ -12,6 +13,20 @@ export async function POST(req: Request) {
     const { id } = await req.json();
 
     if (!id) return NextResponse.json({ error: "ID requerido." }, { status: 400 });
+
+    // Get Security Headers
+    let externalHeaders;
+    try {
+      externalHeaders = await getTradeCopierHeaders(session.user.id);
+    } catch (err: any) {
+      if (err.message === "CredentialsApiConfigurationMissing") {
+        return NextResponse.json({ 
+          error: "Configuración Faltante", 
+          message: "Debes configurar tus credenciales de API en el módulo de Configuraciones primero." 
+        }, { status: 400 });
+      }
+      throw err;
+    }
 
     // 1. Fetch the actual model from DB
     const modelIcon: any = await prisma.tradingModel.findUnique({
@@ -29,7 +44,10 @@ export async function POST(req: Request) {
        try {
          const extRes = await fetch(`${EXTERNAL_BASE_URL}/api/v1/trade-copier/template/delete`, {
            method: "POST",
-           headers: { "Content-Type": "application/json" },
+           headers: { 
+             ...externalHeaders,
+             "Content-Type": "application/json" 
+           },
            body: JSON.stringify({ payload: { group_id: modelIcon.group_id } }),
          });
          

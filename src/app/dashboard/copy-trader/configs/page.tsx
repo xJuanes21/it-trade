@@ -10,7 +10,7 @@ export default async function ConfigsPage() {
     redirect("/login");
   }
 
-  if (session.user.role !== "superadmin") {
+  if (session.user.role !== "superadmin" && session.user.role !== "trader") {
     redirect("/dashboard/copy-trader/accounts");
   }
 

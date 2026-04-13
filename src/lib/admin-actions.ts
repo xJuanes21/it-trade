@@ -75,6 +75,19 @@ export async function updateUserRole(userId: string, newRole: UserRole) {
       return { error: "No autorizado" };
     }
 
+    // STRICT ENFORCEMENT: If promoting to TRADER, verify API credentials exist
+    if (newRole === "trader") {
+      const credentials = await prisma.credentialsApi.findUnique({
+        where: { userId }
+      });
+
+      if (!credentials) {
+        return { 
+          error: "Para asignar el rol de Trader, primero debe configurar las credenciales de API del usuario en el módulo de Autenticación de Plataforma." 
+        };
+      }
+    }
+
     await prisma.user.update({
       where: { id: userId },
       data: { role: newRole },

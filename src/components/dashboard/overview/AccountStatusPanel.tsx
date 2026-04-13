@@ -60,11 +60,13 @@ export function AccountStatusPanel() {
         <div className="flex-1 space-y-6 overflow-y-auto pr-1 custom-scrollbar">
           {/* Summary Card / Skeleton */}
           {loading ? (
-            <div className="p-6 rounded-[2rem] bg-white/5 border border-white/5 animate-pulse">
-              <div className="h-4 w-48 bg-white/10 rounded mb-4" />
-              <div className="space-y-2">
-                <div className="h-2 w-20 bg-white/5 rounded" />
-                <div className="h-8 w-12 bg-white/10 rounded" />
+            <div className="p-8 rounded-[2rem] bg-white/5 border border-white/5 animate-pulse flex flex-col items-center gap-4">
+              <div className="h-10 w-10 bg-white/10 rounded-2xl mb-2" />
+              <div className="h-4 w-48 bg-white/10 rounded-lg" />
+              <div className="h-2 w-24 bg-white/5 rounded-full" />
+              <div className="grid grid-cols-2 gap-4 w-full mt-4">
+                <div className="h-16 bg-white/5 rounded-2xl" />
+                <div className="h-16 bg-white/5 rounded-2xl" />
               </div>
             </div>
           ) : (
@@ -96,13 +98,22 @@ export function AccountStatusPanel() {
             </h4>
 
             {loading ? (
-              Array(3)
+              Array(4)
                 .fill(0)
                 .map((_, i) => (
                   <div
                     key={i}
-                    className="h-20 w-full bg-white/5 rounded-3xl animate-pulse"
-                  />
+                    className="p-4 rounded-3xl bg-white/5 border border-white/5 flex items-center justify-between animate-pulse"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-white/10" />
+                      <div className="space-y-2">
+                        <div className="h-3 w-24 bg-white/10 rounded-lg" />
+                        <div className="h-2 w-32 bg-white/5 rounded-full" />
+                      </div>
+                    </div>
+                    <div className="w-3 h-3 rounded-full bg-white/10" />
+                  </div>
                 ))
             ) : linkedCount > 0 ? (
               accounts.slice(0, 4).map((acc, idx) => (
@@ -134,7 +145,7 @@ export function AccountStatusPanel() {
                   <AlertCircle className="text-muted-foreground/30 w-8 h-8" />
                 </div>
                 <p className="text-xs text-muted-foreground font-medium">
-                  No se encontraron cuentas MT5 vinculadas a tu perfil.
+                  No se encontraron cuentas vinculadas a tu perfil.
                 </p>
                 <Link
                   href="/dashboard/copy-trader/accounts"

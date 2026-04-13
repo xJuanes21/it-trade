@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { getTradeCopierHeaders } from "@/lib/trade-copier-headers";
 
 const EXTERNAL_BASE_URL = process.env.NEXT_PUBLIC_MT5_API_BASE_URL || "https://mt5.ittradew.com";
 
@@ -17,9 +18,21 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
+    let externalHeaders;
+    try {
+      externalHeaders = await getTradeCopierHeaders(session.user.id);
+    } catch (err: any) {
+      if (err.message === "CredentialsApiConfigurationMissing") {
+        console.warn(`[Settings Get] User ${session.user.id} has no API credentials. Returning empty settings.`);
+        return NextResponse.json({ status: "success", data: [] });
+      }
+      throw err;
+    }
+
     const externalResponse = await fetch(`${EXTERNAL_BASE_URL}/api/v1/trade-copier/settings/get`, {
       method: "POST",
       headers: {
+        ...externalHeaders,
         "Content-Type": "application/json",
         "Accept": "application/json",
       },

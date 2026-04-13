@@ -15,6 +15,7 @@ import {
   Settings,
   Settings2,
   Users,
+  Columns,
   Copy,
   Layout,
   ChevronDown,
@@ -22,7 +23,12 @@ import {
   LucideIcon,
 } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { getMenuItems, SETTINGS_ITEM, type UserRole, type NavItem } from "@/lib/auth-utils";
+import {
+  getMenuItems,
+  SETTINGS_ITEM,
+  type UserRole,
+  type NavItem,
+} from "@/lib/auth-utils";
 
 // Map icon names to components
 const iconMap: Record<string, LucideIcon> = {
@@ -39,6 +45,7 @@ const iconMap: Record<string, LucideIcon> = {
   Layout,
   ChevronDown,
   ChevronUp,
+  Columns,
 };
 
 interface NavLinksProps {
@@ -46,6 +53,7 @@ interface NavLinksProps {
   pathname: string;
   isActive: (href: string) => boolean;
   onItemClick: () => void;
+  role: string;
 }
 
 const NavLinks = ({
@@ -53,13 +61,14 @@ const NavLinks = ({
   pathname,
   isActive,
   onItemClick,
+  role,
 }: NavLinksProps) => {
   const [openGroups, setOpenGroups] = React.useState<Record<string, boolean>>({
-    "MODELOS": true, // Open by default for UX
+    MODELOS: true, // Open by default for UX
   });
 
   const toggleGroup = (label: string) => {
-    setOpenGroups(prev => ({ ...prev, [label]: !prev[label] }));
+    setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }));
   };
 
   return (
@@ -68,11 +77,13 @@ const NavLinks = ({
         const Icon = iconMap[item.icon as keyof typeof iconMap];
         const hasChildren = item.children && item.children.length > 0;
         const isExpanded = openGroups[item.label];
-        
+
         // Active state for parent: if any child is active or parent itself is active
-        const isParentActive = hasChildren 
-          ? item.children?.some(child => isActive(child.href))
-          : (item.href === "/dashboard" ? pathname === "/dashboard" : isActive(item.href));
+        const isParentActive = hasChildren
+          ? item.children?.some((child) => isActive(child.href))
+          : item.href === "/dashboard"
+            ? pathname === "/dashboard"
+            : isActive(item.href);
 
         if (hasChildren) {
           return (
@@ -80,24 +91,36 @@ const NavLinks = ({
               <button
                 onClick={() => toggleGroup(item.label)}
                 className={`flex items-center justify-between px-4 py-2.5 rounded-xl transition-all duration-300 font-bold ${
-                  isParentActive 
-                    ? "text-primary bg-primary/5" 
+                  isParentActive
+                    ? "text-primary bg-primary/5"
                     : "text-foreground/70 hover:text-foreground hover:bg-white/5"
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  {Icon && <Icon size={18} className={isParentActive ? "text-primary" : "opacity-70"} />}
-                  <span className="tracking-wide uppercase font-black text-[11px]">{item.label}</span>
+                  {Icon && (
+                    <Icon
+                      size={18}
+                      className={isParentActive ? "text-primary" : "opacity-70"}
+                    />
+                  )}
+                  <span className="tracking-wide uppercase font-black text-[11px]">
+                    {item.label}
+                  </span>
                 </div>
-                {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                {isExpanded ? (
+                  <ChevronUp size={14} />
+                ) : (
+                  <ChevronDown size={14} />
+                )}
               </button>
-              
+
               {isExpanded && (
                 <div className="flex flex-col gap-1 ml-4 pl-4 border-l border-white/5 animate-in slide-in-from-top-2 duration-300">
                   {item.children?.map((child) => {
-                    const ChildIcon = iconMap[child.icon as keyof typeof iconMap];
+                    const ChildIcon =
+                      iconMap[child.icon as keyof typeof iconMap];
                     const isChildActive = isActive(child.href);
-                    
+
                     return (
                       <Link
                         key={child.href}
@@ -109,7 +132,9 @@ const NavLinks = ({
                             : "text-foreground/60 hover:text-foreground hover:bg-white/5"
                         }`}
                       >
-                        {ChildIcon && <ChildIcon size={14} className="opacity-70" />}
+                        {ChildIcon && (
+                          <ChildIcon size={14} className="opacity-70" />
+                        )}
                         <span className="font-bold">{child.label}</span>
                       </Link>
                     );
@@ -131,7 +156,9 @@ const NavLinks = ({
             href={item.href}
             onClick={onItemClick}
           >
-            {Icon && <Icon size={18} className={isParentActive ? "" : "opacity-70"} />}
+            {Icon && (
+              <Icon size={18} className={isParentActive ? "" : "opacity-70"} />
+            )}
             <span className="tracking-wide">{item.label}</span>
           </Link>
         );
@@ -139,18 +166,25 @@ const NavLinks = ({
 
       <div className="h-px my-4 bg-white/5" />
 
-      <Link
-        className={`inline-flex items-center gap-3 px-4 py-2.5 rounded-xl text-[12px] font-bold transition-all duration-300 ${
-          isActive(SETTINGS_ITEM.href)
-            ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-            : "text-foreground/80 hover:text-foreground hover:bg-white/5"
-        }`}
-        href={SETTINGS_ITEM.href}
-        onClick={onItemClick}
-      >
-        <Settings size={18} className={isActive(SETTINGS_ITEM.href) ? "" : "opacity-70"} />
-        <span className="tracking-wide uppercase font-black text-[11px]">{SETTINGS_ITEM.label}</span>
-      </Link>
+      {role === "superadmin" && (
+        <Link
+          className={`inline-flex items-center gap-3 px-4 py-2.5 rounded-xl text-[12px] font-bold transition-all duration-300 ${
+            isActive(SETTINGS_ITEM.href)
+              ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+              : "text-foreground/80 hover:text-foreground hover:bg-white/5"
+          }`}
+          href={SETTINGS_ITEM.href}
+          onClick={onItemClick}
+        >
+          <Settings
+            size={18}
+            className={isActive(SETTINGS_ITEM.href) ? "" : "opacity-70"}
+          />
+          <span className="tracking-wide uppercase font-black text-[11px]">
+            {SETTINGS_ITEM.label}
+          </span>
+        </Link>
+      )}
     </nav>
   );
 };
@@ -210,6 +244,7 @@ export default function Sidebar({ user: initialUser }: SidebarProps) {
           pathname={pathname}
           isActive={isActive}
           onItemClick={handleItemClick}
+          role={userRole}
         />
       </aside>
 
@@ -236,6 +271,7 @@ export default function Sidebar({ user: initialUser }: SidebarProps) {
               pathname={pathname}
               isActive={isActive}
               onItemClick={handleItemClick}
+              role={userRole}
             />
           </aside>
         </>

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { getTradeCopierHeaders } from "@/lib/trade-copier-headers";
 
 const EXTERNAL_BASE_URL = process.env.NEXT_PUBLIC_MT5_API_BASE_URL || "https://mt5.ittradew.com";
 
@@ -10,9 +11,20 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    let externalHeaders;
+    try {
+      externalHeaders = await getTradeCopierHeaders(session.user.id);
+    } catch (err: any) {
+      if (err.message === "CredentialsApiConfigurationMissing") {
+        return NextResponse.json({ status: "success", data: [] });
+      }
+      throw err;
+    }
+
     const externalResponse = await fetch(`${EXTERNAL_BASE_URL}/api/v1/trade-copier/notification/get`, {
       method: "GET",
       headers: {
+        ...externalHeaders,
         "Accept": "application/json"
       }
     });

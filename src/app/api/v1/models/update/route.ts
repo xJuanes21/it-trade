@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { getTradeCopierHeaders } from "@/lib/trade-copier-headers";
 
 const EXTERNAL_BASE_URL = process.env.NEXT_PUBLIC_MT5_API_BASE_URL || "https://mt5.ittradew.com";
 
@@ -13,6 +14,20 @@ export async function POST(req: Request) {
     const { id, name, description, masterAccountId, settings, isPublic, investment_min, monthly_fee } = body;
 
     if (!id) return NextResponse.json({ error: "ID del modelo requerido." }, { status: 400 });
+
+    // Get Security Headers
+    let externalHeaders;
+    try {
+      externalHeaders = await getTradeCopierHeaders(session.user.id);
+    } catch (err: any) {
+      if (err.message === "CredentialsApiConfigurationMissing") {
+        return NextResponse.json({ 
+          error: "Configuración Faltante", 
+          message: "Debes configurar tus credenciales de API en el módulo de Configuraciones primero." 
+        }, { status: 400 });
+      }
+      throw err;
+    }
 
     const {
         risk_factor_value,
@@ -47,7 +62,10 @@ export async function POST(req: Request) {
       try {
         const templateResponse = await fetch(`${EXTERNAL_BASE_URL}/api/v1/trade-copier/template/add`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            ...externalHeaders,
+            "Content-Type": "application/json" 
+          },
           body: JSON.stringify({ payload: { name } }),
         });
         const templateData = await templateResponse.json();
@@ -64,7 +82,10 @@ export async function POST(req: Request) {
        if (name && name !== model.name) {
           await fetch(`${EXTERNAL_BASE_URL}/api/v1/trade-copier/template/edit`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+              ...externalHeaders,
+              "Content-Type": "application/json" 
+            },
             body: JSON.stringify({ payload: { group_id: currentGroupId, name } }),
           });
        }
@@ -76,8 +97,8 @@ export async function POST(req: Request) {
             risk_factor_value: Number(risk_factor_value ?? 1.0),
             risk_factor_type: Number(risk_factor_type ?? 3),
             copier_status: Number(copier_status ?? 1),
-            max_order_size: max_order_size !== undefined ? Number(max_order_size) : undefined,
-            min_order_size: min_order_size !== undefined ? Number(min_order_size) : undefined,
+            max_order_size: max_order_size && max_order_size !== "" ? Number(max_order_size) : undefined,
+            min_order_size: min_order_size && min_order_size !== "" ? Number(min_order_size) : undefined,
             pending_order: Number(pending_order ?? 1),
             stop_loss: Number(stop_loss ?? 0),
             take_profit: Number(take_profit ?? 0),
@@ -96,7 +117,10 @@ export async function POST(req: Request) {
 
           await fetch(`${EXTERNAL_BASE_URL}/api/v1/trade-copier/settings/set`, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+              ...externalHeaders,
+              "Content-Type": "application/json" 
+            },
             body: JSON.stringify({ payload: dictPayload }),
           });
        }

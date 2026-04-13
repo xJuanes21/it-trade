@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { getTradeCopierHeaders } from "@/lib/trade-copier-headers";
 
 const EXTERNAL_BASE_URL = process.env.NEXT_PUBLIC_MT5_API_BASE_URL || "https://mt5.ittradew.com";
 
@@ -17,10 +18,21 @@ export async function POST(req: Request) {
 
     const body = await req.json();
     const userId = session.user.id;
+    const isSuperAdmin = session.user.role === "superadmin";
 
-    // 1. Ownership check: If account_id is provided, verify it belongs to the user
-    if (body.account_id) {
-      // @ts-ignore - prisma.tradeCopierAccount might not be visible in IDE until generate is fully reconciled
+    // Header Impersonation Logic
+    let headerUserId = userId;
+    let isImpersonating = false;
+
+    if (body.targetUserId) {
+      headerUserId = body.targetUserId;
+      isImpersonating = true;
+      delete body.targetUserId; // Do not leak this internal param to external API
+    }
+
+    // 1. Ownership check: Only if not impersonating and account_id is provided
+    if (body.account_id && !isSuperAdmin && !isImpersonating) {
+      // @ts-ignore
       const account = await (prisma as any).tradeCopierAccount.findFirst({
         where: {
           account_id: body.account_id,
@@ -33,14 +45,27 @@ export async function POST(req: Request) {
       }
     }
 
+    let externalHeaders;
+    try {
+      externalHeaders = await getTradeCopierHeaders(headerUserId);
+    } catch (err: any) {
+      if (err.message === "CredentialsApiConfigurationMissing") {
+        return NextResponse.json({
+          status: "success",
+          data: {
+            reporting: [],
+            totalCount: 0
+          }
+        });
+      }
+      throw err;
+    }
+
     // 2. Proxy to external API
     // Removing "payload" wrapper as per latest API observations
     const externalResponse = await fetch(`${EXTERNAL_BASE_URL}/api/v1/trade-copier/reporting/get`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Accept": "application/json"
-      },
+      headers: externalHeaders,
       body: JSON.stringify(body),
     });
 

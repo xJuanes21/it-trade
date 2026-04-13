@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { encrypt } from "@/lib/encryption";
+import { getTradeCopierHeaders } from "@/lib/trade-copier-headers";
 
 const EXTERNAL_BASE_URL = process.env.NEXT_PUBLIC_MT5_API_BASE_URL || "https://mt5.ittradew.com";
 
@@ -14,6 +15,14 @@ export async function POST(req: Request) {
 
     const body = await req.json();
 
+    // Extract impersonation target BEFORE any branching
+    const targetUserId = body.targetUserId;
+    let headerUserId = session.user.id;
+    if (targetUserId) {
+      headerUserId = targetUserId;
+      delete body.targetUserId; // Do not leak to external API payload
+    }
+
     // 1.5 SIMULACIÓN DE PRUEBAS LOCALES
     const SIMULATED_LOGINS = ["77889900", "11223344", "999999", "12345"];
     let accountId = "";
@@ -24,16 +33,15 @@ export async function POST(req: Request) {
       accountId = `sim_acc_${body.login}_${Date.now()}`;
       result = { status: "success", data: { account: { account_id: accountId } } };
     } else {
+      const externalHeaders = await getTradeCopierHeaders(headerUserId);
+
       // 2. Proxy to external API with increased timeout (60s)
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 60000);
 
       const externalResponse = await fetch(`${EXTERNAL_BASE_URL}/api/v1/trade-copier/account/add`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
+        headers: externalHeaders,
         body: JSON.stringify({ payload: body }),
         signal: controller.signal
       });
@@ -58,6 +66,15 @@ export async function POST(req: Request) {
         return NextResponse.json(result, { status: externalResponse.status });
       }
 
+      // Edge case: API returns status:"success" but data contains an error code (e.g. subscription limit)
+      if (result.data?.code || result.data?.error) {
+        return NextResponse.json({
+          status: "error",
+          message: result.data.error || "Error del servidor externo.",
+          code: result.data.code
+        }, { status: 403 });
+      }
+
       // Robust ID extraction from multiple known formats
       accountId = result?.data?.account?.account_id || 
                   result?.data?.account_id || 
@@ -74,6 +91,18 @@ export async function POST(req: Request) {
         }, { status: 502 });
       }
     }
+
+    // For impersonation (copy trader), we only proxied to the external API.
+    // Do NOT create/update local DB records — the account already lives locally for the user.
+    const isImpersonated = headerUserId !== session.user.id;
+    if (isImpersonated) {
+      return NextResponse.json({
+        status: "success",
+        data: { account: { account_id: accountId } }
+      });
+    }
+
+    // --- Personal account flow: sync with local DB ---
 
     // Check if another user already has this account linked
     const existingLink = await prisma.tradeCopierAccount.findUnique({
