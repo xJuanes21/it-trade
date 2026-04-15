@@ -3,25 +3,19 @@ import React, { useState, useEffect, useMemo } from "react";
 import {
   RefreshCw,
   Share2,
-  Calendar,
-  Filter,
   PlusCircle,
   Wallet,
 } from "lucide-react";
-import { WinstreakCard } from "./WinstreakCard";
+import { AccountStatusCard } from "./WinstreakCard";
 import { MetricCard } from "./MetricCards";
 import { GaugeCard } from "./WinrateGauges";
 import { PnLSummary } from "./PnLSummary";
-import { PeriodReturns } from "./PeriodReturns";
+import { EquityEvolution } from "./PeriodReturns";
 import { CapitalFlows } from "./CapitalFlows";
 import { TradeStats } from "./TradeStats";
-import { EquityCurve, PnLDistribution } from "./Charts";
-import { TradingCalendar } from "./TradingCalendar";
-import { RankingTable } from "../overview/RankingTable";
 import { tradeCopierService } from "@/services/trade-copier.service";
 import { tradeCopierAdapter } from "@/lib/trade-copier-adapter";
 import { FinancialDashboardResponse } from "@/types/dashboard";
-import { toast } from "sonner";
 import Link from "next/link";
 import { TechnicalAudit } from "./TechnicalAudit";
 import { HistoryTable } from "./HistoryTable";
@@ -133,11 +127,14 @@ const TradingDashboard = () => {
     const fetchActData = async () => {
       setLoading(true);
       try {
+        // Find the selected account from the list for real-time data
+        const currentAcc = accountsList.find(
+          (a) => a.account_id === selectedAccount,
+        );
+
         if (selectedAccount !== "all_accounts") {
-           const currentAcc = accountsList.find(
-             (a) => a.account_id === selectedAccount,
-           );
            if (currentAcc) {
+             // Create empty financial with real account data already merged
              setData(tradeCopierAdapter.createEmptyFinancial(currentAcc));
            }
         } else if (data === null) {
@@ -162,17 +159,74 @@ const TradingDashboard = () => {
           tradeCopierService.getPositionsClosed(basePayload),
         ]);
 
-        if (
-          reportRes.status === "success" &&
-          reportRes.data?.reporting?.length > 0
-        ) {
-          setData(tradeCopierAdapter.toFinancial(reportRes.data.reporting[0]));
-        }
+        let closedPositions: any[] = [];
+
         if (
           historyRes.status === "success" &&
           historyRes.data?.closedPositions
         ) {
-          setHistory(historyRes.data.closedPositions);
+          closedPositions = historyRes.data.closedPositions;
+          setHistory(closedPositions);
+        }
+
+        if (selectedAccount === "all_accounts") {
+          const reports = reportRes.status === "success" && reportRes.data?.reporting ? reportRes.data.reporting : [];
+          const dFrom = reportRes?.data?.meta?.day_from || "N/A";
+          const dTo = reportRes?.data?.meta?.day_to || "N/A";
+
+          const globalData = tradeCopierAdapter.aggregatePortfolio(
+            accountsList,
+            reports,
+            closedPositions,
+            dFrom,
+            dTo
+          );
+          setData(globalData);
+        } else {
+          // single account logic
+          if (
+            reportRes.status === "success" &&
+            reportRes.data?.reporting?.length > 0
+          ) {
+            // Find the exact report for the selected account, fallback to [0] just in case
+            const myReport = reportRes.data.reporting.find(
+              (r: any) => r.account_id === selectedAccount
+            ) || reportRes.data.reporting[0];
+
+            // Build financial from reporting data
+            let financial = tradeCopierAdapter.toFinancial(myReport);
+
+            // Extract meta range
+            if (reportRes.data.meta) {
+              financial.meta.day_from = reportRes.data.meta.day_from || "N/A";
+              financial.meta.day_to = reportRes.data.meta.day_to || "N/A";
+            }
+
+            // Merge real-time account data
+            if (currentAcc) {
+              financial = tradeCopierAdapter.mergeAccountData(financial, currentAcc);
+            }
+
+            // Compute trade stats from closed positions
+            financial.trade_stats = tradeCopierAdapter.computeTradeStatsFromHistory(closedPositions);
+            financial.summary.total_trades = {
+              won: financial.trade_stats.won_trades,
+              lost: financial.trade_stats.lost_trades,
+              total: financial.trade_stats.total_trades,
+            };
+
+            setData(financial);
+          } else if (currentAcc) {
+            // No reporting data but we have account data — show what we can
+            const fallback = tradeCopierAdapter.createEmptyFinancial(currentAcc);
+            fallback.trade_stats = tradeCopierAdapter.computeTradeStatsFromHistory(closedPositions);
+            fallback.summary.total_trades = {
+              won: fallback.trade_stats.won_trades,
+              lost: fallback.trade_stats.lost_trades,
+              total: fallback.trade_stats.total_trades,
+            };
+            setData(fallback);
+          }
         }
       } catch (err) {
         console.error("Fetch Data Error:", err);
@@ -214,56 +268,6 @@ const TradingDashboard = () => {
       setIsSyncing(false);
     }
   };
-
-  const equityCurveData = useMemo(() => {
-    if (!data?.charts?.equity_curve) return [];
-    return data.charts.equity_curve.map((point) => ({
-      day: new Date(point.date).toLocaleDateString("es-ES"),
-      equity: point.equity,
-    }));
-  }, [data]);
-
-  const dailyPnLData = useMemo(() => {
-    if (!data?.charts?.daily_pnl_distribution) return [];
-    return data.charts.daily_pnl_distribution.map((point) => ({
-      day: new Date(point.date).toLocaleDateString("es-ES"),
-      pnl: point.pnl,
-      color: point.color,
-    }));
-  }, [data]);
-
-  const weekTotals = useMemo(() => {
-    if (!data?.calendar) return [];
-    const weeks: any[] = [];
-    let weekSum = 0;
-    let weekPercent = 0;
-
-    data.calendar.forEach((day: any, idx) => {
-      weekSum += day.pnl || 0;
-      weekPercent += day.percent || 0;
-
-      if ((idx + 1) % 7 === 0 || idx === data.calendar.length - 1) {
-        weeks.push({
-          total: weekSum.toFixed(2),
-          percent: weekPercent.toFixed(2),
-          isNegative: weekSum < 0,
-        });
-        weekSum = 0;
-        weekPercent = 0;
-      }
-    });
-    return weeks;
-  }, [data]);
-
-  const monthTotal = useMemo(() => {
-    if (!data?.calendar) return { total: "0.00", percent: "0.00" };
-    const total = data.calendar.reduce((sum, day) => sum + (day.pnl || 0), 0);
-    const percent = data.calendar.reduce(
-      (sum, day) => sum + (day.percent || 0),
-      0,
-    );
-    return { total: total.toFixed(2), percent: percent.toFixed(2) };
-  }, [data]);
 
   if (loading) {
     return (
@@ -317,7 +321,7 @@ const TradingDashboard = () => {
               </h1>
               <div className="flex items-center gap-3 mt-1 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <span className={`w-2 h-2 rounded-full ${data.account_info.state === 'CONNECTED' ? 'bg-emerald-500' : 'bg-red-500'}`}></span>
                   Última Sync:{" "}
                   {data.meta.last_sync
                     ? new Date(data.meta.last_sync).toLocaleString("es-ES")
@@ -337,9 +341,9 @@ const TradingDashboard = () => {
                 </button>
               </div>
             </div>
-            <div className="flex items-center gap-3 flex-wrap relative z-[50] ">
+            <div className="flex items-center gap-3 flex-wrap relative z-30">
               <div className="flex items-center gap-1 glass-widget rounded-[1.25rem] py-1.5 px-2 pb-2.5 border border-border bg-background/40 backdrop-blur-md shadow-sm">
-                <div className="w-2 h-2 rounded-full bg-emerald-500 ml-2 mr-1 animate-pulse shrink-0"></div>
+                <div className={`w-2 h-2 rounded-full ml-2 mr-1 shrink-0 ${data.account_info.state === 'CONNECTED' ? 'bg-emerald-500 animate-pulse' : 'bg-red-500'}`}></div>
 
                 {isSuperAdmin && accountsList.length > 0 && (
                   <div className="flex items-center">
@@ -369,63 +373,79 @@ const TradingDashboard = () => {
             </div>
           </div>
 
+          {/* ═══ TOP ROW: 5 Cards with REAL data ═══ */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
-            <WinstreakCard
-              current={data.summary.win_streak.current}
-              best={data.summary.win_streak.best}
-              losses={data.summary.win_streak.losses}
-              wonDays={data.summary.total_trades.won}
-              lostTrades={data.summary.total_trades.lost}
+            {/* 1. Account Status — balance, equity, state, open trades */}
+            <AccountStatusCard
+              name={data.account_info.name}
+              balance={data.account_info.balance}
+              equity={data.account_info.equity}
+              freeMargin={data.account_info.free_margin}
+              openTrades={data.account_info.open_trades}
+              state={data.account_info.state}
+              currency={data.meta.currency}
             />
+
+            {/* 2. PnL del periodo — from reporting (pnlUSD) */}
             <MetricCard
-              title="Ganancia/Pérdida Diaria"
-              value={data.summary.performance.day_win}
+              title="Ganancia/Pérdida"
+              value={data.summary.performance.pnl}
               label={data.meta.currency}
-              max={data.summary.performance.day_win || 100}
+              max={Math.abs(data.summary.performance.pnl) || 100}
               delay="0.1s"
             />
+
+            {/* 3. Performance % — from reporting (performance) */}
             <MetricCard
-              title="Promedio Ganancia"
-              value={data.summary.performance.avg_win}
-              label="Por Operación"
-              max={100}
+              title="Performance"
+              value={`${data.summary.performance.performance_percent >= 0 ? "+" : ""}${data.summary.performance.performance_percent.toFixed(2)}%`}
+              label="Rendimiento del Periodo"
               delay="0.2s"
             />
+
+            {/* 4. Equity vs Balance gauge — derived from account data */}
             <GaugeCard
-              label="Winrate Diario"
-              value={data.summary.performance.daily_winrate}
-              max={100}
-              color="#3b82f6"
+              label="Equity / Balance"
+              value={data.account_info.equity}
+              max={data.account_info.balance > 0 ? data.account_info.balance : 1}
+              color={data.account_info.equity >= data.account_info.balance ? "#10b981" : "#ef4444"}
               delay="0.3s"
             />
+
+            {/* 5. Free Margin gauge — from account data */}
             <GaugeCard
-              label="Winrate Total"
-              value={data.summary.performance.total_winrate}
-              max={100}
-              color="#8b5cf6"
+              label="Margen Libre"
+              value={data.account_info.free_margin}
+              max={data.account_info.equity > 0 ? data.account_info.equity : 1}
+              color="#3b82f6"
               delay="0.4s"
             />
           </div>
 
+          {/* ═══ MAIN BODY ═══ */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* LEFT COLUMN */}
             <div className="lg:col-span-4 space-y-6 flex flex-col h-full">
+              {/* PnL Summary — uses real reporting data */}
               <PnLSummary
                 gains={{
                   percent: data.technical_stats.performance_percent,
-                  absolute: data.summary.performance.day_win,
+                  absolute: data.summary.performance.pnl,
                 }}
-                netPnL={data.summary.performance.day_win}
+                netPnL={data.summary.performance.pnl}
                 delay="0.5s"
               />
-              <PeriodReturns
-                periodReturns={{
-                  daily: data.summary.performance.day_win,
-                  weekly: 0,
-                  monthly: 0,
-                  annualized: 0,
-                }}
+
+              {/* Equity Evolution — uses real reporting data */}
+              <EquityEvolution
+                equityStart={data.technical_stats.equity_start}
+                equityEnd={data.technical_stats.equity_end}
+                hwm={data.technical_stats.hwm}
+                currency={data.meta.currency}
                 delay="0.6s"
               />
+
+              {/* Trade Stats — computed from closedPositions */}
               <TradeStats
                 tradeStats={data.trade_stats}
                 risk={{
@@ -435,16 +455,25 @@ const TradingDashboard = () => {
                 }}
                 delay="0.7s"
               />
-              <CapitalFlows capitalFlows={data.capital_flows} delay="0.8s" />
+
+              {/* Capital Flows — deposit_withdrawal from reporting */}
+              <CapitalFlows
+                depositWithdrawal={data.capital_flows.deposit_withdrawal}
+                currency={data.meta.currency}
+                delay="0.8s"
+              />
             </div>
 
+            {/* RIGHT COLUMN */}
             <div className="lg:col-span-8 space-y-8 flex flex-col h-full">
+              {/* Technical Audit — Remodeled to Environment & Subscription Data */}
               <TechnicalAudit
-                stats={data.technical_stats}
-                currency={data.meta.currency}
+                account_info={data.account_info}
+                meta={data.meta}
                 delay="0.9s"
               />
 
+              {/* History Table — ✅ Works when there are closed positions */}
               <HistoryTable positions={history} className="flex-1" />
             </div>
           </div>
