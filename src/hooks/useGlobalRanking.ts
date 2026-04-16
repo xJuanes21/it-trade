@@ -2,15 +2,18 @@ import { useState, useEffect, useCallback } from "react";
 import { tradeCopierService } from "@/services/trade-copier.service";
 
 export interface RankingEntry {
+  rankingId: string;
   account_id: string;
   name: string;
   ownerName: string;
+  ownerRole?: string;
   profit: number;
   roi: number;
   drawdown: number;
   equity: number;
   type: number;
   accountCount: number;
+  score?: number;
 }
 
 export function useGlobalRanking() {
@@ -64,7 +67,7 @@ export function useGlobalRanking() {
       const mappedRanking: RankingEntry[] = rawData.map(
         (rep: any) => {
           const hwm = Number(rep.hwm || 0);
-          const equityEnd = Number(rep.equity_end || 0);
+          const equityEnd = rep.equity_end || rep.balance || 0;
 
           const calcDD =
             hwm > 0 ? Math.max(0, (1 - equityEnd / hwm) * 100) : 0;
@@ -72,7 +75,8 @@ export function useGlobalRanking() {
           const ownerName = rep.ownerName || "";
 
           return {
-            account_id: rep.account_id,
+            rankingId: rep.rankingId || String(rep.account_id),
+            account_id: String(rep.account_id),
             name:
               rep.ownerName ||
               accountNames.get(rep.account_id) ||
@@ -86,19 +90,22 @@ export function useGlobalRanking() {
                 ? rep.drawdown
                 : calcDD,
             equity: equityEnd,
-            type: typeof rep.type === "number" ? rep.type : 0,
+            type: typeof rep.type === "number" ? rep.type : parseInt(rep.type || "0"),
             accountCount: Number(rep.traderAccountCount || 0),
+            ownerRole: rep.ownerRole,
           };
         },
       );
+      
+      // Filter: Master accounts ONLY and EXCLUDE SuperAdmins
+      const filteredRanking = mappedRanking.filter(
+        (acc) => acc.type === 0 && acc.ownerRole !== "superadmin"
+      );
 
-      // Filter only Master accounts (type === 0)
-      const masterAccounts = mappedRanking.filter((acc) => acc.type === 0);
-
-      if (masterAccounts.length > 0) {
+      if (filteredRanking.length > 0) {
         // Calculate composite score using min-max normalization
-        const profits = masterAccounts.map((a) => a.profit);
-        const rois = masterAccounts.map((a) => a.roi);
+        const profits = filteredRanking.map((a) => a.profit);
+        const rois = filteredRanking.map((a) => a.roi);
 
         const minProfit = Math.min(...profits);
         const maxProfit = Math.max(...profits);
@@ -108,7 +115,7 @@ export function useGlobalRanking() {
         const WEIGHT_PROFIT = 0.5;
         const WEIGHT_ROI = 0.5;
 
-        const withScores = masterAccounts.map((acc) => {
+        const withScores = filteredRanking.map((acc) => {
           const normProfit =
             maxProfit !== minProfit
               ? (acc.profit - minProfit) / (maxProfit - minProfit)

@@ -87,13 +87,6 @@ export async function POST(req: Request) {
     const payload = await req.json();
     const { slaveAccountId, masterAccountId, traderId } = payload;
 
-    console.log("[POST /api/v1/copy-requests] Initiated", {
-        followerId: session.user.id,
-        traderId,
-        slaveAccountId,
-        masterAccountId
-    });
-
     if (!slaveAccountId || !masterAccountId || !traderId) {
       return NextResponse.json({ 
         error: "Missing required fields", 
@@ -131,7 +124,6 @@ export async function POST(req: Request) {
       }
     });
 
-    console.log("[POST /api/v1/copy-requests] Success", { requestId: request.id });
     return NextResponse.json({ status: "success", data: request });
   } catch (error: any) {
     console.error("[POST /api/v1/copy-requests] Critical Error:", {

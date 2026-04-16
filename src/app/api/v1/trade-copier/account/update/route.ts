@@ -34,7 +34,6 @@ export async function POST(req: Request) {
     // 2. Proxy to external API
     let result: any = {};
     if (account_id.startsWith("sim_acc_")) {
-      console.log(`[Simulación] Bypass API Externa para actualizar cuenta ${account_id}`);
       result = { status: "success", message: "Account updated simulated" };
     } else {
       // Impersonation logic for headers: prioritize targetUserId, then dbOwner, then session

@@ -94,7 +94,6 @@ export async function POST(req: Request) {
             const existing = groups.find((g: any) => g.name === name);
             if (existing) {
               externalGroupId = existing.group_id || existing.template;
-              console.log("Found existing group_id via fallback search:", externalGroupId);
             }
           }
         }

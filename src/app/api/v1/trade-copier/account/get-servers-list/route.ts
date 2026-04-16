@@ -57,7 +57,6 @@ export async function POST(req: Request) {
     
     if (contentType && contentType.includes("application/json")) {
       result = await externalResponse.json();
-      console.log(`[Proxy] Get Servers List SUCCESS for broker ${body.broker}. Count: ${result?.data?.length || result?.payload?.length || 0}`);
     } else {
       const text = await externalResponse.text();
       console.error(`[Proxy] External API Servers List ERROR (${externalResponse.status}):`, text);

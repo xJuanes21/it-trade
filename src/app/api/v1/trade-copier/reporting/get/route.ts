@@ -59,18 +59,21 @@ export async function POST(req: Request) {
     // GLOBAL RANKING MODE — aggregate across every CredentialsApi
     // ═══════════════════════════════════════════════════════════════
     if (body.global) {
-      // 1. Retrieve all stored credentials — EXCLUDING SuperAdmins
+      // 1. Step 1: Get all users with trader/admin roles that have API credentials configured
       const allCredentials = await prisma.credentialsApi.findMany({
         where: {
           user: {
-            role: { not: "superadmin" }
+            OR: [
+              { role: "trader" },
+              { role: "superadmin" }
+            ]
           }
         },
         select: {
           userId: true,
           data: true,
           user: {
-            select: { name: true, email: true },
+            select: { name: true, email: true, role: true },
           },
         },
       });
@@ -82,7 +85,7 @@ export async function POST(req: Request) {
         });
       }
 
-      // 2. Fan-out
+      // 2. Step 2: Fan-out requests to external API for each credential set
       const results = await Promise.allSettled(
         allCredentials.map(async (cred) => {
           const headers: Record<string, string> = {
@@ -94,45 +97,42 @@ export async function POST(req: Request) {
           const reporting = await fetchExternalReporting(headers, {});
           const ownerName =
             cred.user?.name || cred.user?.email || `User ${cred.userId}`;
+          const ownerRole = cred.user?.role || "user";
 
           return reporting.map((entry: any) => ({
             ...entry,
             ownerName,
+            ownerRole,
             ownerUserId: cred.userId,
-            _allUserAccountsTotal: reporting.length // Store the total count for this user
+            _allUserAccountsTotal: reporting.length
           }));
         })
       );
 
-      // 3. Flatten fulfilled results
-      const seen = new Set<string>();
+      // 3. Step 3: Aggregate (Allow multiple traders per account)
       const globalReporting: any[] = [];
       const userAccountCounts = new Map<string, number>();
 
       for (const result of results) {
         if (result.status !== "fulfilled") continue;
         
-        // Record the total account count for this user (once)
         const firstEntry = result.value[0];
         if (firstEntry) {
           userAccountCounts.set(firstEntry.ownerUserId, firstEntry._allUserAccountsTotal);
         }
 
         for (const entry of result.value) {
-          const key = String(entry.account_id);
-          if (!seen.has(key)) {
-            seen.add(key);
-            // Append the total count to every account entry for the frontend to use
-            entry.traderAccountCount = userAccountCounts.get(entry.ownerUserId) || 0;
-            delete entry._allUserAccountsTotal; // Clean up temp property
-            globalReporting.push(entry);
-          }
+          // We no longer deduplicate by account_id because multiple IT TRADE users 
+          // might be managing/linking the same external account and want to be ranked.
+          entry.traderAccountCount = userAccountCounts.get(entry.ownerUserId) || 0;
+          
+          // Generate a truly unique ID for this ranking entry (User + Account)
+          entry.rankingId = `${entry.ownerUserId}_${entry.account_id}`;
+          
+          delete entry._allUserAccountsTotal;
+          globalReporting.push(entry);
         }
       }
-
-      console.log(
-        `[Reporting Proxy] Global mode: aggregated ${globalReporting.length} unique accounts from ${allCredentials.length} credential sets for user ${userId}`
-      );
 
       return NextResponse.json({
         status: "success",
@@ -271,8 +271,6 @@ export async function POST(req: Request) {
       result.data.reporting = result.data.reporting.filter((rep: any) =>
         allowedIds.has(String(rep.account_id))
       );
-
-      console.log(`[Reporting Proxy] Filtered ${initialCount} -> ${result.data.reporting.length} accounts for target user ${headerUserId}`);
     }
 
     return NextResponse.json(result);

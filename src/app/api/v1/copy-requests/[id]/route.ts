@@ -11,18 +11,15 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params;
-  console.log(`[PATCH /api/v1/copy-requests/${id}] Iniciando actualización de estado...`);
 
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      console.warn(`[PATCH /api/v1/copy-requests/${id}] Intento de acceso sin sesión.`);
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await req.json();
     const { status, message } = body;
-    console.log(`[PATCH /api/v1/copy-requests/${id}] Solicitando cambio a estado: ${status}`);
 
     if (!["APPROVED", "REJECTED", "CANCELLED"].includes(status)) {
       return NextResponse.json({ error: "Invalid status" }, { status: 400 });
@@ -55,7 +52,6 @@ export async function PATCH(
 
     // --- CASO APROBACIÓN: Generar cuenta Slave en MT5 ---
     if (normalizedStatus === "APPROVED") {
-      console.log(`[PATCH /api/v1/copy-requests/${id}] -> PROCESANDO APROBACIÓN PARA MT5...`);
       
       const p = prisma as any;
       const slaveAccount = await p.tradeCopierAccount.findUnique({
@@ -89,8 +85,6 @@ export async function PATCH(
         status: 1 // 1 = ACTIVE
       };
 
-      console.log(`[PATCH /api/v1/copy-requests/${id}] -> PAYLOAD MT5:`, JSON.stringify(payload));
-      
       const response = await fetch(`${EXTERNAL_BASE_URL}/api/v1/trade-copier/account/add`, {
         method: "POST",
         headers: externalHeaders,
@@ -98,7 +92,6 @@ export async function PATCH(
       });
 
       externalApiResult = await response.json();
-      console.log(`[PATCH /api/v1/copy-requests/${id}] -> RESPUESTA MT5:`, JSON.stringify(externalApiResult));
 
       if (!response.ok || externalApiResult.status !== "success") {
         return NextResponse.json({ 
@@ -121,7 +114,6 @@ export async function PATCH(
       // 3. Sincronizar ID si cambió
       const realId = externalApiResult?.data?.account?.account_id || externalApiResult?.data?.account_id || externalApiResult?.account_id;
       if (realId && String(realId) !== String(request.slaveAccountId)) {
-        console.log(`[PATCH /api/v1/copy-requests/${id}] -> ID ACTUALIZADO: ${realId}`);
         await p.tradeCopierAccount.update({
           where: { account_id: request.slaveAccountId },
           data: { account_id: String(realId) }
@@ -132,7 +124,6 @@ export async function PATCH(
 
     // --- CASO RECHAZO/CANCELACIÓN: Limpiar si era APPROVED ---
     if (["REJECTED", "CANCELLED"].includes(normalizedStatus) && request.status === "APPROVED") {
-      console.log(`[PATCH /api/v1/copy-requests/${id}] -> ELIMINANDO CUENTA EN MT5...`);
       const externalHeaders = await getTradeCopierHeaders(request.traderId);
       const response = await fetch(`${EXTERNAL_BASE_URL}/api/v1/trade-copier/account/delete`, {
         method: "POST",
@@ -143,7 +134,6 @@ export async function PATCH(
     }
 
     // 3. Persistir cambio final en DB
-    console.log(`[PATCH /api/v1/copy-requests/${id}] -> Guardando estado ${normalizedStatus} en base de datos local...`);
     const updatedRequest = await (prisma as any).copyRequest.update({
       where: { id },
       data: { 

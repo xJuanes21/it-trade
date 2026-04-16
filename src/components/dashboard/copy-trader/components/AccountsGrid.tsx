@@ -94,7 +94,7 @@ export function AccountsGrid({
               onDelete={onDelete}
               onPromote={onPromote}
               onToggleStatus={onToggleStatus}
-              onLink={onLink}
+              onLink={isSuperAdmin ? onLink : undefined}
               isToggling={togglingAccountId === account.account_id}
             />
           )) : (
@@ -133,7 +133,7 @@ export function AccountsGrid({
               onDelete={onDelete}
               onPromote={onPromote}
               onToggleStatus={onToggleStatus}
-              onLink={onLink}
+              onLink={isSuperAdmin ? onLink : undefined}
               isToggling={togglingAccountId === account.account_id}
             />
           )) : (

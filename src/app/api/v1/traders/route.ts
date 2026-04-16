@@ -14,8 +14,6 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const hasCredentials = searchParams.get("hasCredentials") === "true";
 
-    console.log(`[API/Traders] Fetching - hasCredentials: ${hasCredentials}, role: ${session.user.role}`);
-
     // Filtros: Para el Directorio público solo Traders/Admins con credenciales.
     // Pero si es el SuperAdmin pidiendo la lista de gestión, le mostramos a todos.
     const isSuperAdmin = session.user.role === "superadmin";
@@ -25,7 +23,6 @@ export async function GET(request: Request) {
     
     if (showAll && isSuperAdmin) {
       // No role filter for Admin management view
-      console.log(`[API/Traders] SuperAdmin loading all users for management`);
     } else {
       where = {
         OR: [
@@ -56,8 +53,6 @@ export async function GET(request: Request) {
       },
       orderBy: { name: 'asc' }
     });
-
-    console.log(`[API/Traders] Found ${traders.length} traders`);
 
     return NextResponse.json({ traders });
   } catch (error) {

@@ -78,7 +78,6 @@ export async function POST(req: Request) {
             });
             if (masterAcc?.login) {
               newItem.id_master = masterAcc.login;
-              console.log(`[Proxy/Settings] Auto-injected id_master ${newItem.id_master} for group ${newItem.id_group}`);
             }
           }
         }
@@ -128,7 +127,6 @@ export async function POST(req: Request) {
       );
       
       if (containsSimulated) {
-        console.log("[Simulation] Bypassing external settings/set for simulated accounts");
         for (const item of items) {
           if (item.id_slave && String(item.id_slave).includes("sim_acc_")) {
             const targetGroupId = item.copier_status === 0 ? null : item.id_group;
@@ -148,8 +146,6 @@ export async function POST(req: Request) {
 
       body.payload = newPayload;
     }
-
-    console.log(`[API/Settings-Set] Forwarding to External API. Final JSON:`, JSON.stringify(body, null, 2));
 
     const externalResponse = await fetch(`${EXTERNAL_BASE_URL}/api/v1/trade-copier/settings/set`, {
       method: "POST",

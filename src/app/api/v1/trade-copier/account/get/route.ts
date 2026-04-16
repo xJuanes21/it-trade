@@ -37,9 +37,6 @@ export async function POST(req: Request) {
       if (acc.login) localAccountsMap.set(String(acc.login), acc);
     });
 
-    console.log(`[API/Account/Get] Local accounts found: ${localAccounts.length}`);
-    console.log(`[API/Account/Get] Map keys:`, Array.from(localAccountsMap.keys()));
-
     let externalHeaders;
     try {
       externalHeaders = await getTradeCopierHeaders(headerUserId);

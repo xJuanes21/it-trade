@@ -23,8 +23,6 @@ export async function POST(req: Request) {
       );
     }
 
-    console.log(`[API/Account/Link] Linking account ${account.account_id} to user ${targetUserId}`);
-
     // Encrypt password if present to maintain consistency with local accounts GET route
     const passwordToStore = account.password && account.password !== "****" 
       ? encrypt(account.password) 

@@ -170,13 +170,18 @@ export function AccountCard({
           </div>
 
           <div className="flex items-center gap-2">
-            {isSuperAdmin && isUnlinked && onLink && (
+            {isSuperAdmin && onLink && (
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => onLink(account)}
-                className="h-10 w-10 rounded-xl bg-emerald-500/10 hover:bg-emerald-500 hover:text-white transition-all text-emerald-400 border-none"
-                title="Vincular a Usuario"
+                className={cn(
+                  "h-10 w-10 rounded-xl transition-all border-none",
+                  isUnlinked
+                    ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white"
+                    : "bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white",
+                )}
+                title={isUnlinked ? "Vincular a Usuario IT Trade" : "Re-vincular o Cambiar Usuario"}
               >
                 <UserPlus size={18} />
               </Button>
