@@ -32,7 +32,13 @@ export async function POST(req: Request) {
       include: { user: { select: { email: true } } } 
     });
     const localAccountsMap = new Map();
-    localAccounts.forEach(acc => localAccountsMap.set(acc.account_id, acc));
+    localAccounts.forEach(acc => {
+      if (acc.account_id) localAccountsMap.set(String(acc.account_id), acc);
+      if (acc.login) localAccountsMap.set(String(acc.login), acc);
+    });
+
+    console.log(`[API/Account/Get] Local accounts found: ${localAccounts.length}`);
+    console.log(`[API/Account/Get] Map keys:`, Array.from(localAccountsMap.keys()));
 
     let externalHeaders;
     try {
@@ -74,7 +80,12 @@ export async function POST(req: Request) {
 
     // 3. Map external accounts and mix local identifiers
     let finalAccounts = externalAccounts.map(extAcc => {
-      const localMatch = localAccountsMap.get(extAcc.account_id);
+      // Robust matching: Try account_id first, then login as fallback
+      const extId = String(extAcc.account_id || "");
+      const extLogin = String(extAcc.login || "");
+      
+      const localMatch = localAccountsMap.get(extId) || localAccountsMap.get(extLogin);
+      
       return {
         ...extAcc,
         // Override state/balance safely
@@ -83,8 +94,10 @@ export async function POST(req: Request) {
         equity: extAcc.equity || 0,
         ccy: extAcc.ccy || "USD",
         // Map ownership data
-        isOwner: localMatch?.userId === userId || false,
+        isOwner: localMatch ? localMatch.userId === userId : false,
         ownerEmail: localMatch?.user?.email,
+        ownerName: localMatch?.user?.name, // Added for extra context
+        isLinked: !!localMatch, // Added to help UI logic
       };
     });
 

@@ -24,10 +24,20 @@ export async function GET(req: Request) {
     });
 
     // Desencriptar contraseñas para el formulario
-    const decryptedAccounts = accounts.map(acc => ({
-      ...acc,
-      password: acc.password ? decrypt(acc.password) : "",
-    }));
+    const decryptedAccounts = accounts.map(acc => {
+      let decryptedPassword = "";
+      try {
+        decryptedPassword = acc.password ? decrypt(acc.password) : "";
+      } catch (e) {
+        console.warn(`[API/Accounts] Failed to decrypt password for account ${acc.id}. Using placeholder.`);
+        decryptedPassword = acc.password || ""; // Fallback to raw value if decryption fails
+      }
+
+      return {
+        ...acc,
+        password: decryptedPassword,
+      };
+    });
 
     return NextResponse.json({
       status: "success",

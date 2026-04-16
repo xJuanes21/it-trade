@@ -17,10 +17,10 @@ import { tradeCopierService } from "@/services/trade-copier.service";
 import { tradeCopierAdapter } from "@/lib/trade-copier-adapter";
 import { FinancialDashboardResponse } from "@/types/dashboard";
 import Link from "next/link";
-import { TechnicalAudit } from "./TechnicalAudit";
 import { HistoryTable } from "./HistoryTable";
 import { useSession } from "next-auth/react";
 import { ModernSelect } from "@/components/ui/ModernSelect";
+import { PnLConversionCard } from "./PnLConversionCard";
 
 const TradingDashboard = () => {
   const { data: session } = useSession();
@@ -28,6 +28,7 @@ const TradingDashboard = () => {
 
   const [data, setData] = useState<FinancialDashboardResponse | null>(null);
   const [hasAccounts, setHasAccounts] = useState(false);
+  const [hasApprovedCopy, setHasApprovedCopy] = useState<boolean | null>(null);
   const [history, setHistory] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -46,11 +47,17 @@ const TradingDashboard = () => {
         let tcAccounts: any[] = [];
 
         if (session?.user?.role === "user") {
-          // Users: check local DB only — they don't have external credentials
+          // 1. Fetch Approved Copy Relations for standard users
+          const copyRes = await tradeCopierService.getCopyRequests();
+          const approved = copyRes.requests?.some((r: any) => r.status === "APPROVED");
+          setHasApprovedCopy(!!approved);
+
+          // 2. Users: check local DB only — they don't have external credentials
           const localRes = await tradeCopierService.getAccountsLocal();
           tcAccounts = localRes.data?.accounts || [];
         } else {
           // Traders/SuperAdmins: fetch from external API
+          setHasApprovedCopy(true); // Always true for Traders/Admins
           const payload: any = {};
           if (selectedTrader !== "all" && selectedTrader !== "me") {
              payload.targetUserId = selectedTrader;
@@ -312,7 +319,7 @@ const TradingDashboard = () => {
 
   return (
     <div className="text-foreground">
-      {hasAccounts && data ? (
+      {hasAccounts && hasApprovedCopy && data ? (
         <div className="max-w-[1600px] mx-auto px-4 md:px-8 py-6">
           <div className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
             <div>
@@ -436,12 +443,10 @@ const TradingDashboard = () => {
                 delay="0.5s"
               />
 
-              {/* Equity Evolution — uses real reporting data */}
-              <EquityEvolution
-                equityStart={data.technical_stats.equity_start}
-                equityEnd={data.technical_stats.equity_end}
-                hwm={data.technical_stats.hwm}
-                currency={data.meta.currency}
+              {/* Currency PnL Conversion — New widget replacement */}
+              <PnLConversionCard
+                pnlUSD={data.technical_stats.pnl_usd}
+                pnlEUR={data.technical_stats.pnl_eur}
                 delay="0.6s"
               />
 
@@ -466,10 +471,12 @@ const TradingDashboard = () => {
 
             {/* RIGHT COLUMN */}
             <div className="lg:col-span-8 space-y-8 flex flex-col h-full">
-              {/* Technical Audit — Remodeled to Environment & Subscription Data */}
-              <TechnicalAudit
-                account_info={data.account_info}
-                meta={data.meta}
+              {/* Equity Evolution — Relocated for better visibility */}
+              <EquityEvolution
+                equityStart={data.technical_stats.equity_start}
+                equityEnd={data.technical_stats.equity_end}
+                hwm={data.technical_stats.hwm}
+                currency={data.meta.currency}
                 delay="0.9s"
               />
 
@@ -497,44 +504,72 @@ const TradingDashboard = () => {
               </div>
             </div>
 
-            {/* Role-specific messaging */}
+            {/* Conditional messaging based on whether they have accounts or just waiting for approval */}
             {session?.user?.role === "user" ? (
-              <div className="space-y-5 relative z-10 flex flex-col items-center stat-fade-in">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold uppercase tracking-wider mb-2">
-                  <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                  Bienvenido a IT Trade
-                </div>
-                <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
-                  Empieza a Copiar
-                </h3>
-                <p className="text-muted-foreground text-lg leading-relaxed max-w-[90%] mx-auto">
-                  Registra tu cuenta de broker en el módulo de{" "}
-                  <strong className="text-foreground">Cuentas</strong> y
-                  explora nuestro{" "}
-                  <strong className="text-foreground">
-                    Directorio de Traders
-                  </strong>{" "}
-                  para empezar a copiar estrategias profesionales en tiempo
-                  real.
-                </p>
+              !hasAccounts ? (
+                /* START COPYING STATE (No accounts linked yet) */
+                <div className="space-y-5 relative z-10 flex flex-col items-center stat-fade-in">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-semibold uppercase tracking-wider mb-2">
+                    <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                    Bienvenido a IT Trade
+                  </div>
+                  <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+                    Empieza a Copiar
+                  </h3>
+                  <p className="text-muted-foreground text-lg leading-relaxed max-w-[90%] mx-auto">
+                    Registra tu cuenta de broker en el módulo de{" "}
+                    <strong className="text-foreground">Cuentas</strong> y
+                    explora nuestro{" "}
+                    <strong className="text-foreground">
+                      Directorio de Traders
+                    </strong>{" "}
+                    para empezar a copiar estrategias profesionales en tiempo
+                    real.
+                  </p>
 
-                <div className="w-full pt-4 flex flex-col sm:flex-row gap-3">
-                  <Link
-                    href="/dashboard/copy-trader/accounts"
-                    className="neumorphic-button group/btn flex-1 flex items-center justify-center gap-3 text-foreground py-4 px-6 rounded-2xl font-bold text-base transition-all duration-300"
-                  >
-                    <Wallet className="w-5 h-5" />
-                    Registrar Cuenta
-                  </Link>
-                  <Link
-                    href="/dashboard/copy-trader/traders"
-                    className="group/btn flex-1 flex items-center justify-center gap-3 bg-primary hover:bg-primary/90 text-primary-foreground py-4 px-6 rounded-2xl font-bold text-base shadow-xl shadow-primary/20 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
-                  >
-                    <PlusCircle className="w-5 h-5 transition-transform group-hover/btn:rotate-90" />
-                    Explorar Traders
-                  </Link>
+                  <div className="w-full pt-4 flex flex-col sm:flex-row gap-3">
+                    <Link
+                      href="/dashboard/copy-trader/accounts"
+                      className="neumorphic-button group/btn flex-1 flex items-center justify-center gap-3 text-foreground py-4 px-6 rounded-2xl font-bold text-base transition-all duration-300"
+                    >
+                      <Wallet className="w-5 h-5" />
+                      Registrar Cuenta
+                    </Link>
+                    <Link
+                      href="/dashboard/copy-trader/traders"
+                      className="group/btn flex-1 flex items-center justify-center gap-3 bg-primary hover:bg-primary/90 text-primary-foreground py-4 px-6 rounded-2xl font-bold text-base shadow-xl shadow-primary/20 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98]"
+                    >
+                      <PlusCircle className="w-5 h-5 transition-transform group-hover/btn:rotate-90" />
+                      Explorar Traders
+                    </Link>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                /* WAITING FOR APPROVAL STATE (Has account but no approved copy request) */
+                <div className="space-y-5 relative z-10 flex flex-col items-center stat-fade-in">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold uppercase tracking-wider mb-2">
+                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+                    Pendiente de Aprobación
+                  </div>
+                  <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+                    Sincronización en Proceso
+                  </h3>
+                  <p className="text-muted-foreground text-lg leading-relaxed max-w-[90%] mx-auto">
+                    Has vinculado tu cuenta correctamente, pero{" "}
+                    <strong className="text-foreground">
+                      la relación de copia aún no ha sido aprobada
+                    </strong>.
+                    Estamos preparando el entorno. Se habilitarán los reportes
+                    tan pronto como se active la copia.
+                  </p>
+                  <div className="w-full pt-4">
+                    <div className="glass-widget-darker flex items-center justify-center gap-3 text-amber-400 py-4 px-6 font-bold text-base">
+                      <RefreshCw className="w-5 h-5 animate-spin-slow" />
+                      Esperando Aprobación de Copia
+                    </div>
+                  </div>
+                </div>
+              )
             ) : session?.user?.role === "trader" ? (
               <div className="space-y-5 relative z-10 flex flex-col items-center stat-fade-in">
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-semibold uppercase tracking-wider mb-2">

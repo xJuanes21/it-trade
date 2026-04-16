@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 import { toast } from "sonner";
 import { AccountsGrid } from "@/components/dashboard/copy-trader/components/AccountsGrid";
+import { LinkAccountModal } from "@/components/dashboard/copy-trader/components/LinkAccountModal";
 import { ModernSelect } from "@/components/ui/ModernSelect";
 import { useSearchParams } from "next/navigation";
 
@@ -46,6 +47,14 @@ export default function CopyTraderAccountsPage() {
   const [togglingAccountId, setTogglingAccountId] = useState<string | null>(null);
 
   const [promoteModal, setPromoteModal] = useState<{
+    isOpen: boolean;
+    account: Account | null;
+  }>({
+    isOpen: false,
+    account: null,
+  });
+
+  const [linkModal, setLinkModal] = useState<{
     isOpen: boolean;
     account: Account | null;
   }>({
@@ -174,10 +183,14 @@ export default function CopyTraderAccountsPage() {
     setShowForm(true);
   };
 
+  const handleLink = (account: Account) => {
+    setLinkModal({ isOpen: true, account });
+  };
+
   const handleSuccess = () => {
     setShowForm(false);
     setEditingAccount(null);
-    fetchAccounts();
+    fetchAccounts(selectedTrader); // Refresh with current filter
     fetchAccountLimit();
   };
 
@@ -365,13 +378,15 @@ export default function CopyTraderAccountsPage() {
                 </Card>
               ) : (
                 <AccountsGrid
-                  accounts={displayedAccounts}
+                  accounts={accounts}
                   isSuperAdmin={isSuperAdmin}
+                  isTrader={isTrader}
                   canClassify={canClassify}
                   onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onPromote={handlePromoteToMaster}
-                  onToggleStatus={handleToggleStatus}
+                  onDelete={(id) => setDeleteModal({ isOpen: true, accountId: id })}
+                  onPromote={(acc) => setPromoteModal({ isOpen: true, account: acc })}
+                  onToggleStatus={(acc) => setStatusModal({ isOpen: true, account: acc })}
+                  onLink={(acc) => setLinkModal({ isOpen: true, account: acc })}
                   togglingAccountId={togglingAccountId}
                 />
               )}
@@ -379,6 +394,13 @@ export default function CopyTraderAccountsPage() {
           )}
         </div>
       </div>
+
+      <LinkAccountModal
+        isOpen={linkModal.isOpen}
+        onClose={() => setLinkModal({ isOpen: false, account: null })}
+        account={linkModal.account}
+        onSuccess={() => fetchAccounts(selectedTrader)}
+      />
 
       <ConfirmationModal
         isOpen={deleteModal.isOpen}

@@ -45,10 +45,12 @@ export const TradersList = ({
     );
   }
 
-  return (
+    const isCompact = !!selectedTraderId;
+
+    return (
     <div
       className={cn(
-        "flex flex-col gap-6 transition-all duration-700 w-full",
+        "flex flex-col gap-5 transition-all duration-700 w-full",
         selectedTraderId ? "opacity-100" : "",
       )}
     >
@@ -57,7 +59,8 @@ export const TradersList = ({
           key={profile.trader.id}
           onClick={() => onSelect(profile)}
           className={cn(
-            "cursor-pointer p-6 rounded-[2rem] border transition-all duration-500 relative overflow-hidden group flex flex-col md:flex-row items-center justify-between min-h-[110px] gap-6",
+            "cursor-pointer rounded-[1.75rem] border transition-all duration-500 relative overflow-hidden group flex flex-col items-center justify-between gap-4",
+            isCompact ? "p-4 min-h-[90px] md:flex-row" : "p-6 min-h-[110px] md:flex-row md:gap-6",
             selectedTraderId === profile.masterAccount?.account_id
               ? "border-primary bg-primary/10 ring-1 ring-primary/20 shadow-2xl shadow-primary/10"
               : "glass-widget widget-hover",
@@ -66,39 +69,49 @@ export const TradersList = ({
           {/* Subtle background glow on hover */}
           <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/[0.05] to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
 
-          <div className="relative z-10 flex flex-col md:flex-row items-center gap-6 flex-1 w-full">
+          <div className="relative z-10 flex flex-col md:flex-row items-center gap-4 flex-1 w-full">
             <div
               className={cn(
-                "w-14 h-14 rounded-2xl flex items-center justify-center border transition-all duration-500 shrink-0 aspect-square",
+                "rounded-2xl flex items-center justify-center border transition-all duration-500 shrink-0 aspect-square",
+                isCompact ? "w-11 h-11" : "w-14 h-14",
                 selectedTraderId && selectedTraderId === profile.masterAccount?.account_id
                   ? "bg-primary text-primary-foreground border-primary shadow-lg"
                   : "bg-background/40 text-primary border border-white/10 group-hover:border-primary/40 group-hover:shadow-[0_0_20px_rgba(var(--primary),0.15)]",
               )}
             >
-              <Users className="w-7 h-7" />
+              <Users className={cn(isCompact ? "w-5 h-5" : "w-7 h-7")} />
             </div>
 
-            <div className="flex flex-col items-center md:items-start text-center md:text-left space-y-1 w-full overflow-hidden">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10px] bg-primary/20 text-primary px-2 py-0.5 rounded-full font-black uppercase tracking-widest">
+            <div className="flex flex-col items-center md:items-start text-center md:text-left space-y-0.5 w-full overflow-hidden">
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-[9px] bg-primary/20 text-primary px-2 py-0.5 rounded-full font-black uppercase tracking-widest">
                   Trader Verificado
                 </span>
-                <span className="text-[10px] text-muted-foreground font-mono">
-                  {profile.trader.email}
-                </span>
+                {!isCompact && (
+                  <span className="text-[9px] text-muted-foreground font-mono">
+                    {profile.trader.email}
+                  </span>
+                )}
               </div>
-              <h3 className="font-bold text-xl text-foreground tracking-tight group-hover:text-primary transition-colors truncate w-full">
+              <h3 className={cn(
+                "font-bold text-foreground tracking-tight group-hover:text-primary transition-colors truncate w-full",
+                isCompact ? "text-base" : "text-xl"
+              )}>
                 {profile.trader.name || "Usuario Plataforma"}
               </h3>
               {profile.masterAccount ? (
-                <div className="flex items-center gap-3 opacity-70">
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-emerald-400">
+                <div className="flex items-center gap-2 opacity-70">
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-400">
                     {profile.masterAccount.name}
                   </span>
-                  <div className="w-1 h-1 rounded-full bg-white/20" />
-                  <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
-                    {profile.masterAccount.broker} @ {profile.masterAccount.server}
-                  </span>
+                  {!isCompact && (
+                    <>
+                      <div className="w-1 h-1 rounded-full bg-white/20" />
+                      <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest">
+                        {profile.masterAccount.broker} @ {profile.masterAccount.server}
+                      </span>
+                    </>
+                  )}
                 </div>
               ) : (
                 <span className="text-[10px] text-muted-foreground/60 font-bold uppercase tracking-widest italic animate-pulse">
@@ -110,12 +123,18 @@ export const TradersList = ({
 
           <div className="relative z-10 flex flex-col items-center md:items-end gap-3 shrink-0">
             {selectedTraderId && selectedTraderId === profile.masterAccount?.account_id ? (
-              <div className="px-5 py-2 rounded-full bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-widest border border-primary/30 animate-pulse">
-                Analizando...
+              <div className={cn(
+                "rounded-full bg-primary text-primary-foreground font-black uppercase tracking-widest border border-primary/30 animate-pulse",
+                isCompact ? "px-3 py-1.5 text-[8px]" : "px-5 py-2 text-[10px]"
+              )}>
+                Seleccionado
               </div>
             ) : (
-              <div className="px-6 py-2.5 rounded-xl bg-muted border border-border text-[10px] font-black text-muted-foreground uppercase tracking-[0.15em] group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all duration-300">
-                Ver Rendimiento
+              <div className={cn(
+                "rounded-xl bg-muted border border-border font-black text-muted-foreground uppercase tracking-[0.15em] group-hover:bg-primary group-hover:text-primary-foreground group-hover:border-primary transition-all duration-300",
+                isCompact ? "px-4 py-2 text-[8px]" : "px-6 py-2.5 text-[10px]"
+              )}>
+                {isCompact ? "Ver" : "Ver Rendimiento"}
               </div>
             )}
           </div>

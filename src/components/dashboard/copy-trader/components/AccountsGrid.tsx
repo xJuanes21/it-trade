@@ -3,28 +3,42 @@
 import React from "react";
 import { Account } from "@/lib/copy-trader-types";
 import { AccountCard } from "./AccountCard";
+import { Activity } from "lucide-react";
 
 interface AccountsGridProps {
   accounts: Account[];
   isSuperAdmin: boolean;
+  isTrader?: boolean;
   canClassify?: boolean;
   onEdit: (account: Account) => void;
   onDelete: (accountId: string) => void;
   onPromote: (account: Account) => void;
   onToggleStatus: (account: Account) => void;
+  onLink?: (account: Account) => void;
   togglingAccountId: string | null;
 }
 
 export function AccountsGrid({
   accounts,
   isSuperAdmin,
-  canClassify = true,
+  isTrader = false,
+  canClassify = false,
   onEdit,
   onDelete,
   onPromote,
   onToggleStatus,
+  onLink,
   togglingAccountId,
 }: AccountsGridProps) {
+  if (accounts.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 glass-card border border-dashed border-white/10 rounded-2xl bg-white/5">
+        <Activity size={48} className="text-muted-foreground mb-4 opacity-20" />
+        <p className="text-muted-foreground font-medium">No se encontraron cuentas.</p>
+      </div>
+    );
+  }
+
   if (!canClassify) {
     return (
       <div className="grid grid-cols-1 gap-4">
@@ -32,10 +46,13 @@ export function AccountsGrid({
           <AccountCard
             key={account.account_id}
             account={account}
-            isSuperAdmin={false}
+            isSuperAdmin={isSuperAdmin}
+            isTrader={isTrader}
             onEdit={onEdit}
             onDelete={onDelete}
+            onPromote={onPromote}
             onToggleStatus={onToggleStatus}
+            onLink={isSuperAdmin ? onLink : undefined}
             isToggling={togglingAccountId === account.account_id}
           />
         ))}
@@ -72,10 +89,12 @@ export function AccountsGrid({
               key={account.account_id}
               account={account}
               isSuperAdmin={isSuperAdmin}
+              isTrader={isTrader}
               onEdit={onEdit}
               onDelete={onDelete}
               onPromote={onPromote}
               onToggleStatus={onToggleStatus}
+              onLink={onLink}
               isToggling={togglingAccountId === account.account_id}
             />
           )) : (
@@ -109,10 +128,12 @@ export function AccountsGrid({
               key={account.account_id}
               account={account}
               isSuperAdmin={isSuperAdmin}
+              isTrader={isTrader}
               onEdit={onEdit}
               onDelete={onDelete}
               onPromote={onPromote}
               onToggleStatus={onToggleStatus}
+              onLink={onLink}
               isToggling={togglingAccountId === account.account_id}
             />
           )) : (

@@ -1,4 +1,5 @@
 import React from "react";
+import { cn } from "@/lib/utils";
 
 export const ProgressBar = ({
   value,
@@ -11,8 +12,8 @@ export const ProgressBar = ({
   label: string;
   showValues?: boolean;
 }) => {
-  const winPercent = (value / max) * 100;
-  const lossPercent = 100 - winPercent;
+  const isNegative = value < 0;
+  const percent = Math.min(100, Math.max(0, (Math.abs(value) / max) * 100));
 
   return (
     <div className="space-y-2">
@@ -20,18 +21,19 @@ export const ProgressBar = ({
         <span>{label}</span>
         {showValues && (
           <span>
-            {value} / {max}
+             {isNegative ? "-" : ""}{Math.abs(value).toLocaleString()} / {max.toLocaleString()}
           </span>
         )}
       </div>
-      <div className="flex h-2 rounded-full overflow-hidden bg-muted">
+      <div className="flex h-1.5 rounded-full overflow-hidden bg-muted/30">
         <div
-          className="bg-gradient-to-r from-blue-500 to-blue-400 transition-all duration-500"
-          style={{ width: `${winPercent}%` }}
-        />
-        <div
-          className="bg-gradient-to-r from-red-500 to-red-400 transition-all duration-500"
-          style={{ width: `${lossPercent}%` }}
+          className={cn(
+            "transition-all duration-1000 ease-out h-full",
+            isNegative 
+              ? "bg-gradient-to-r from-red-500/80 to-red-400/80" 
+              : "bg-gradient-to-r from-emerald-500/80 to-emerald-400/80"
+          )}
+          style={{ width: `${percent}%` }}
         />
       </div>
     </div>
@@ -57,10 +59,17 @@ export const MetricCard = ({
       style={{ animationDelay: delay }}
     >
       {title && (
-        <h3 className="text-xs font-semibold text-muted-foreground mb-2">{title}</h3>
+        <h3 className="text-[10px] md:text-xs font-bold text-muted-foreground mb-2 uppercase tracking-widest opacity-70">{title}</h3>
       )}
-      <div className="text-2xl md:text-3xl font-bold text-foreground mb-1">
-        {typeof value === "number" ? value.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : value}
+      <div className={cn(
+        "text-2xl md:text-3xl font-black tracking-tight mb-1",
+        typeof value === "number" 
+          ? (value >= 0 ? "text-emerald-500" : "text-red-500") 
+          : "text-foreground"
+      )}>
+        {typeof value === "number" 
+          ? `${value >= 0 ? "+" : "-"}${Math.abs(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
+          : value}
       </div>
       <div className="text-[10px] md:text-xs text-muted-foreground mb-2">{label}</div>
       {max !== undefined && typeof value === "number" && (
