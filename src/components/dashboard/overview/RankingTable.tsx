@@ -126,7 +126,7 @@ export function RankingTable() {
               Cuenta
             </th>
             <th className="px-4 py-3 text-center font-black uppercase text-[10px] tracking-widest">
-              Cuentas
+              Cuentas Relacionadas
             </th>
             <th className="px-4 py-3 text-right font-black uppercase text-[10px] tracking-widest">
               Profit
@@ -143,7 +143,7 @@ export function RankingTable() {
           {ranking.length > 0 ? (
             ranking.map((account, index) => (
               <tr
-                key={account.account_id}
+                key={account.rankingId}
                 className="hover:bg-primary/5 transition-colors group cursor-default"
               >
                 <td className="px-4 py-4 text-center">
@@ -195,8 +195,8 @@ export function RankingTable() {
                 <td
                   className={`px-4 py-4 text-right font-mono font-black text-base ${account.profit >= 0 ? "text-emerald-500" : "text-red-500"}`}
                 >
-                  {account.profit >= 0 ? "+" : ""}$
-                  {account.profit.toLocaleString(undefined, {
+                  {account.profit >= 0 ? "+" : "-"}$
+                  {Math.abs(account.profit).toLocaleString(undefined, {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}
