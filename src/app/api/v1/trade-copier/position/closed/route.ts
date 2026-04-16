@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 import { getTradeCopierHeaders } from "@/lib/trade-copier-headers";
 
 const EXTERNAL_BASE_URL = process.env.NEXT_PUBLIC_MT5_API_BASE_URL || "https://mt5.ittradew.com";
@@ -15,11 +16,27 @@ export async function POST(req: Request) {
     const userId = session.user.id;
     const isSuperAdmin = session.user.role === "superadmin";
 
-    // Header Impersonation Logic
+    // Header Impersonation and Copy Relation Logic
     let headerUserId = userId;
-    if (isSuperAdmin && body.targetUserId) {
+    let isImpersonating = false;
+
+    if (body.targetUserId) {
       headerUserId = body.targetUserId;
+      isImpersonating = true;
       delete body.targetUserId;
+    }
+
+    // Resolution for standard users fetching their own data
+    if (session.user.role === "user" && !isImpersonating) {
+      const copyRequest = await prisma.copyRequest.findFirst({
+        where: {
+          followerId: userId,
+          slaveAccountId: body.account_id ? String(body.account_id) : undefined,
+          status: "APPROVED"
+        },
+        select: { traderId: true }
+      });
+      if (copyRequest) headerUserId = copyRequest.traderId;
     }
 
     let externalHeaders;

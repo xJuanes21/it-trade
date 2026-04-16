@@ -272,4 +272,18 @@ export const tradeCopierService = {
     }
     return response.json();
   },
+  
+  async linkAccount(account: Account, userId: string) {
+    const response = await fetch("/api/v1/trade-copier/account/link", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ account, targetUserId: userId }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || error.error || "Failed to link account");
+    }
+    return response.json();
+  },
 };

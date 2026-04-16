@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import {
   Trophy,
   TrendingUp,
@@ -8,108 +8,10 @@ import {
   Loader2,
   AlertCircle,
 } from "lucide-react";
-import { tradeCopierService } from "@/services/trade-copier.service";
-
-interface RankingEntry {
-  account_id: string;
-  name: string;
-  profit: number;
-  roi: number;
-  drawdown: number;
-  equity: number;
-  type: number;
-}
+import { useGlobalRanking } from "@/hooks/useGlobalRanking";
 
 export function RankingTable() {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [ranking, setRanking] = useState<RankingEntry[]>([]);
-
-  useEffect(() => {
-    const fetchRanking = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        // 1. Fetch reporting data with global flag for the Home Ranking
-        const reportResponse = await tradeCopierService.getReporting({
-          global: true,
-        } as any);
-
-        if (reportResponse.status === "error") {
-          setError(
-            reportResponse.message ||
-              "Error al conectar con el servidor de reporting.",
-          );
-          setRanking([]);
-          return;
-        }
-
-        if (
-          reportResponse.status !== "success" ||
-          !reportResponse.data?.reporting
-        ) {
-          setRanking([]);
-          return;
-        }
-
-        // 2. Fetch local accounts to get the "proper name"
-        let accountNames = new Map();
-        try {
-          const accountsResponse = await tradeCopierService.getAccounts();
-          accountNames = new Map(
-            (accountsResponse.data?.accounts || []).map((a: any) => [
-              a.account_id,
-              a.name,
-            ]),
-          );
-        } catch (accErr) {
-          console.warn("Failed to fetch account names for ranking:", accErr);
-        }
-
-        // 3. Map and sort by Profit (Ranking)
-        const mappedRanking: RankingEntry[] = reportResponse.data.reporting.map(
-          (rep: any) => {
-            const hwm = Number(rep.hwm || 0);
-            const equityEnd = Number(rep.equity_end || 0);
-
-            const calcDD =
-              hwm > 0 ? Math.max(0, (1 - equityEnd / hwm) * 100) : 0;
-
-            return {
-              account_id: rep.account_id,
-              name:
-                rep.name ||
-                accountNames.get(rep.account_id) ||
-                `Cuenta ${rep.account_id}`,
-              profit: Number(rep.pnlUSD || rep.profit || 0),
-              roi: Number(rep.performance || rep.roi || 0),
-              drawdown:
-                typeof rep.drawdown === "number" && rep.drawdown !== 0
-                  ? rep.drawdown
-                  : calcDD,
-              equity: equityEnd,
-              type: typeof rep.type === "number" ? rep.type : 0,
-            };
-          },
-        );
-
-        // Sort by profit descending
-        mappedRanking.sort((a, b) => b.profit - a.profit);
-        setRanking(mappedRanking);
-      } catch (err: any) {
-        console.error("Ranking fetch error:", err);
-        // We set a friendly error but we'll show it inside the table body area
-        setError(
-          err.message || "Error al conectar con el servidor de reporting.",
-        );
-        setRanking([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchRanking();
-  }, []);
+  const { loading, error, ranking } = useGlobalRanking();
 
   // Skeleton for loading state
   const SkeletonRow = ({ index }: { index: number }) => (
@@ -223,6 +125,9 @@ export function RankingTable() {
             <th className="px-4 py-3 text-left font-black uppercase text-[10px] tracking-widest">
               Cuenta
             </th>
+            <th className="px-4 py-3 text-center font-black uppercase text-[10px] tracking-widest">
+              Cuentas Relacionadas
+            </th>
             <th className="px-4 py-3 text-right font-black uppercase text-[10px] tracking-widest">
               Profit
             </th>
@@ -238,7 +143,7 @@ export function RankingTable() {
           {ranking.length > 0 ? (
             ranking.map((account, index) => (
               <tr
-                key={account.account_id}
+                key={account.rankingId}
                 className="hover:bg-primary/5 transition-colors group cursor-default"
               >
                 <td className="px-4 py-4 text-center">
@@ -263,7 +168,7 @@ export function RankingTable() {
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
                       <span className="font-bold text-foreground group-hover:text-primary transition-colors">
-                        {account.name}
+                        {account.ownerName || account.name}
                       </span>
                       <span
                         className={`text-[9px] px-2 py-0.5 rounded-lg font-black uppercase border ${
@@ -280,11 +185,18 @@ export function RankingTable() {
                     </span>
                   </div>
                 </td>
+                <td className="px-4 py-4 text-center">
+                  <div className="flex flex-col items-center justify-center">
+                    <span className="bg-primary/10 text-primary border border-primary/20 px-2.5 py-1 rounded-full text-[11px] font-black min-w-[32px] transition-transform group-hover:scale-110">
+                      {account.accountCount}
+                    </span>
+                  </div>
+                </td>
                 <td
                   className={`px-4 py-4 text-right font-mono font-black text-base ${account.profit >= 0 ? "text-emerald-500" : "text-red-500"}`}
                 >
-                  {account.profit >= 0 ? "+" : ""}$
-                  {account.profit.toLocaleString(undefined, {
+                  {account.profit >= 0 ? "+" : "-"}$
+                  {Math.abs(account.profit).toLocaleString(undefined, {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                   })}

@@ -29,7 +29,6 @@ export async function POST(req: Request) {
     let result: any = {};
 
     if (SIMULATED_LOGINS.includes(body.login)) {
-      console.log(`[Simulación] Bypass API Externa para login ${body.login}`);
       accountId = `sim_acc_${body.login}_${Date.now()}`;
       result = { status: "success", data: { account: { account_id: accountId } } };
     } else {

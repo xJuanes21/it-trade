@@ -47,7 +47,6 @@ export async function GET(req: Request) {
       }
 
       const externalData = await externalResponse.json();
-      console.log("DEBUG: External API /accounts response:", JSON.stringify(externalData, null, 2));
 
       // 3. Filter: Only return accounts that the user OWNS locally
       if (Array.isArray(externalData)) {
@@ -56,7 +55,6 @@ export async function GET(req: Request) {
               return localLogins.has(String(account.login));
           });
           
-          console.log(`DEBUG: Filtered ${externalData.length} accounts to ${filteredData.length} for user ${session.user.email}`);
           return NextResponse.json(filteredData);
       }
       

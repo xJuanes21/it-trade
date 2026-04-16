@@ -37,8 +37,7 @@ export default function TradersPage() {
   // Lógica de filtrado modular y extensible
   const filteredProfiles = profiles.filter((p) => {
     // REQUERIMIENTO: Solo usuarios con rol 'trader'
-    const isTrader =
-      p.trader.role === "trader" || p.trader.role === "superadmin";
+    const isTrader = p.trader.role === "trader";
 
     // Aquí se pueden añadir más filtros en el futuro
     return isTrader;

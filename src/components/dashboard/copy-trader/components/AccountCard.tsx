@@ -10,6 +10,7 @@ import {
   ArrowUpCircle,
   Power,
   Loader2,
+  UserPlus,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,20 +19,24 @@ import { Account } from "@/lib/copy-trader-types";
 interface AccountCardProps {
   account: Account;
   isSuperAdmin: boolean;
+  isTrader?: boolean;
   onEdit: (account: Account) => void;
   onDelete: (accountId: string) => void;
   onPromote?: (account: Account) => void;
   onToggleStatus?: (account: Account) => void;
+  onLink?: (account: Account) => void;
   isToggling?: boolean;
 }
 
 export function AccountCard({
   account,
   isSuperAdmin,
+  isTrader = false,
   onEdit,
   onDelete,
   onPromote,
   onToggleStatus,
+  onLink,
   isToggling = false,
 }: AccountCardProps) {
   const handleToggle = () => {
@@ -39,12 +44,14 @@ export function AccountCard({
   };
 
   const isActive = Number(account.status) === 1;
+  const isUnlinked = account.isOwner === false && !account.ownerEmail;
+  const showOwnership = isSuperAdmin || isTrader;
 
   return (
     <Card
       className={cn(
         "glass-widget widget-hover group overflow-hidden transition-all duration-300",
-        !isActive && "opacity-75 grayscale-[0.5]"
+        !isActive && "opacity-75 grayscale-[0.5]",
       )}
     >
       <CardContent className="p-0">
@@ -58,11 +65,15 @@ export function AccountCard({
                   : "bg-emerald-500/10 text-emerald-500",
               )}
             >
-              <div className={cn(
-                "absolute inset-0 bg-gradient-to-br transition-opacity duration-500",
-                isActive ? "opacity-20 from-emerald-500/40 to-transparent" : "opacity-0"
-              )} />
-              
+              <div
+                className={cn(
+                  "absolute inset-0 bg-gradient-to-br transition-opacity duration-500",
+                  isActive
+                    ? "opacity-20 from-emerald-500/40 to-transparent"
+                    : "opacity-0",
+                )}
+              />
+
               {account.type === 0 ? (
                 <Server size={24} className="relative z-10" />
               ) : (
@@ -94,25 +105,34 @@ export function AccountCard({
                 >
                   {isActive ? "ACTIVA" : "DESACTIVADA"}
                 </span>
-                {account.isOwner === false ? (
-                  account.ownerEmail ? (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground ml-2">
-                      De: {account.ownerEmail}
+
+                {showOwnership && (
+                  account.isOwner ? (
+                    <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 ml-2 tracking-wider">
+                      TUYA
                     </span>
                   ) : (
-                    <span className="text-[9px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-500 font-bold uppercase ml-2 border border-red-500/20 whitespace-nowrap">
-                      SIN RELACIÓN CON IT TRADE
-                    </span>
+                    account.ownerEmail ? (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground ml-2 border border-white/5 font-medium">
+                        De: {account.ownerEmail}
+                      </span>
+                    ) : (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-500 font-bold uppercase ml-2 border border-red-500/20 whitespace-nowrap tracking-tight">
+                        SIN RELACIÓN CON IT TRADE
+                      </span>
+                    )
                   )
-                ) : null}
+                )}
               </div>
               <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground font-medium">
                 <span className="flex items-center gap-1">
-                  <span className={cn(
-                    "w-1.5 h-1.5 rounded-full shrink-0",
-                    isActive ? "bg-emerald-500 animate-pulse" : "bg-red-500"
-                  )} />
-                  {isActive ? (account.state || "CONECTADA") : "DESCONECTADA"}
+                  <span
+                    className={cn(
+                      "w-1.5 h-1.5 rounded-full shrink-0",
+                      isActive ? "bg-emerald-500 animate-pulse" : "bg-red-500",
+                    )}
+                  />
+                  {isActive ? account.state || "CONECTADA" : "DESCONECTADA"}
                 </span>
                 <span className="opacity-20">|</span>
                 <span>{account.broker.toUpperCase()}</span>
@@ -138,16 +158,35 @@ export function AccountCard({
               <p className="text-[10px] uppercase tracking-wider font-bold text-muted-foreground mb-1">
                 Equity
               </p>
-              <p className={cn(
-                "text-lg font-black",
-                isActive ? "text-primary" : "text-muted-foreground/40"
-              )}>
+              <p
+                className={cn(
+                  "text-lg font-black",
+                  isActive ? "text-primary" : "text-muted-foreground/40",
+                )}
+              >
                 {account.equity || "0.00"}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
+            {isSuperAdmin && onLink && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onLink(account)}
+                className={cn(
+                  "h-10 w-10 rounded-xl transition-all border-none",
+                  isUnlinked
+                    ? "bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500 hover:text-white"
+                    : "bg-blue-500/10 text-blue-400 hover:bg-blue-500 hover:text-white",
+                )}
+                title={isUnlinked ? "Vincular a Usuario IT Trade" : "Re-vincular o Cambiar Usuario"}
+              >
+                <UserPlus size={18} />
+              </Button>
+            )}
+
             <Button
               variant="outline"
               size="icon"
@@ -157,7 +196,7 @@ export function AccountCard({
                 "h-10 w-10 rounded-xl transition-all border-none",
                 isActive
                   ? "bg-red-500/10 hover:bg-red-500/20 text-red-400"
-                  : "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400"
+                  : "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400",
               )}
               title={isActive ? "Desactivar Cuenta" : "Activar Cuenta"}
             >
@@ -168,20 +207,6 @@ export function AccountCard({
               )}
             </Button>
 
-            {isSuperAdmin && account.type === 1 && onPromote && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onPromote(account)}
-                className="h-10 rounded-xl hover:bg-emerald-500 hover:text-white hover:border-emerald-500 transition-all text-emerald-400 border-white/10 hidden md:flex items-center gap-2 px-3"
-                title="Ascender a Master"
-              >
-                <ArrowUpCircle size={16} />
-                <span className="text-[10px] uppercase font-black tracking-widest">
-                  Ascender
-                </span>
-              </Button>
-            )}
             <Button
               variant="ghost"
               size="icon"

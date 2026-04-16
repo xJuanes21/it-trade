@@ -75,6 +75,23 @@ export interface FinancialDashboardResponse {
     currency: string;
     broker: string;
     server: string;
+    day_from: string;
+    day_to: string;
+  };
+  account_info: {
+    balance: number;
+    equity: number;
+    free_margin: number;
+    open_trades: number;
+    state: string;
+    broker: string;
+    name: string;
+    ccyToUSD: number;
+    ccyToEUR: number;
+    environment: string;
+    login: string;
+    subscription_name: string;
+    expiration: string;
   };
   technical_stats: {
     equity_start: number;
@@ -86,41 +103,34 @@ export interface FinancialDashboardResponse {
     performance_percent: number;
   };
   summary: {
-    win_streak: {
-      current: number;
-      best: number;
-      losses: number;
-    };
     total_trades: {
       won: number;
       lost: number;
+      total: number;
     };
     performance: {
-      day_win: number;
-      day_loss: number;
-      avg_win: number;
-      avg_loss: number;
-      daily_winrate: number;
-      total_winrate: number;
+      pnl: number;
+      performance_percent: number;
     };
     risk: {
-      max_drawdown: number;
       current_equity: number;
       current_balance: number;
       highest_balance: number;
     };
   };
   capital_flows: {
-    deposits: number;
-    withdrawals: number;
-    commissions: number;
-    swap: number;
+    deposit_withdrawal: number;
   };
   trade_stats: {
     win_rate: number;
     profit_factor: number;
+    avg_win: number;
+    avg_loss: number;
     avg_win_loss_ratio: string;
     avg_duration: string;
+    total_trades: number;
+    won_trades: number;
+    lost_trades: number;
   };
   charts: {
     equity_curve: Array<{

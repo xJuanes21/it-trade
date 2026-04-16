@@ -1,123 +1,128 @@
 "use client";
 
 import React from "react";
-import { Shield, TrendingUp, Wallet, ArrowDownCircle, ArrowUpCircle, Info } from "lucide-react";
+import { Server, CalendarDays, Key, Globe, ShieldCheck, Activity } from "lucide-react";
 
-interface TechnicalStatsProps {
-  stats: {
-    equity_start: number;
-    equity_end: number;
-    hwm: number;
-    deposit_withdrawal: number;
-    pnl_usd: number;
-    pnl_eur: number;
-    performance_percent: number;
+interface AccountMetadataProps {
+  account_info: {
+    environment: string;
+    login: string;
+    subscription_name: string;
+    expiration: string;
+    broker: string;
+    ccyToUSD: number;
+    ccyToEUR: number;
   };
-  currency: string;
+  meta: {
+    day_from: string;
+    day_to: string;
+    server: string;
+  };
   delay?: string;
 }
 
-export function TechnicalAudit({ stats, currency, delay }: TechnicalStatsProps) {
-  const isPositive = stats.performance_percent >= 0;
-
+export const TechnicalAudit = ({
+  account_info,
+  meta,
+  delay = "0.7s",
+}: AccountMetadataProps) => {
   return (
-    <div 
-      className="glass-widget widget-hover p-6 text-foreground"
+    <div
+      className="glass-widget widget-hover p-5 md:p-6 stat-fade-in flex flex-col h-full"
       style={{ animationDelay: delay }}
     >
-      <header className="mb-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center">
-            <Shield className="text-primary w-6 h-6" />
-          </div>
-          <div>
-            <h3 className="text-lg font-bold">Auditoría Técnica</h3>
-            <p className="text-xs text-muted-foreground">Métricas de equidad y límites de cuenta</p>
-          </div>
+      <div className="flex items-center gap-3 mb-6">
+        <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+          <ShieldCheck className="w-5 h-5 text-primary" />
         </div>
-        <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-          isPositive ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"
-        }`}>
-          Performance: {isPositive ? "+" : ""}{stats.performance_percent.toFixed(2)}%
-        </div>
-      </header>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Equity Start */}
-        <div className="bg-secondary/20 rounded-2xl p-4 border border-border/50">
-          <div className="flex items-center gap-2 mb-2 text-muted-foreground">
-            <ArrowDownCircle size={14} />
-            <span className="text-xs font-medium uppercase">Equity Inicial</span>
-          </div>
-          <p className="text-xl font-mono font-bold">
-            {stats.equity_start.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currency}
-          </p>
-        </div>
-
-        {/* Equity End */}
-        <div className="bg-secondary/20 rounded-2xl p-4 border border-border/50">
-          <div className="flex items-center gap-2 mb-2 text-muted-foreground">
-            <ArrowUpCircle size={14} />
-            <span className="text-xs font-medium uppercase">Equity Final</span>
-          </div>
-          <p className="text-xl font-mono font-bold text-primary">
-            {stats.equity_end.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currency}
-          </p>
-        </div>
-
-        {/* High Water Mark */}
-        <div className="bg-primary/5 rounded-2xl p-4 border border-primary/20">
-          <div className="flex items-center gap-2 mb-2 text-primary/70">
-            <TrendingUp size={14} />
-            <span className="text-xs font-bold uppercase tracking-tight">High Water Mark (HWM)</span>
-          </div>
-          <p className="text-xl font-mono font-bold text-primary">
-            {stats.hwm.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currency}
-          </p>
-        </div>
-
-        {/* Deposits/Withdrawals */}
-        <div className="bg-secondary/20 rounded-2xl p-4 border border-border/50">
-          <div className="flex items-center gap-2 mb-2 text-muted-foreground">
-            <Wallet size={14} />
-            <span className="text-xs font-medium uppercase">Flujo Capital</span>
-          </div>
-          <p className={`text-xl font-mono font-bold ${stats.deposit_withdrawal >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-            {stats.deposit_withdrawal >= 0 ? "+" : ""}{stats.deposit_withdrawal.toLocaleString(undefined, { minimumFractionDigits: 2 })} {currency}
+        <div>
+          <h3 className="text-sm md:text-base font-semibold text-foreground">
+            Auditoría de Entorno
+          </h3>
+          <p className="text-[11px] md:text-xs text-muted-foreground">
+            Metadatos y configuración de la cuenta origen
           </p>
         </div>
       </div>
 
-      <div className="mt-6 pt-6 border-t border-border/30 grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="flex items-center gap-4 bg-secondary/10 p-4 rounded-xl">
-          <div className="w-10 h-10 bg-indigo-500/10 rounded-lg flex items-center justify-center font-bold text-xs text-indigo-500">
-            USD
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1">
+        {/* Entorno y Servidor */}
+        <div className="flex bg-secondary/30 rounded-xl p-3 border border-border/50 items-center gap-3">
+          <div className="bg-background rounded-lg p-2 border border-border">
+            <Globe className="w-4 h-4 text-muted-foreground" />
           </div>
           <div>
-            <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">PnL en USD</p>
-            <p className={`text-lg font-mono font-bold ${stats.pnl_usd >= 0 ? "text-emerald-500" : "text-red-500"}`}>
-              {stats.pnl_usd >= 0 ? "+" : ""}{stats.pnl_usd.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-            </p>
+            <div className="text-[10px] text-muted-foreground uppercase font-semibold">Broker / Entorno</div>
+            <div className="font-medium text-sm flex items-center gap-1.5">
+              <span className="capitalize">{account_info.broker}</span>
+              <span className="text-[10px] bg-primary/10 text-primary px-1.5 py-0.5 rounded uppercase font-bold">
+                {account_info.environment}
+              </span>
+            </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-4 bg-secondary/10 p-4 rounded-xl">
-          <div className="w-10 h-10 bg-amber-500/10 rounded-lg flex items-center justify-center font-bold text-xs text-amber-500">
-            EUR
+        {/* Credenciales */}
+        <div className="flex bg-secondary/30 rounded-xl p-3 border border-border/50 items-center gap-3">
+          <div className="bg-background rounded-lg p-2 border border-border">
+            <Key className="w-4 h-4 text-muted-foreground" />
           </div>
           <div>
-            <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest">PnL en EUR</p>
-            <p className={`text-lg font-mono font-bold ${stats.pnl_eur >= 0 ? "text-emerald-500" : "text-red-500"}`}>
-              {stats.pnl_eur >= 0 ? "+" : ""}{stats.pnl_eur.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-            </p>
+            <div className="text-[10px] text-muted-foreground uppercase font-semibold">Login ID</div>
+            <div className="font-mono text-sm font-medium">{account_info.login}</div>
+          </div>
+        </div>
+
+        {/* Suscripción (Si aplica) */}
+        <div className="flex bg-secondary/30 rounded-xl p-3 border border-border/50 items-center gap-3">
+          <div className="bg-background rounded-lg p-2 border border-border">
+            <Activity className="w-4 h-4 text-muted-foreground" />
+          </div>
+          <div>
+            <div className="text-[10px] text-muted-foreground uppercase font-semibold">Suscripción</div>
+            <div className="font-medium text-sm">
+              {account_info.subscription_name}
+              {account_info.expiration !== "N/A" && (
+                <span className="block text-[10px] text-muted-foreground mt-0.5">
+                  Expira: {new Date(account_info.expiration).toLocaleDateString()}
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Periodo del Reporte */}
+        <div className="flex bg-secondary/30 rounded-xl p-3 border border-border/50 items-center gap-3">
+          <div className="bg-background rounded-lg p-2 border border-border">
+            <CalendarDays className="w-4 h-4 text-muted-foreground" />
+          </div>
+          <div>
+            <div className="text-[10px] text-muted-foreground uppercase font-semibold">Periodo Evaluado</div>
+            <div className="font-medium text-sm">
+              {meta.day_from !== "N/A" && meta.day_to !== "N/A" ? (
+                <>
+                  <span className="tabular-nums">{meta.day_from}</span>
+                  <span className="text-muted-foreground mx-1">a</span>
+                  <span className="tabular-nums">{meta.day_to}</span>
+                </>
+              ) : (
+                <span className="text-muted-foreground italic">No disponible</span>
+              )}
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="mt-4 flex items-center gap-2 text-[10px] text-muted-foreground italic px-2">
-        <Info size={12} />
-        <span>Las conversiones a USD/EUR son calculadas por el Servidor de IT TRADE al momento del snapshot.</span>
+      <div className="mt-4 pt-4 border-t border-border/50 flex justify-between items-center gap-4">
+        <Server className="w-4 h-4 text-muted-foreground shrink-0" />
+        <div className="text-[10px] text-muted-foreground truncate font-mono">
+          SERVER: {meta.server}
+        </div>
+        <div className="flex gap-3 text-[10px] text-muted-foreground ml-auto whitespace-nowrap">
+          <span>USD: <strong className="text-foreground">{account_info.ccyToUSD}</strong></span>
+          <span>EUR: <strong className="text-foreground">{account_info.ccyToEUR}</strong></span>
+        </div>
       </div>
     </div>
   );
-}
+};

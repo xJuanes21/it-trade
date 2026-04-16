@@ -49,12 +49,10 @@ export const authConfig: NextAuthConfig = {
         if (!user || !user.credential?.passwordHash) return null;
 
         if (!user.isApproved) {
-            console.log("User not approved:", user.email);
             throw new Error("AccessDenied: Pending Approval"); 
         }
 
         if (user.isActive === false) { 
-             console.log("User disabled:", user.email);
              throw new Error("AccessDenied: Account Disabled");
         }
         
@@ -85,7 +83,6 @@ export const authConfig: NextAuthConfig = {
   },
   callbacks: {
     async signIn({ user, account, profile }) {
-      console.log("SI_CB:", account?.provider, user?.email);
       
       if (account?.provider === "google" && user?.email) {
         const { prisma } = await import("@/lib/prisma");
@@ -95,7 +92,6 @@ export const authConfig: NextAuthConfig = {
         });
 
         if (dbUser) {
-          console.log("SI_CB_DB:", dbUser.isApproved, dbUser.isActive);
           if (!dbUser.isApproved) return "/login?error=PendingApproval";
           if (!dbUser.isActive) return "/login?error=AccountDisabled";
         }

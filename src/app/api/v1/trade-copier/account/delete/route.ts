@@ -30,7 +30,6 @@ export async function POST(req: Request) {
     // 2. Proxy to external API
     let result: any = {};
     if (account_id.startsWith("sim_acc_")) {
-      console.log(`[Simulación] Bypass API Externa para eliminar cuenta ${account_id}`);
       result = { status: "success", message: "Account deleted simulated" };
     } else {
       // Impersonation Logic
