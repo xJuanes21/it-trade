@@ -25,13 +25,13 @@ export const authConfig: NextAuthConfig = {
       },
       authorize: async (credentials) => {
         if (!credentials?.email || !credentials?.password) return null;
-        
+
         // Dynamic imports to avoid bundling in Edge Runtime (Middleware)
-        const { prisma } = await import("@/lib/prisma"); 
+        const { prisma } = await import("@/lib/prisma");
         const bcrypt = await import("bcryptjs");
-        
+
         const email = credentials.email.toString();
-        const user = await prisma.user.findUnique({ 
+        const user = await prisma.user.findUnique({
           where: { email },
           select: {
             id: true,
@@ -45,17 +45,17 @@ export const authConfig: NextAuthConfig = {
             isActive: true,
           }
         });
-        
+
         if (!user || !user.credential?.passwordHash) return null;
 
         if (!user.isApproved) {
-            throw new Error("AccessDenied: Pending Approval"); 
+          throw new Error("AccessDenied: Pending Approval");
         }
 
-        if (user.isActive === false) { 
-             throw new Error("AccessDenied: Account Disabled");
+        if (user.isActive === false) {
+          throw new Error("AccessDenied: Account Disabled");
         }
-        
+
         const passwordsMatch = await bcrypt.compare(
           credentials.password.toString(),
           user.credential.passwordHash
@@ -83,7 +83,7 @@ export const authConfig: NextAuthConfig = {
   },
   callbacks: {
     async signIn({ user, account, profile }) {
-      
+
       if (account?.provider === "google" && user?.email) {
         const { prisma } = await import("@/lib/prisma");
         const dbUser = await prisma.user.findUnique({
@@ -106,12 +106,12 @@ export const authConfig: NextAuthConfig = {
         token.isApproved = user.isApproved;
         token.isActive = user.isActive;
       }
-      
+
       // CARGA DINÁMICA: Si no tenemos el rol o si el usuario AÚN no está aprobado, 
       // re-consultar la DB para ver si ya lo aprobaron.
       if ((!token.role || !token.isApproved || token.isActive === false) && token.sub) {
         const { prisma } = await import("@/lib/prisma");
-        const dbUser = await prisma.user.findUnique({ 
+        const dbUser = await prisma.user.findUnique({
           where: { id: token.sub },
           select: { role: true, isApproved: true, isActive: true }
         });
@@ -121,7 +121,7 @@ export const authConfig: NextAuthConfig = {
           token.isActive = dbUser.isActive;
         }
       }
-      
+
       return token;
     },
     async session({ session, token }) {
@@ -135,9 +135,8 @@ export const authConfig: NextAuthConfig = {
       // Pasar estados de aprobación y actividad
       session.user.isApproved = token.isApproved as boolean;
       session.user.isActive = token.isActive as boolean;
-      
+
       return session;
     }
   }
 }
-

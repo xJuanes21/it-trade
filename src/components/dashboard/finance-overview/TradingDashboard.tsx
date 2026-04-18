@@ -50,11 +50,13 @@ const TradingDashboard = () => {
           // 1. Fetch Approved Copy Relations for standard users
           const copyRes = await tradeCopierService.getCopyRequests();
           const approved = copyRes.requests?.some((r: any) => r.status === "APPROVED");
-          setHasApprovedCopy(!!approved);
-
-          // 2. Users: check local DB only — they don't have external credentials
+          
+          // 2. Users: check local DB only (Mt5Account or TradeCopierAccount)
           const localRes = await tradeCopierService.getAccountsLocal();
           tcAccounts = localRes.data?.accounts || [];
+
+          // Ownership logic: If they have accounts linked manually by admin OR an approved request, it's valid.
+          setHasApprovedCopy(!!approved || tcAccounts.length > 0);
         } else {
           // Traders/SuperAdmins: fetch from external API
           setHasApprovedCopy(true); // Always true for Traders/Admins

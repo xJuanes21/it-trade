@@ -286,4 +286,18 @@ export const tradeCopierService = {
     }
     return response.json();
   },
+
+  async unlinkAccount(accountId: string) {
+    const response = await fetch("/api/v1/trade-copier/account/unlink", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ account_id: accountId }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || error.error || "Failed to unlink account");
+    }
+    return response.json();
+  },
 };

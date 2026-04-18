@@ -14,17 +14,23 @@ export async function GET(req: Request) {
     }
 
 
-    // 1. Get Local Accounts (Ownership Source of Truth)
-    const localAccounts = await prisma.mt5Account.findMany({
-      where: {
-        userId: session.user.id,
-      },
-      select: {
-        login: true
-      }
-    });
+    // 1. Get ALL Local Accounts associated with this user
+    // We combine mt5Account (direct) and tradeCopierAccount (linked)
+    const [mt5Accounts, linkedAccounts] = await Promise.all([
+      prisma.mt5Account.findMany({
+        where: { userId: session.user.id },
+        select: { login: true }
+      }),
+      prisma.tradeCopierAccount.findMany({
+        where: { userId: session.user.id },
+        select: { login: true }
+      })
+    ]);
 
-    const localLogins = new Set(localAccounts.map(a => a.login));
+    const localLogins = new Set([
+      ...mt5Accounts.map(a => String(a.login)),
+      ...linkedAccounts.map(a => String(a.login))
+    ]);
 
     try {
       // 2. Get External Data (Data Source)

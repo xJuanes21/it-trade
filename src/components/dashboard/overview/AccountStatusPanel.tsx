@@ -33,7 +33,7 @@ export function AccountStatusPanel() {
   }, []);
 
   const linkedCount = accounts.length;
-  const activeCount = accounts.filter((a) => a.state === 1).length;
+  const activeCount = accounts.filter((a) => Number(a.status) === 1).length;
 
   return (
     <div className="glass-widget widget-hover p-6 text-foreground h-[650px] flex flex-col border border-white/5 relative overflow-hidden group">
