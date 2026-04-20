@@ -163,35 +163,48 @@ export async function POST(req: Request) {
 
     // 2. Ownership check and Header resolution for standard users
     if (isStandardUser && !isImpersonating) {
-      // Find if this user has an APPROVED copy request for this account
-      const copyRequest = await prisma.copyRequest.findFirst({
-        where: {
-          followerId: userId,
-          slaveAccountId: body.account_id ? String(body.account_id) : undefined,
-          status: "APPROVED"
-        },
-        select: { traderId: true }
-      });
-
-      if (copyRequest) {
-        // Use the trader's credentials to fetch the report for the user's slave account
-        headerUserId = copyRequest.traderId;
-      } else {
-        // Falling back to own credentials if any, but regular users usually have none
-        // If they have a manually linked account but no copy request, 
-        // they might still need a way to see reports. 
-        // For now, if no copy request, we check local ownership strictly.
-        if (body.account_id) {
-          const account = await prisma.tradeCopierAccount.findFirst({
-            where: {
-              account_id: String(body.account_id),
-              userId: userId
-            }
-          });
-          if (!account) {
-            return NextResponse.json({ error: "No tienes permiso para ver este reporte o no hay una relación de copia aprobada." }, { status: 403 });
+      if (body.account_id) {
+        // 1. Check if the user really owns this account locally
+        const account = await prisma.tradeCopierAccount.findFirst({
+          where: {
+            account_id: String(body.account_id),
+            userId: userId
           }
+        });
+        if (!account) {
+          return NextResponse.json({ error: "No tienes permiso para ver este reporte." }, { status: 403 });
         }
+
+        // 2. Try to get the Trader's credentials via approved copy request
+        const copyRequest = await prisma.copyRequest.findFirst({
+          where: {
+            followerId: userId,
+            slaveAccountId: String(body.account_id),
+            status: "APPROVED"
+          },
+          select: { traderId: true }
+        });
+
+        if (copyRequest) {
+          headerUserId = copyRequest.traderId;
+        } else {
+          // Manually associated account without CopyRequest
+          // Standard user has no API credentials, so we use a SuperAdmin's credentials to fetch
+          const adminWithCreds = await prisma.credentialsApi.findFirst({
+            where: { user: { role: "superadmin" } },
+            select: { userId: true }
+          });
+          if (adminWithCreds) headerUserId = adminWithCreds.userId;
+        }
+      } else {
+        // Fetching for ALL accounts of this user.
+        // The user might have multiple accounts across different traders or manual links.
+        // The safest way to ensure we can pull all their metrics is to use a SuperAdmin token.
+        const adminWithCreds = await prisma.credentialsApi.findFirst({
+          where: { user: { role: "superadmin" } },
+          select: { userId: true }
+        });
+        if (adminWithCreds) headerUserId = adminWithCreds.userId;
       }
     } else if (isTrader && !isImpersonating && body.account_id) {
       // For Traders looking at their own stuff, we allow it if we can find the account in the system
@@ -276,15 +289,14 @@ export async function POST(req: Request) {
     const canSeeAllLocal = isSuperAdmin || isTrader;
 
     if (!body.account_id && result.data && result.data.reporting && !canSeeAllLocal) {
-      // @ts-ignore
-      const userAccounts = await (prisma as any).tradeCopierAccount.findMany({
-        where: { userId: headerUserId },
+      // FIX: use 'userId' (session user), NOT 'headerUserId' (which could be the SuperAdmin now)
+      const userAccounts = await prisma.tradeCopierAccount.findMany({
+        where: { userId: userId },
         select: { account_id: true }
       });
 
       const allowedIds = new Set(userAccounts.map((a: any) => String(a.account_id)));
-      const initialCount = result.data.reporting.length;
-
+      
       result.data.reporting = result.data.reporting.filter((rep: any) =>
         allowedIds.has(String(rep.account_id))
       );
