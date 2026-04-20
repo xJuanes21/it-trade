@@ -23,19 +23,50 @@ export async function GET(req: Request) {
       },
     });
 
-    // Desencriptar contraseñas para el formulario
+    // Fetch copying information for slave accounts
+    const slaveAccountIds = accounts.filter(acc => acc.type === 1).map(acc => acc.account_id);
+    const syncConfigs = await prisma.syncConfig.findMany({
+      where: { slaveAccountId: { in: slaveAccountIds } },
+      include: {
+        user: { // This is the user who owns the SyncConfig, not necessarily the master owner
+            select: { name: true }
+        }
+      }
+    });
+
+    // We need to find the OWNER of the master accounts listed in syncConfigs
+    const masterAccountIds = syncConfigs.map(sc => sc.masterAccountId);
+    const masterAccounts = await prisma.tradeCopierAccount.findMany({
+      where: { account_id: { in: masterAccountIds } },
+      include: {
+        user: {
+          select: { name: true, email: true }
+        }
+      }
+    });
+
+    // Desencriptar contraseñas y añadir info de trading
     const decryptedAccounts = accounts.map(acc => {
       let decryptedPassword = "";
       try {
         decryptedPassword = acc.password ? decrypt(acc.password) : "";
       } catch (e) {
-        console.warn(`[API/Accounts] Failed to decrypt password for account ${acc.id}. Using placeholder.`);
-        decryptedPassword = acc.password || ""; // Fallback to raw value if decryption fails
+        decryptedPassword = acc.password || "";
+      }
+
+      let traderName = "";
+      if (acc.type === 1) {
+        const config = syncConfigs.find(sc => sc.slaveAccountId === acc.account_id);
+        if (config) {
+            const master = masterAccounts.find(ma => ma.account_id === config.masterAccountId);
+            traderName = master?.user?.name || master?.user?.email || "Trader";
+        }
       }
 
       return {
         ...acc,
         password: decryptedPassword,
+        traderName // Added traderName for UI
       };
     });
 

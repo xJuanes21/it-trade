@@ -56,23 +56,23 @@ export const AccountStatusCard = ({
       </div>
 
       {/* Balance & Equity */}
-      <div className="space-y-3">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <Wallet className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">Balance</span>
+      <div className="space-y-3 overflow-hidden">
+        <div className="flex flex-col overflow-hidden">
+          <div className="flex items-center gap-1.5 mb-0.5 whitespace-nowrap overflow-hidden">
+            <Wallet className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider truncate">Balance</span>
           </div>
-          <span className="text-base font-bold font-mono text-foreground text-right w-full">
+          <span className="text-sm md:text-base font-bold font-mono text-foreground text-right w-full truncate whitespace-nowrap">
             {balance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs text-muted-foreground font-sans">{currency}</span>
           </span>
         </div>
         
-        <div className="flex flex-col">
-          <div className="flex items-center gap-1.5 mb-0.5">
-            <TrendingUp className="w-3.5 h-3.5 text-primary" />
-            <span className="text-[10px] text-primary font-medium uppercase tracking-wider">Equity</span>
+        <div className="flex flex-col overflow-hidden">
+          <div className="flex items-center gap-1.5 mb-0.5 whitespace-nowrap overflow-hidden">
+            <TrendingUp className="w-3.5 h-3.5 text-primary shrink-0" />
+            <span className="text-[10px] text-primary font-medium uppercase tracking-wider truncate">Equity</span>
           </div>
-          <span className="text-base font-bold font-mono text-primary text-right w-full">
+          <span className="text-sm md:text-base font-bold font-mono text-primary text-right w-full truncate whitespace-nowrap">
             {equity.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-xs opacity-70 font-sans">{currency}</span>
           </span>
         </div>

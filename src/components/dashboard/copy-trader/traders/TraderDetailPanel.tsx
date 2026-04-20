@@ -83,7 +83,11 @@ export const TraderDetailPanel = ({
     try {
       const res = await tradeCopierService.deleteAccount(linkedAccount.account_id || "", traderId);
       if (res.status === "success") {
-        toast.success("Has dejado de copiar a este trader correctamente.");
+        if (res.code === 201) {
+          toast.success("Solicitud de finalización enviada. El trader debe aprobarla.");
+        } else {
+          toast.success("Has dejado de copiar a este trader correctamente.");
+        }
         await fetchData(); // Refresh state
       } else {
         toast.error(res.message || "Error al dejar de copiar");

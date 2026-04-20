@@ -31,6 +31,11 @@ export default function CopyTraderAccountsPage() {
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
     accountId: string | null;
+    isRequest?: boolean;
+    title?: string;
+    description?: string;
+    confirmText?: string;
+    variant?: "danger" | "primary";
   }>({
     isOpen: false,
     accountId: null,
@@ -163,16 +168,26 @@ export default function CopyTraderAccountsPage() {
     if (!deleteModal.accountId) return;
 
     try {
-      const res = await tradeCopierService.deleteAccount(deleteModal.accountId);
+      let res;
+      if (deleteModal.isRequest) {
+        res = await tradeCopierService.requestAccountFinalization(deleteModal.accountId);
+      } else {
+        res = await tradeCopierService.deleteAccount(deleteModal.accountId);
+      }
+
       if (res.status === "success") {
-        toast.success("Cuenta eliminada correctamente.");
+        if (deleteModal.isRequest) {
+          toast.success("Solicitud de finalización enviada con éxito.");
+        } else {
+          toast.success("Cuenta eliminada correctamente.");
+        }
         fetchAccounts();
         fetchAccountLimit();
       } else {
-        toast.error(res.message || "Error al eliminar");
+        toast.error(res.message || "Error al procesar la acción");
       }
-    } catch (error) {
-      toast.error("Error de conexión");
+    } catch (error: any) {
+      toast.error(error.message || "Error de conexión");
     } finally {
       setDeleteModal({ isOpen: false, accountId: null });
     }
@@ -383,7 +398,37 @@ export default function CopyTraderAccountsPage() {
                   isTrader={isTrader}
                   canClassify={canClassify}
                   onEdit={handleEdit}
-                  onDelete={(id) => setDeleteModal({ isOpen: true, accountId: id })}
+                  onDelete={(id) => {
+                    const acc = accounts.find(a => a.account_id === id);
+                    const isStandardUser = session?.user?.role === "user";
+                    const isSlave = acc?.type === 1;
+                    const hasActiveCopyConfig = !!acc?.traderName;
+                    
+                    if (isStandardUser && isSlave && hasActiveCopyConfig) {
+                      setDeleteModal({ 
+                        isOpen: true, 
+                        accountId: id,
+                        isRequest: true,
+                        title: "Solicitar Finalización de Copia",
+                        description: `¿Deseas solicitar la finalización de copiado para esta cuenta? Se enviará una solicitud al trader ${acc?.traderName || "administrador"} para desvincularla de forma segura.`,
+                        confirmText: "Enviar Solicitud",
+                        variant: "primary"
+                      });
+                    } else {
+                      setDeleteModal({ 
+                        isOpen: true, 
+                        accountId: id,
+                        isRequest: false,
+                        title: isStandardUser ? "Desvincular Cuenta" : "Eliminar Cuenta",
+                        description: isStandardUser 
+                          ? "¿Estás seguro de que deseas desvincular esta cuenta de tu panel? Ya no la verás más." 
+                          : "¿Estás seguro de que deseas eliminar esta cuenta permanentemente del servidor y del ecosistema?",
+                        confirmText: isStandardUser ? "Desvincular" : "Eliminar permanentemente",
+                        variant: "danger"
+                      });
+                    }
+
+                  }}
                   onPromote={(acc) => setPromoteModal({ isOpen: true, account: acc })}
                   onToggleStatus={(acc) => setStatusModal({ isOpen: true, account: acc })}
                   onLink={(acc) => setLinkModal({ isOpen: true, account: acc })}
@@ -406,11 +451,11 @@ export default function CopyTraderAccountsPage() {
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ isOpen: false, accountId: null })}
         onConfirm={confirmDelete}
-        title="Eliminar Cuenta"
-        description="¿Estás seguro de que deseas eliminar esta cuenta? Esta acción desvinculará permanentemente el broker de nuestro ecosistema."
-        confirmText="Eliminar permanentemente"
+        title={deleteModal.title || "Eliminar Cuenta"}
+        description={deleteModal.description || "¿Estás seguro de que deseas eliminar esta cuenta? Esta acción desvinculará permanentemente el broker de nuestro ecosistema."}
+        confirmText={deleteModal.confirmText || "Eliminar permanentemente"}
         cancelText="Volver"
-        variant="danger"
+        variant={deleteModal.variant || "danger"}
       />
 
       <ConfirmationModal
