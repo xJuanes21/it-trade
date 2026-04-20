@@ -48,6 +48,7 @@ export interface Account {
   
   isOwner?: boolean;
   ownerEmail?: string;
+  traderName?: string;
 
   // Alertas adicionales
   alert_sms?: AlertStatus;

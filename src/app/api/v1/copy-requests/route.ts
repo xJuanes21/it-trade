@@ -85,23 +85,79 @@ export async function POST(req: Request) {
     }
 
     const payload = await req.json();
-    const { slaveAccountId, masterAccountId, traderId } = payload;
+    let { slaveAccountId, masterAccountId, traderId, type = "START_COPYING" } = payload;
 
-    if (!slaveAccountId || !masterAccountId || !traderId) {
-      return NextResponse.json({ 
-        error: "Missing required fields", 
-        details: { slaveAccountId, masterAccountId, traderId } 
-      }, { status: 400 });
+    if (!slaveAccountId) {
+      return NextResponse.json({ error: "Missing slaveAccountId" }, { status: 400 });
     }
 
     const p = prisma as any;
 
-    // Check if a pending request already exists for this pair
+    // Smart resolution for STOP_COPYING
+    if (type === "STOP_COPYING" && (!masterAccountId || !traderId)) {
+        // 1. Resolve the "True" account_id if it's a local proxy
+        let targetSlaveId = slaveAccountId;
+        const currentAccount = await p.tradeCopierAccount.findUnique({
+            where: { account_id: slaveAccountId }
+        });
+
+        if (currentAccount && slaveAccountId.startsWith("local_")) {
+            // Find if there's a linked version of this account (same login/broker, not local)
+            const linkedAccount = await p.tradeCopierAccount.findFirst({
+                where: {
+                    userId: currentAccount.userId,
+                    login: currentAccount.login,
+                    broker: currentAccount.broker,
+                    NOT: { account_id: { startsWith: "local_" } }
+                }
+            });
+            if (linkedAccount) {
+                targetSlaveId = linkedAccount.account_id;
+            }
+        }
+
+        const syncConfig = await p.syncConfig.findFirst({
+            where: { slaveAccountId: targetSlaveId }
+        });
+        
+        if (!syncConfig) {
+            return NextResponse.json({ 
+                status: "error", 
+                message: "No se encontró una configuración de copia activa para esta cuenta." 
+            }, { status: 404 });
+        }
+
+        masterAccountId = syncConfig.masterAccountId;
+
+        // Find the Trader who owns the Master account
+        const masterAccount = await p.tradeCopierAccount.findUnique({
+            where: { account_id: masterAccountId },
+            select: { userId: true }
+        });
+
+        if (!masterAccount) {
+            return NextResponse.json({ status: "error", message: "No se pudo identificar al trader maestro." }, { status: 404 });
+        }
+        traderId = masterAccount.userId;
+        
+        // Update variables for the rest of the flow
+        slaveAccountId = targetSlaveId;
+    }
+
+    if (!masterAccountId || !traderId) {
+      return NextResponse.json({ 
+        error: "Missing required fields: masterAccountId or traderId", 
+        details: { slaveAccountId, masterAccountId, traderId } 
+      }, { status: 400 });
+    }
+
+    // Check if a pending request already exists for this pair and type
     const existing = await p.copyRequest.findFirst({
       where: {
         followerId: session.user.id,
         slaveAccountId,
         masterAccountId,
+        type,
         status: "PENDING"
       }
     });
@@ -109,7 +165,7 @@ export async function POST(req: Request) {
     if (existing) {
       return NextResponse.json({ 
         status: "error", 
-        message: "Ya tienes una solicitud pendiente para esta combinación de cuentas." 
+        message: `Ya tienes una solicitud de ${type === "START_COPYING" ? "copiado" : "finalización"} pendiente para esta cuenta.` 
       }, { status: 400 });
     }
 
@@ -120,6 +176,7 @@ export async function POST(req: Request) {
         traderId,
         masterAccountId,
         slaveAccountId,
+        type,
         status: "PENDING"
       }
     });

@@ -63,8 +63,8 @@ export async function toggleUserStatus(userId: string, isActive: boolean) {
     revalidatePath("/dashboard/usuarios");
     return { success: true };
   } catch (error) {
-      console.error("Error toggling user status:", error);
-      return { error: "Error al cambiar estado" };
+    console.error("Error toggling user status:", error);
+    return { error: "Error al cambiar estado" };
   }
 }
 
@@ -82,8 +82,8 @@ export async function updateUserRole(userId: string, newRole: UserRole) {
       });
 
       if (!credentials) {
-        return { 
-          error: "Para asignar el rol de Trader, primero debe configurar las credenciales de API del usuario en el módulo de Autenticación de Plataforma." 
+        return {
+          error: "Para asignar el rol de Trader, primero debe configurar las credenciales de API del usuario en el módulo de Autenticación de Plataforma."
         };
       }
     }

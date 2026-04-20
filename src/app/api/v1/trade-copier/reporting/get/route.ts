@@ -208,6 +208,23 @@ export async function POST(req: Request) {
       if (!account) {
         return NextResponse.json({ error: "No autorizado" }, { status: 403 });
       }
+
+      // If the account is linked but we reached here, it means we might need 
+      // credentials from a SuperAdmin to fetch the report, as the standard user has none.
+      try {
+        await getTradeCopierHeaders(headerUserId);
+      } catch (err: any) {
+        if (err.message === "CredentialsApiConfigurationMissing") {
+          // Fallback: Find the first SuperAdmin with credentials
+          const adminWithCreds = await prisma.credentialsApi.findFirst({
+            where: { user: { role: "superadmin" } },
+            select: { userId: true }
+          });
+          if (adminWithCreds) {
+            headerUserId = adminWithCreds.userId;
+          }
+        }
+      }
     }
 
     let externalHeaders;

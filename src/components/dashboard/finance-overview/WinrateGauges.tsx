@@ -37,12 +37,12 @@ export const SemiCircleProgress = ({
           />
         </svg>
         <div className="absolute inset-0 flex items-end justify-center pb-2">
-          <span className="text-xl md:text-2xl font-bold text-foreground">
+          <span className="text-lg md:text-xl font-bold text-foreground truncate px-1">
             {percentage.toFixed(1)}%
           </span>
         </div>
       </div>
-      <p className="text-[10px] md:text-xs text-muted-foreground font-medium uppercase tracking-wider">
+      <p className="text-[10px] md:text-xs text-muted-foreground font-medium uppercase tracking-wider truncate w-full text-center">
         {label}
       </p>
     </div>

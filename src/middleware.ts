@@ -7,12 +7,12 @@ const { auth } = NextAuth(authConfig)
 
 export default auth((req) => {
   const { pathname } = req.nextUrl
-  
+
   // Bypass total para rutas API para evitar redirecciones que devuelven RSC
   if (pathname.startsWith("/api")) {
     return NextResponse.next()
   }
-  
+
   // Si no hay sesión, dejar que NextAuth maneje la redirección
   if (!req.auth?.user) {
     if (pathname.startsWith("/dashboard")) {
@@ -27,20 +27,9 @@ export default auth((req) => {
   // pero el schema dice que superadmin es un rol, no un bypass de aprobación)
   if (!user.isApproved || !user.isActive) {
     if (pathname.startsWith("/dashboard")) {
-      const error = !user.isApproved ? "PendingApproval" : "AccountDisabled"
-      return NextResponse.redirect(new URL(`/login?error=${error}`, req.url))
+      return NextResponse.redirect(new URL("/login", req.url))
     }
   }
-
-  // Verificar acceso basado en rol
-  const userRole = (user.role || "user") as UserRole
-  
-  if (!canAccessRoute(userRole, pathname)) {
-    // Redirigir a dashboard según el rol
-    const redirectPath = userRole === "superadmin" ? "/dashboard/traders" : "/dashboard"
-    return NextResponse.redirect(new URL(redirectPath, req.url))
-  }
-
   return NextResponse.next()
 })
 

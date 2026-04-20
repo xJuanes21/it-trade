@@ -32,6 +32,7 @@ interface CopyRequest {
   masterAccountId: string;
   slaveAccountId: string;
   status: "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
+  type: "START_COPYING" | "STOP_COPYING";
   msg?: string;
   createdAt: string;
   slaveAccount?: {
@@ -229,6 +230,14 @@ function RequestCard({
               <p className="text-[10px] text-muted-foreground/60 font-black uppercase tracking-widest">
                 {request.follower.email}
               </p>
+              <div className={cn(
+                "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-widest mt-1",
+                request.type === "STOP_COPYING" 
+                  ? "bg-red-500/10 text-red-400 border border-red-500/20" 
+                  : "bg-primary/10 text-primary border border-primary/20"
+              )}>
+                {request.type === "STOP_COPYING" ? "Finalización" : "Activación"}
+              </div>
             </div>
           </div>
           
@@ -307,7 +316,18 @@ function RequestDetailPanel({
                 </div>
                 <div className="space-y-1">
                   <h3 className="text-xl font-black tracking-tighter uppercase">{followerName}</h3>
-                  <p className="text-[10px] font-black tracking-[0.1em] text-primary uppercase">{request.follower.email}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-[10px] font-black tracking-[0.1em] text-primary uppercase">{request.follower.email}</p>
+                    <div className="w-1 h-1 rounded-full bg-border" />
+                    <span className={cn(
+                      "text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded border",
+                      request.type === "STOP_COPYING" 
+                        ? "bg-red-500/10 border-red-500/20 text-red-500" 
+                        : "bg-emerald-500/10 border-emerald-500/20 text-emerald-500"
+                    )}>
+                      {request.type === "STOP_COPYING" ? "Solicita Finalizar" : "Solicita Copiar"}
+                    </span>
+                  </div>
                 </div>
               </div>
             </section>
@@ -388,9 +408,21 @@ function RequestDetailPanel({
               <Button 
                 onClick={() => onAction(request.id, "APPROVED")}
                 disabled={isProcessing}
-                className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-black text-xs uppercase tracking-[0.2em] transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-3"
+                className={cn(
+                  "w-full h-14 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all shadow-lg flex items-center justify-center gap-3",
+                  request.type === "STOP_COPYING"
+                    ? "bg-red-500 hover:bg-red-600 text-white shadow-red-500/20"
+                    : "bg-primary hover:bg-primary/90 text-primary-foreground shadow-primary/20"
+                )}
               >
-                {isProcessing ? <Loader2 size={18} className="animate-spin" /> : <><Check size={18} /> Aprobar Asociación</>}
+                {isProcessing ? (
+                  <Loader2 size={18} className="animate-spin" />
+                ) : (
+                  <>
+                    <Check size={18} /> 
+                    {request.type === "STOP_COPYING" ? "Aprobar Finalización" : "Aprobar Asociación"}
+                  </>
+                )}
               </Button>
               <Button 
                 variant="ghost"

@@ -220,6 +220,7 @@ export function AccountCard({
               size="icon"
               onClick={() => onDelete(account.account_id!)}
               className="h-10 w-10 rounded-xl hover:bg-red-500 hover:text-white transition-all text-red-400"
+              title={isSuperAdmin || isTrader ? "Eliminar Cuenta permanentemente" : "Solicitar Finalización de Copia"}
             >
               <Trash2 size={16} />
             </Button>

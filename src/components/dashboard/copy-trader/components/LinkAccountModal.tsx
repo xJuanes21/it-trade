@@ -20,6 +20,7 @@ export function LinkAccountModal({ isOpen, onClose, account, onSuccess }: LinkAc
   const [users, setUsers] = useState<{ value: string; label: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [linking, setLinking] = useState(false);
+  const [unlinking, setUnlinking] = useState(false);
 
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -77,6 +78,29 @@ export function LinkAccountModal({ isOpen, onClose, account, onSuccess }: LinkAc
     }
   };
 
+  const handleUnlink = async () => {
+    if (!account?.account_id) return;
+
+    setUnlinking(true);
+    try {
+      const res = await tradeCopierService.unlinkAccount(account.account_id);
+      if (res.status === "success") {
+        toast.success("Cuenta desvinculada correctamente.");
+        onSuccess();
+        onClose();
+      } else {
+        toast.error(res.message || "Error al desvincular la cuenta.");
+      }
+    } catch (error) {
+      console.error("Unlink error:", error);
+      toast.error("Error de conexión al intentar desvincular.");
+    } finally {
+      setUnlinking(false);
+    }
+  };
+
+  const isUnlinked = account?.isOwner === false && !account?.ownerEmail;
+
   if (!isOpen) return null;
 
   return (
@@ -122,20 +146,30 @@ export function LinkAccountModal({ isOpen, onClose, account, onSuccess }: LinkAc
           </div>
 
           <div className="flex items-center justify-end gap-3 mt-10">
+            {account?.ownerEmail && !isUnlinked && (
+              <Button
+                variant="outline"
+                onClick={handleUnlink}
+                disabled={unlinking || linking}
+                className="rounded-xl px-6 h-12 text-red-500 border-red-500/20 hover:bg-red-500/10 hover:text-red-500 mr-auto"
+              >
+                {unlinking ? <Loader2 size={20} className="animate-spin" /> : "Desvincular"}
+              </Button>
+            )}
             <Button
               variant="ghost"
               onClick={onClose}
               className="rounded-xl px-6 h-12"
-              disabled={linking}
+              disabled={linking || unlinking}
             >
               Cancelar
             </Button>
             <Button
               onClick={handleLink}
-              disabled={!selectedUserId || linking}
+              disabled={!selectedUserId || linking || unlinking}
               className="bg-primary hover:bg-primary/90 text-white font-bold rounded-xl px-8 h-12 gap-2 min-w-[140px] shadow-lg shadow-primary/20"
             >
-              {linking ? <Loader2 size={20} className="animate-spin" /> : "Vincular"}
+              {linking ? <Loader2 size={20} className="animate-spin" /> : account?.ownerEmail ? "Cambiar Usuario" : "Vincular"}
             </Button>
           </div>
         </div>

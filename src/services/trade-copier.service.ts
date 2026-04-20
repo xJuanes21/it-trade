@@ -247,7 +247,12 @@ export const tradeCopierService = {
     return response.json();
   },
 
-  async sendCopyRequest(payload: { slaveAccountId: string; masterAccountId: string; traderId: string }) {
+  async sendCopyRequest(payload: { 
+    slaveAccountId: string; 
+    masterAccountId: string; 
+    traderId: string;
+    type?: "START_COPYING" | "STOP_COPYING";
+  }) {
     const response = await fetch("/api/v1/copy-requests", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -256,6 +261,35 @@ export const tradeCopierService = {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.message || error.error || "Failed to send copy request");
+    }
+    return response.json();
+  },
+
+  /**
+   * Specifically for standard users to request the termination of a copy relationship.
+   */
+  async requestAccountFinalization(accountId: string) {
+    // 1. We first need to know who the master of this slave is.
+    // The accounts endpoint already provides 'traderName', but not always the full details needed for a request.
+    // However, the backend /api/v1/copy-requests/POST can handle finding the traderId if we update it,
+    // OR we can fetch it here.
+    // For now, we'll assume a dedicated logic or that we pass the account details.
+    
+    // Let's call the delete endpoint but with a flag? No, let's keep it separate.
+    // We'll call a specialized request creator.
+    const response = await fetch("/api/v1/copy-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+            slaveAccountId: accountId,
+            type: "STOP_COPYING"
+            // The backend MUST be able to resolve traderId/masterAccountId from slaveAccountId
+        }),
+    });
+    
+    if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || error.error || "Error al solicitar finalización");
     }
     return response.json();
   },
@@ -283,6 +317,20 @@ export const tradeCopierService = {
     if (!response.ok) {
       const error = await response.json();
       throw new Error(error.message || error.error || "Failed to link account");
+    }
+    return response.json();
+  },
+
+  async unlinkAccount(accountId: string) {
+    const response = await fetch("/api/v1/trade-copier/account/unlink", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ account_id: accountId }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.message || error.error || "Failed to unlink account");
     }
     return response.json();
   },

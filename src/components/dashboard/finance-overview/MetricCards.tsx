@@ -55,14 +55,14 @@ export const MetricCard = ({
 }) => {
   return (
     <div
-      className="glass-widget-darker widget-hover p-4 md:p-5 stat-fade-in flex flex-col justify-center h-full"
+      className="glass-widget-darker widget-hover p-4 md:p-5 stat-fade-in flex flex-col justify-center h-full overflow-hidden"
       style={{ animationDelay: delay }}
     >
       {title && (
-        <h3 className="text-[10px] md:text-xs font-bold text-muted-foreground mb-2 uppercase tracking-widest opacity-70">{title}</h3>
+        <h3 className="text-[10px] md:text-xs font-bold text-muted-foreground mb-2 uppercase tracking-widest opacity-70 truncate">{title}</h3>
       )}
       <div className={cn(
-        "text-2xl md:text-3xl font-black tracking-tight mb-1",
+        "text-xl md:text-2xl font-black tracking-tight mb-1 truncate whitespace-nowrap",
         typeof value === "number" 
           ? (value >= 0 ? "text-emerald-500" : "text-red-500") 
           : "text-foreground"
@@ -71,7 +71,7 @@ export const MetricCard = ({
           ? `${value >= 0 ? "+" : "-"}${Math.abs(value).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` 
           : value}
       </div>
-      <div className="text-[10px] md:text-xs text-muted-foreground mb-2">{label}</div>
+      <div className="text-[10px] md:text-xs text-muted-foreground mb-2 truncate">{label}</div>
       {max !== undefined && typeof value === "number" && (
         <ProgressBar value={value} max={max || 1} label="" />
       )}

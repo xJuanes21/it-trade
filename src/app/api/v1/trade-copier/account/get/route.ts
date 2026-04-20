@@ -42,12 +42,35 @@ export async function POST(req: Request) {
       externalHeaders = await getTradeCopierHeaders(headerUserId);
     } catch (err: any) {
       if (err.message === "CredentialsApiConfigurationMissing") {
-        return NextResponse.json({
-          status: "success",
-          data: { accounts: [], totalCount: 0 }
+        // Fallback: If this user has linked accounts, try to use a SuperAdmin's credentials to fetch the data
+        const hasLinkedAccounts = await prisma.tradeCopierAccount.findFirst({
+           where: { userId: session.user.id }
         });
+
+        if (hasLinkedAccounts) {
+           const adminWithCreds = await prisma.credentialsApi.findFirst({
+             where: { user: { role: "superadmin" } },
+             select: { userId: true }
+           });
+           if (adminWithCreds) {
+              headerUserId = adminWithCreds.userId;
+              externalHeaders = await getTradeCopierHeaders(headerUserId);
+           } else {
+              // No admin with creds found, return empty
+              return NextResponse.json({
+                status: "success",
+                data: { accounts: [], totalCount: 0 }
+              });
+           }
+        } else {
+           return NextResponse.json({
+             status: "success",
+             data: { accounts: [], totalCount: 0 }
+           });
+        }
+      } else {
+        throw err;
       }
-      throw err;
     }
 
     // 2. Fetch from external API as the SOURCE OF TRUTH
@@ -98,11 +121,12 @@ export async function POST(req: Request) {
       };
     });
 
-    // 4. Temporarily disabled role based filter. 
-    // The raw "get a pelo" array will be returned directly, and the future Header implementation will manage session filtering natively.
-    // if (!canSeeAll) {
-    //   finalAccounts = finalAccounts.filter(acc => acc.isOwner);
-    // }
+    // 4. Filter by ownership for non-admin roles
+    if (!canSeeAll) {
+      finalAccounts = finalAccounts.filter(acc => 
+         acc.isOwner || (localAccountsMap.get(String(acc.account_id))?.userId === session.user.id)
+      );
+    }
 
     return NextResponse.json({
       status: "success",

@@ -50,85 +50,114 @@ export async function PATCH(
     const normalizedStatus = status?.toUpperCase().trim();
     let externalApiResult = null;
 
-    // --- CASO APROBACIÓN: Generar cuenta Slave en MT5 ---
+    // --- CASO APROBACIÓN: Generar cuenta Slave en MT5 (START) o Eliminar (STOP) ---
     if (normalizedStatus === "APPROVED") {
-      
       const p = prisma as any;
-      const slaveAccount = await p.tradeCopierAccount.findUnique({
-        where: { account_id: request.slaveAccountId }
-      });
-
-      if (!slaveAccount) {
-        console.error(`[PATCH /api/v1/copy-requests/${id}] -> ERR: Slave log ${request.slaveAccountId} no existe.`);
-        return NextResponse.json({ error: "Cuenta de seguidor no localizada." }, { status: 404 });
-      }
-
-      // 1. Headers del Trader (obligatorios)
       const externalHeaders = await getTradeCopierHeaders(request.traderId);
 
-      // 2. Password decriptado
-      let decryptedPassword = "";
-      try {
-        if (slaveAccount.password) decryptedPassword = decrypt(slaveAccount.password);
-      } catch (e) {
-        console.warn(`[PATCH /api/v1/copy-requests/${id}] -> No se pudo decifrar password.`);
-      }
-
-      const payload = {
-        name: slaveAccount.name || `Slave_${slaveAccount.login}`,
-        type: 1, // 1 = SLAVE
-        broker: slaveAccount.broker,
-        login: slaveAccount.login,
-        password: decryptedPassword,
-        server: slaveAccount.server,
-        group: request.masterAccountId, // ID del Master (Group)
-        status: 1 // 1 = ACTIVE
-      };
-
-      const response = await fetch(`${EXTERNAL_BASE_URL}/api/v1/trade-copier/account/add`, {
-        method: "POST",
-        headers: externalHeaders,
-        body: JSON.stringify({ payload })
-      });
-
-      externalApiResult = await response.json();
-
-      if (!response.ok || externalApiResult.status !== "success") {
-        return NextResponse.json({ 
-          error: "Error en Servidor Externo", 
-          message: externalApiResult.message || "La API de MT5 rechazó la creación de la cuenta.",
-          details: externalApiResult
-        }, { status: 502 });
-      }
-
-      // --- NUEVO: Validar errores de negocio (ej: límites de suscripción) ---
-      if (externalApiResult.data?.error || externalApiResult.data?.code) {
-        console.warn(`[PATCH /api/v1/copy-requests/${id}] -> RECHAZADO POR NEGOCIO:`, externalApiResult.data.error);
-        return NextResponse.json({ 
-          error: "Límite de Suscripción", 
-          message: externalApiResult.data.error || "No tienes permisos suficientes en IT TRADE para agregar más cuentas.",
-          code: externalApiResult.data.code
-        }, { status: 403 });
-      }
-
-      // 3. Sincronizar ID si cambió
-      const realId = externalApiResult?.data?.account?.account_id || externalApiResult?.data?.account_id || externalApiResult?.account_id;
-      if (realId && String(realId) !== String(request.slaveAccountId)) {
-        await p.tradeCopierAccount.update({
-          where: { account_id: request.slaveAccountId },
-          data: { account_id: String(realId) }
+      if (request.type === "STOP_COPYING") {
+        // --- CASO STOP: Eliminar de MT5 Server y Limpiar DB Local ---
+        const response = await fetch(`${EXTERNAL_BASE_URL}/api/v1/trade-copier/account/delete`, {
+          method: "POST",
+          headers: externalHeaders,
+          body: JSON.stringify({ payload: { account_id: request.slaveAccountId } })
         });
-        request.slaveAccountId = String(realId);
+        
+        externalApiResult = await response.json();
+
+        if (!response.ok || externalApiResult.status !== "success") {
+           // Si falla el borrado externo, igual informamos, pero permitimos continuar si es error de "no existe"
+           console.warn(`[PATCH /api/v1/copy-requests/${id}] Fallo eliminación externa en STOP:`, externalApiResult);
+        }
+
+        // 1. Eliminar SyncConfig
+        await p.syncConfig.deleteMany({
+          where: {
+            masterAccountId: request.masterAccountId,
+            slaveAccountId: request.slaveAccountId
+          }
+        });
+
+        // 2. Eliminar TradeCopierAccount
+        await p.tradeCopierAccount.delete({
+          where: { account_id: request.slaveAccountId }
+        });
+
+      } else {
+        // --- CASO START: Crear en MT5 Server (Lógica original) ---
+        const slaveAccount = await p.tradeCopierAccount.findUnique({
+          where: { account_id: request.slaveAccountId }
+        });
+
+        if (!slaveAccount) {
+          console.error(`[PATCH /api/v1/copy-requests/${id}] -> ERR: Slave log ${request.slaveAccountId} no existe.`);
+          return NextResponse.json({ error: "Cuenta de seguidor no localizada." }, { status: 404 });
+        }
+
+        let decryptedPassword = "";
+        try {
+          if (slaveAccount.password) decryptedPassword = decrypt(slaveAccount.password);
+        } catch (e) {
+          console.warn(`[PATCH /api/v1/copy-requests/${id}] -> No se pudo decifrar password.`);
+        }
+
+        const payload = {
+          name: slaveAccount.name || `Slave_${slaveAccount.login}`,
+          type: 1, // 1 = SLAVE
+          broker: slaveAccount.broker,
+          login: slaveAccount.login,
+          password: decryptedPassword,
+          server: slaveAccount.server,
+          group: request.masterAccountId, // ID del Master (Group)
+          status: 1 // 1 = ACTIVE
+        };
+
+        const response = await fetch(`${EXTERNAL_BASE_URL}/api/v1/trade-copier/account/add`, {
+          method: "POST",
+          headers: externalHeaders,
+          body: JSON.stringify({ payload })
+        });
+
+        externalApiResult = await response.json();
+
+        if (!response.ok || externalApiResult.status !== "success") {
+          return NextResponse.json({ 
+            error: "Error en Servidor Externo", 
+            message: externalApiResult.message || "La API de MT5 rechazó la creación de la cuenta.",
+            details: externalApiResult
+          }, { status: 502 });
+        }
+
+        // --- Validaciones de límites etc ... ---
+        if (externalApiResult.data?.error || externalApiResult.data?.code) {
+          return NextResponse.json({ 
+            error: "Límite de Suscripción", 
+            message: externalApiResult.data.error || "No tienes permisos suficientes en IT TRADE para agregar más cuentas.",
+            code: externalApiResult.data.code
+          }, { status: 403 });
+        }
+
+        // Sincronizar ID si cambió
+        const realId = externalApiResult?.data?.account?.account_id || externalApiResult?.data?.account_id || externalApiResult?.account_id;
+        if (realId && String(realId) !== String(request.slaveAccountId)) {
+          await p.tradeCopierAccount.update({
+            where: { account_id: request.slaveAccountId },
+            data: { account_id: String(realId) }
+          });
+          request.slaveAccountId = String(realId);
+        }
       }
     }
 
-    // --- CASO RECHAZO/CANCELACIÓN: Limpiar si era APPROVED ---
-    if (["REJECTED", "CANCELLED"].includes(normalizedStatus) && request.status === "APPROVED") {
+    // --- CASO RECHAZO/CANCELACIÓN: Limpiar si era APPROVED y tipo START ---
+    if (["REJECTED", "CANCELLED"].includes(normalizedStatus) && 
+        request.status === "APPROVED" && 
+        request.type === "START_COPYING") {
       const externalHeaders = await getTradeCopierHeaders(request.traderId);
       const response = await fetch(`${EXTERNAL_BASE_URL}/api/v1/trade-copier/account/delete`, {
         method: "POST",
         headers: externalHeaders,
-        body: JSON.stringify({ account_id: request.slaveAccountId })
+        body: JSON.stringify({ payload: { account_id: request.slaveAccountId } })
       });
       externalApiResult = await response.json();
     }
@@ -139,7 +168,11 @@ export async function PATCH(
       data: { 
         status: normalizedStatus as any, 
         slaveAccountId: request.slaveAccountId,
-        message: message || (normalizedStatus === "APPROVED" ? "Aprobado" : "Gestionado por el trader")
+        message: message || (
+          normalizedStatus === "APPROVED" 
+            ? (request.type === "STOP_COPYING" ? "Relación finalizada con éxito" : "Aprobado")
+            : "Gestionado por el trader"
+        )
       }
     });
 
